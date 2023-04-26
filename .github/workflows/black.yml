@@ -16,5 +16,4 @@ jobs:
         python-version: 3.7
         cache: 'pip'
     - run: pip install black==22.3.0
-    - run: black --diff .
-    - run: black --check .
+    - run: black --diff --check .
