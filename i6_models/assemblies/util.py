@@ -9,7 +9,7 @@ class ModelConfiguration:
     _name: Optional[str] = None
 
     @staticmethod
-    def name():
+    def name() -> Optional[str]:
         return None
 
     def _get_all_attributes(self) -> List[str]:
