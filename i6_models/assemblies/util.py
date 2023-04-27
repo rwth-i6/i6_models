@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 @dataclass
 class ModelConfiguration:
-    """base dataclass that supported fetching attributes and metas"""
+    """base dataclass that supported fetching attributes"""
 
     _name: Optional[str] = None
 
@@ -32,6 +32,11 @@ class ModelConfiguration:
 
     @classmethod
     def from_namespace(cls, args):
+        """
+        Generates a ModelConfiguration from a given dataclass.
+        If its already of the correct instance it will return the input object, otherwise it creates an object
+        from the matching attributes.
+        """
         if isinstance(args, cls):
             return args
         else:
