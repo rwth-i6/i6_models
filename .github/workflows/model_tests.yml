@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: "rwth-i6/i6_models"
-          path: "i6_models"
+          path: ""
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
