@@ -23,7 +23,7 @@ class ModelConfiguration:
             return getattr(self, attribute_name)
 
         f = self.__dataclass_fields__[attribute_name]
-        if not f.default_factory is not MISSING:
+        if f.default_factory is not MISSING:
             return f.default_factory()
         return f.default
 
