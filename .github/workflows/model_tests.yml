@@ -1,0 +1,25 @@
+name: model_tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test-jobs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: "rwth-i6/i6_models"
+          path: "i6_models"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+          cache: 'pip'
+      - run: pip install pytest
+      - name: Test Models
+        run: |
+          set -e
+          pytest i6_models/tests
