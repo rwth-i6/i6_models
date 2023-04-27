@@ -1,6 +1,7 @@
 from dataclasses import MISSING, dataclass
 from typing import Any, List, Optional
 
+
 @dataclass
 class ModelConfiguration:
     """base dataclass that supported fetching attributes and metas"""
@@ -19,7 +20,7 @@ class ModelConfiguration:
 
     def _get_default(self, attribute_name: str) -> Any:
         if hasattr(self, attribute_name):
-                return getattr(self, attribute_name)
+            return getattr(self, attribute_name)
 
         f = self.__dataclass_fields__[attribute_name]
         if not f.default_factory is not MISSING:
@@ -43,15 +44,3 @@ class ModelConfiguration:
                     setattr(config, k, getattr(args, k))
 
             return config
-
-@dataclass
-class TestConfiguration(ModelConfiguration):
-
-    num_layers: int = 5
-    hidden_dim: int = 256
-    name: str = "Cool Model Configuration"
-
-class TestNestedConfiguration(ModelConfiguration):
-
-    encoder_config: ModelConfiguration = TestConfiguration(num_layers=4, hidden_dim=3, name="HSG")
-    hidden_dim: int = 333
