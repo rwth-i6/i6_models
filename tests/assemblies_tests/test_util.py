@@ -27,12 +27,8 @@ def test_nested_configuration():
 
     @dataclass
     class TestNestedConfiguration(ModelConfiguration):
-        encoder_config: TestConfiguration = TestConfiguration(
-            num_layers=4, hidden_dim=3, name="encoder_config"
-        )
-        decoder_config: TestConfiguration = TestConfiguration(
-            num_layers=6, hidden_dim=5, name="decoder_config"
-        )
+        encoder_config: TestConfiguration = TestConfiguration(num_layers=4, hidden_dim=3, name="encoder_config")
+        decoder_config: TestConfiguration = TestConfiguration(num_layers=6, hidden_dim=5, name="decoder_config")
 
     dec_cfg = TestConfiguration()
     test_cfg = TestNestedConfiguration(decoder_config=dec_cfg)
@@ -43,12 +39,11 @@ def test_nested_configuration():
     assert test_cfg.decoder_config.num_layers == 5
     assert test_cfg.decoder_config.hidden_dim == 256
     assert test_cfg.decoder_config.name == "Cool Model Configuration"
-    test_cfg.encoder_config = TestConfiguration(
-        num_layers=1, hidden_dim=2, name="better_encoder_config"
-    )
+    test_cfg.encoder_config = TestConfiguration(num_layers=1, hidden_dim=2, name="better_encoder_config")
     assert test_cfg.encoder_config.num_layers == 1
     assert test_cfg.encoder_config.hidden_dim == 2
     assert test_cfg.encoder_config.name == "better_encoder_config"
+
 
 def test_config_from_namespace():
     @dataclass
@@ -56,6 +51,7 @@ def test_config_from_namespace():
         num_layers: int = 4
         hidden_dim: int = 13
         name: str = "Cool Model Configuration"
+
     @dataclass
     class TestConfiguration2(ModelConfiguration):
         num_layers: int = 3
