@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from i6_models.assemblies.util import ModelConfiguration
+from i6_models.config import ModelConfiguration
 
 
 def test_simple_configuration():
