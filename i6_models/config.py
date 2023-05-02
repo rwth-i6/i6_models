@@ -13,7 +13,7 @@ class ExampleModule(Module):
 This config can then be used in the construction of the model to provide parameters.
 Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
 """
-
+from typing import Any
 from dataclasses import dataclass, fields
 import typeguard
 
@@ -26,7 +26,7 @@ class ModelConfiguration:
     """
 
     @classmethod
-    def from_namespace(cls, args):
+    def from_namespace(cls, args: Any):
         """
         Generates a ModelConfiguration from a given dataclass.
         If it's already of the correct instance, it will return the input object, otherwise it creates an object
