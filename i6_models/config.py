@@ -49,8 +49,8 @@ class ModelConfiguration:
         for field in fields(type(self)):
             try:
                 typeguard.check_type(getattr(self, field.name), field.type)
-            except typeguard.TypeCheckError as e:
-                raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {e}')
+            except typeguard.TypeCheckError as exc:
+                raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {exc}')
 
     def __post_init__(self) -> None:
         self._validate_types()
