@@ -1,16 +1,13 @@
 from dataclasses import MISSING, dataclass
-from typing import Any, List, Optional
+from typing import Any, List
 
 
 @dataclass
 class ModelConfiguration:
-    """base dataclass that supports fetching attributes"""
-
-    _name: Optional[str] = None
-
-    @staticmethod
-    def name() -> Optional[str]:
-        return None
+    """
+    Base dataclass that supports fetching attributes
+    Inspired from https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
+    """
 
     def _get_all_attributes(self) -> List[str]:
         return [k for k in self.__dataclass_fields__.keys()]
