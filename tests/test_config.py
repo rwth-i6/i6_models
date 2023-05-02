@@ -74,7 +74,9 @@ def test_config_typing():
         num_layers: int = 4
         hidden_dim: int = 13
         name: str = "Cool Model Configuration"
+
     from typeguard import TypeCheckError
+
     TestConfiguration(num_layers=2, hidden_dim=1)
     try:
         TestConfiguration(num_layers=2.0, hidden_dim="One")

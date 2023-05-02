@@ -17,6 +17,7 @@ Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq
 from dataclasses import dataclass, fields
 import typeguard
 
+
 @dataclass
 class ModelConfiguration:
     """
@@ -49,8 +50,7 @@ class ModelConfiguration:
             try:
                 typeguard.check_type(getattr(self, field.name), field.type)
             except typeguard.TypeCheckError as e:
-                raise typeguard.TypeCheckError(
-                    f'In field "{field.name}" of "{type(self)}": {e}'
-                )
+                raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {e}')
+
     def __post_init__(self) -> None:
         self._validate_types()
