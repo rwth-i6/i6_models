@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import pytest
 
 from i6_models.config import ModelConfiguration
 
