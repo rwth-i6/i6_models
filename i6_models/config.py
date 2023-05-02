@@ -14,12 +14,9 @@ This config can then be used in the construction of the model to provide paramet
 Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
 """
 
-from dataclasses import MISSING, dataclass
-from typing import Any, List
-from enforce_typing import enforce_types
+from dataclasses import dataclass, fields
+import typeguard
 
-
-@enforce_types
 @dataclass
 class ModelConfiguration:
     """
@@ -46,3 +43,14 @@ class ModelConfiguration:
                     setattr(config, k, getattr(args, k))
 
             return config
+
+    def _validate_types(self) -> None:
+        for field in fields(type(self)):
+            try:
+                typeguard.check_type(getattr(self, field.name), field.type)
+            except typeguard.TypeCheckError as e:
+                raise typeguard.TypeCheckError(
+                    f'In field "{field.name}" of "{type(self)}": {e}'
+                )
+    def __post_init__(self) -> None:
+        self._validate_types()

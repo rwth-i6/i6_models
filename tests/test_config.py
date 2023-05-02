@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enforce_typing import enforce_types
 
 from i6_models.config import ModelConfiguration
 
@@ -70,15 +69,15 @@ def test_config_from_namespace():
 
 
 def test_config_typing():
-    @enforce_types
     @dataclass
     class TestConfiguration(ModelConfiguration):
         num_layers: int = 4
         hidden_dim: int = 13
         name: str = "Cool Model Configuration"
-
+    from typeguard import TypeCheckError
+    TestConfiguration(num_layers=2, hidden_dim=1)
     try:
         TestConfiguration(num_layers=2.0, hidden_dim="One")
         assert False, "Typing should not allow this"
-    except TypeError:
+    except TypeCheckError:
         print("Typing Test worked")
