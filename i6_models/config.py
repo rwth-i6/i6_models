@@ -1,3 +1,19 @@
+"""
+Provides the base class for configurations, model configurations can be derived from this base class e.g:
+
+@dataclass
+class ExampleConfig(ModelConfiguration):
+    hidden_dim: int = 256
+    name: str = "Example Configuration"
+
+class ExampleModule(Module):
+    __init__(self, cfg: ExampleConfig)
+        self.hidden_dim = cfg.hidden_dim
+
+This config can then be used in the construction of the model to provide parameters.
+Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
+"""
+
 from dataclasses import MISSING, dataclass
 from typing import Any, List
 
@@ -6,7 +22,6 @@ from typing import Any, List
 class ModelConfiguration:
     """
     Base dataclass that supports fetching attributes
-    Inspired from https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
     """
 
     def _get_all_attributes(self) -> List[str]:
