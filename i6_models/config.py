@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 @dataclass
 class ModelConfiguration:
-    """base dataclass that supported fetching attributes"""
+    """base dataclass that supports fetching attributes"""
 
     _name: Optional[str] = None
 
