@@ -78,8 +78,5 @@ def test_config_typing():
     from typeguard import TypeCheckError
 
     TestConfiguration(num_layers=2, hidden_dim=1)
-    try:
+    with pytest.raises(TypeCheckError):
         TestConfiguration(num_layers=2.0, hidden_dim="One")
-        assert False, "Typing should not allow this"
-    except TypeCheckError:
-        print("Typing Test worked")
