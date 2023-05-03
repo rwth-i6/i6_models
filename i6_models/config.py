@@ -13,6 +13,8 @@ class ExampleModule(Module):
 This config can then be used in the construction of the model to provide parameters.
 Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
 """
+
+from __future__ import annotations
 from typing import Any
 from dataclasses import dataclass, fields
 import typeguard
