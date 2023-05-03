@@ -26,7 +26,7 @@ class ModelConfiguration:
     """
 
     @classmethod
-    def from_namespace(cls, args: Any):
+    def from_namespace(cls, args: Any) -> ModelConfiguration:
         """
         Generates a ModelConfiguration from a given dataclass.
         If it's already of the correct instance, it will return the input object, otherwise it creates an object
