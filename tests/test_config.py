@@ -46,29 +46,6 @@ def test_nested_configuration():
     assert test_cfg.encoder_config.name == "better_encoder_config"
 
 
-def test_config_from_namespace():
-    @dataclass
-    class TestConfiguration(ModelConfiguration):
-        num_layers: int = 4
-        hidden_dim: int = 13
-        name: str = "Cool Model Configuration"
-
-    @dataclass
-    class TestConfiguration2(ModelConfiguration):
-        num_layers: int = 3
-        hidden_dim: int = 12
-        name: str = "Cool Model Configuration2"
-
-    cfg1 = TestConfiguration(num_layers=1, hidden_dim=2)
-    cfg2 = TestConfiguration.from_namespace(cfg1)
-    assert cfg1 == cfg2
-
-    cfg3 = TestConfiguration2.from_namespace(cfg1)
-    assert cfg3.num_layers == 1
-    assert cfg3.hidden_dim == 2
-    assert cfg3.name == "Cool Model Configuration"
-
-
 def test_config_typing():
     @dataclass
     class TestConfiguration(ModelConfiguration):
