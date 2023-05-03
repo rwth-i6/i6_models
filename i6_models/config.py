@@ -11,7 +11,7 @@ class ExampleModule(Module):
         self.hidden_dim = cfg.hidden_dim
 
 This config can then be used in the construction of the model to provide parameters.
-Approach is inspired by the Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
+Similar approach as done in Fairseq: https://github.com/facebookresearch/fairseq/blob/main/fairseq/dataclass/configs.py
 """
 
 from __future__ import annotations
