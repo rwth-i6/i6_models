@@ -15,7 +15,6 @@ Similar approach as done in Fairseq: https://github.com/facebookresearch/fairseq
 """
 
 from __future__ import annotations
-from typing import Any
 from dataclasses import dataclass, fields
 import typeguard
 
@@ -23,29 +22,9 @@ import typeguard
 @dataclass
 class ModelConfiguration:
     """
-    Base dataclass that supports fetching attributes.
-    In order to enforce typing in a Config, decorate that Config with @enforce_types.
+    Base dataclass for configuration of different primitives, parts and assemblies.
+    Enforces type checking for the creation of derived configs.
     """
-
-    @classmethod
-    def from_namespace(cls, args: Any) -> ModelConfiguration:
-        """
-        Generates a ModelConfiguration from a given dataclass.
-        If it's already of the correct instance, it will return the input object, otherwise it creates an object
-        from the matching attributes.
-        """
-        if isinstance(args, cls):
-            return args
-        else:
-            config = cls()
-            for k in config.__dataclass_fields__.keys():
-                if k.startswith("_"):
-                    # private member, skip
-                    continue
-                if hasattr(args, k):
-                    setattr(config, k, getattr(args, k))
-
-            return config
 
     def _validate_types(self) -> None:
         for field in fields(type(self)):
