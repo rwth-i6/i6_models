@@ -4,6 +4,7 @@ from torch import nn
 class ConformerConvolutionV1(nn.Module):
     """
     Conformer convolution module.
+    see also: https://github.com/espnet/espnet/blob/713e784c0815ebba2053131307db5f00af5159ea/espnet/nets/pytorch_backend/conformer/convolution.py#L13
     """
 
     def __init__(self, channels, kernel_size, dropout=0.1):
@@ -12,6 +13,12 @@ class ConformerConvolutionV1(nn.Module):
         :param int kernel_size: kernel size of conv layers
         """
         super().__init__()
+
+        # kernel size has to be odd to get same input length without zero padding when using odd strides.
+        # Warning from pytorch:
+        #   Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of
+        #   the input be created.
+        assert (kernel_size - 1) % 2 == 0
 
         self.pointwise_conv1 = nn.Conv1d(
             in_channels=channels,
