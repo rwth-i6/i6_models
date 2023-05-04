@@ -15,9 +15,6 @@ class ConformerConvolutionV1(nn.Module):
         super().__init__()
 
         # kernel size has to be odd to get same input length without zero padding when using odd strides.
-        # Warning from pytorch:
-        #   Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of
-        #   the input be created.
         assert (kernel_size - 1) % 2 == 0
 
         self.pointwise_conv1 = nn.Conv1d(
