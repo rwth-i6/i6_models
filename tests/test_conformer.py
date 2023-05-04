@@ -18,6 +18,8 @@ def test_conformer_convolution():
     assert get_output_shape(1, 50, 100) == (1, 50, 100)  # test with batch size 1
     assert get_output_shape(10, 50, 250) == (10, 50, 250)
     assert get_output_shape(10, 1, 50) == (10, 1, 50)  # time dim 1
+    assert get_output_shape(10, 10, 20, dropout=0.0) == (10, 10, 20)  # dropout 0
+    assert get_output_shape(10, 10, 20, kernel_size=3) == (10, 10, 20)  # kernel size 3
 
 
 def test_ConformerPositionwiseFeedForwardV1():
