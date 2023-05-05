@@ -7,10 +7,10 @@ class ConformerConvolutionV1(nn.Module):
     see also: https://github.com/espnet/espnet/blob/713e784c0815ebba2053131307db5f00af5159ea/espnet/nets/pytorch_backend/conformer/convolution.py#L13
     """
 
-    def __init__(self, channels, kernel_size, dropout=0.1):
+    def __init__(self, channels: int, kernel_size: int, dropout: float = 0.1):
         """
-        :param int channels: number of channels for conv layers
-        :param int kernel_size: kernel size of conv layers
+        :param channels: number of channels for conv layers
+        :param kernel_size: kernel size of conv layers
         """
         super().__init__()
 
