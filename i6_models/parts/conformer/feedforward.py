@@ -14,7 +14,7 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         input_dim: int,
         hidden_dim: int,
         dropout: float = 0.1,
-        activation: Callable[[torch.Tensor], torch.Tensor] = nn.SiLU(),
+        activation: Callable[[torch.Tensor], torch.Tensor] = nn.functional.silu,
     ):
         """
         :param input_dim: input dimension
