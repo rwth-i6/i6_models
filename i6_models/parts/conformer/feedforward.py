@@ -43,4 +43,4 @@ class ConformerFeedForwardv1(nn.Module):
 
         out_tensor = self.dropout(out_tensor)  # [B,T,F]
 
-        return tensor + out_tensor
+        return out_tensor
