@@ -41,6 +41,8 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
 
         out_tensor = self.activation(out_tensor)  # [B,T,F]
 
+        out_tensor = self.dropout(out_tensor)  # [B,T,F]
+
         out_tensor = self.linear_out(out_tensor)  # [B,T,F]
 
         out_tensor = self.dropout(out_tensor)  # [B,T,F]
