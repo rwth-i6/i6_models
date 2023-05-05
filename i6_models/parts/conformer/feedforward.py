@@ -1,5 +1,6 @@
 from torch import nn
 
+
 class ConformerFeedForwardv1(nn.Module):
     """
     Conformer feedforward module
@@ -15,11 +16,15 @@ class ConformerFeedForwardv1(nn.Module):
 
         self.layer_norm = nn.LayerNorm(normalized_shape=input_dim)
 
-        self.linear_layer_1 = nn.Linear(in_features=input_dim, out_features=hidden_dim, bias=True)
+        self.linear_layer_1 = nn.Linear(
+            in_features=input_dim, out_features=hidden_dim, bias=True
+        )
 
         self.swish_activation = nn.SiLU()
 
-        self.linear_layer_2 = nn.Linear(in_features=hidden_dim, out_features=input_dim, bias=True)
+        self.linear_layer_2 = nn.Linear(
+            in_features=hidden_dim, out_features=input_dim, bias=True
+        )
 
         self.dropout = nn.Dropout(p=dropout)
 
@@ -28,12 +33,13 @@ class ConformerFeedForwardv1(nn.Module):
         :param torch.Tensor tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T,F]
         """
-        out_tensor = self.layer_norm(tensor) # [B,T,F]
+        out_tensor = self.layer_norm(tensor)  # [B,T,F]
 
-        out_tensor = self.linear_layer_1(out_tensor) # [B,T,F]
-        out_tensor = self.swish_activation(out_tensor) # [B,T,F]
+        out_tensor = self.linear_layer_1(out_tensor)  # [B,T,F]
+        out_tensor = self.swish_activation(out_tensor)  # [B,T,F]
 
-        out_tensor = self.linear_layer_2(out_tensor) # [B,T,F]
-        out_tensor = self.dropout(out_tensor) # [B,T,F]
+        out_tensor = self.linear_layer_2(out_tensor)  # [B,T,F]
+
+        out_tensor = self.dropout(out_tensor)  # [B,T,F]
 
         return tensor + out_tensor
