@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 
-class ConformerFeedForwardV1(nn.Module):
+class ConformerPositionwiseFeedForward(nn.Module):
     """
     Conformer feedforward module
     """
@@ -15,8 +15,6 @@ class ConformerFeedForwardV1(nn.Module):
         :param dropout: dropout probability
         """
         super().__init__()
-
-        self.layer_norm = nn.LayerNorm(normalized_shape=input_dim)
 
         self.linear_ff = nn.Linear(in_features=input_dim, out_features=hidden_dim, bias=True)
 
@@ -31,9 +29,8 @@ class ConformerFeedForwardV1(nn.Module):
         :param torch.Tensor tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T,F]
         """
-        out_tensor = self.layer_norm(tensor)  # [B,T,F]
+        out_tensor = self.linear_ff(tensor)  # [B,T,F]
 
-        out_tensor = self.linear_ff(out_tensor)  # [B,T,F]
         out_tensor = self.swish_activation(out_tensor)  # [B,T,F]
 
         out_tensor = self.linear_out(out_tensor)  # [B,T,F]
