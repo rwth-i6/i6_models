@@ -8,8 +8,13 @@ class ConformerPositionwiseFeedForward(nn.Module):
     """
     Conformer feedforward module
     """
-
-    def __init__(self, input_dim: int, hidden_dim: int, dropout: float = 0.1, activation: Callable[[torch.Tensor], torch.Tensor] = nn.SiLU):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        dropout: float = 0.1,
+        activation: Callable[[torch.Tensor], torch.Tensor] = nn.SiLU,
+    ):
         """
         :param input_dim: input dimension
         :param hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
