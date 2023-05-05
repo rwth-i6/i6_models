@@ -1,17 +1,16 @@
-from __future__ import annotations
-import torch
 from torch import nn
+
 
 class ConformerFeedForwardv1(nn.Module):
     """
     Conformer feedforward module
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int, dropout: float=0.1):
+    def __init__(self, input_dim, hidden_dim, dropout=0.1):
         """
-        :param input_dim: input dimension
-        :param hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
-        :param dropout: dropout probability
+        :param int input_dim: input dimension
+        :param int hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
+        :param float dropout: dropout probability
         """
         super().__init__()
 
@@ -29,7 +28,7 @@ class ConformerFeedForwardv1(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, tensor: torch.Tensor):
+    def forward(self, tensor):
         """
         :param torch.Tensor tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T,F]
@@ -43,4 +42,4 @@ class ConformerFeedForwardv1(nn.Module):
 
         out_tensor = self.dropout(out_tensor)  # [B,T,F]
 
-        return out_tensor
+        return tensor + out_tensor
