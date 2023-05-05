@@ -4,17 +4,17 @@ import torch
 from torch import nn
 
 
-class ConformerPositionwiseFeedForward(nn.Module):
+class ConformerPositionwiseFeedForwardV1(nn.Module):
     """
     Conformer feedforward module
     """
-    
+
     def __init__(
         self,
         input_dim: int,
         hidden_dim: int,
         dropout: float = 0.1,
-        activation: Callable[[torch.Tensor], torch.Tensor] = nn.SiLU,
+        activation: Callable[[torch.Tensor], torch.Tensor] = nn.SiLU(),
     ):
         """
         :param input_dim: input dimension
@@ -26,7 +26,7 @@ class ConformerPositionwiseFeedForward(nn.Module):
 
         self.linear_ff = nn.Linear(in_features=input_dim, out_features=hidden_dim, bias=True)
 
-        self.activation = activation()
+        self.activation = activation
 
         self.linear_out = nn.Linear(in_features=hidden_dim, out_features=input_dim, bias=True)
 
