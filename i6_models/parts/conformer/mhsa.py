@@ -1,6 +1,7 @@
 import torch
 
-class ConformerMHSAV1(nn.Module):
+
+class ConformerMHSAV1(torch.nn.Module):
     """
     Conformer multi-headed self-attention module without relative positional embedding
     :param embed_dim: model dimension, `embed_dim // num_att_heads` becomes the key and value projection dimensions
@@ -18,24 +19,18 @@ class ConformerMHSAV1(nn.Module):
     ):
         super().__init__()
 
-        self.embed_dim = embed_dim
-        self.num_heads = num_att_heads
-        self.att_weights_dropout = att_weights_dropout
-        self.dropout = dropout
-
+        self.layernorm = torch.nn.LayerNorm(embed_dim)
         self.mhsa = torch.nn.MultiheadAttention(embed_dim, num_att_heads, dropout=att_weights_dropout)
-
+        self.dropout = torch.nn.Dropout(dropout)
 
     def forward(self, input: torch.Tensor):
 
         residual = input
 
         # layer norm, Multi-head self attention with dropout and residual connection
-        output = torch.nn.LayerNorm(self.embed_dim)
+        output = self.layernorm(input)
         output, _ = self.mhsa(output)
-        output = torch.nn.Dropout(self.dropout)
+        output = self.dropout(output)
         output = output + residual
 
         return output
-
-
