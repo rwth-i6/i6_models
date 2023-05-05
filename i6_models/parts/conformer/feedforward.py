@@ -32,10 +32,10 @@ class ConformerPositionwiseFeedForward(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, tensor: torch.Tensor):
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        :param torch.Tensor tensor: input tensor of shape [B,T,F]
-        :return: torch.Tensor of shape [B,T,F]
+        :param tensor: shape [B,T,F], F=input_dim
+        :return: shape [B,T,F], F=input_dim
         """
         out_tensor = self.linear_ff(tensor)  # [B,T,F]
 
