@@ -18,15 +18,11 @@ class ConformerFeedForwardV1(nn.Module):
 
         self.layer_norm = nn.LayerNorm(normalized_shape=input_dim)
 
-        self.linear_ff_1 = nn.Linear(
-            in_features=input_dim, out_features=hidden_dim, bias=True
-        )
+        self.linear_ff_1 = nn.Linear(in_features=input_dim, out_features=hidden_dim, bias=True)
 
         self.swish_activation = nn.SiLU()
 
-        self.linear_ff_2 = nn.Linear(
-            in_features=hidden_dim, out_features=input_dim, bias=True
-        )
+        self.linear_ff_2 = nn.Linear(in_features=hidden_dim, out_features=input_dim, bias=True)
 
         self.dropout = nn.Dropout(p=dropout)
 
