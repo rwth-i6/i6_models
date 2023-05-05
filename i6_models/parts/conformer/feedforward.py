@@ -8,6 +8,7 @@ class ConformerPositionwiseFeedForward(nn.Module):
     """
     Conformer feedforward module
     """
+    
     def __init__(
         self,
         input_dim: int,
