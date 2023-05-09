@@ -11,6 +11,7 @@ class ConformerConvolutionV1(nn.Module):
         """
         :param channels: number of channels for conv layers
         :param kernel_size: kernel size of conv layers
+        :param dropout: dropout probability
         """
         super().__init__()
 
