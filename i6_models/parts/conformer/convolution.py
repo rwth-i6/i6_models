@@ -18,11 +18,7 @@ class ConformerConvolutionV1(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(
-            in_channels=channels,
-            out_channels=2 * channels,
-            kernel_size=1,
-        )
+        self.pointwise_conv1 = nn.Linear(in_features=channels, out_features=2 * channels)
         self.depthwise_conv = nn.Conv1d(
             in_channels=channels,
             out_channels=channels,
@@ -30,11 +26,7 @@ class ConformerConvolutionV1(nn.Module):
             padding="same",
             groups=channels,
         )
-        self.pointwise_conv2 = nn.Conv1d(
-            in_channels=channels,
-            out_channels=channels,
-            kernel_size=1,
-        )
+        self.pointwise_conv2 = nn.Linear(in_features=channels, out_features=channels)
         self.layer_norm = nn.LayerNorm(channels)
         self.batch_norm = nn.BatchNorm1d(channels)
         self.dropout = nn.Dropout(dropout)
@@ -46,17 +38,16 @@ class ConformerConvolutionV1(nn.Module):
         :return: torch.Tensor of shape [B,T,F]
         """
         tensor = self.layer_norm(tensor)
+        tensor = self.pointwise_conv1(tensor)  # [B,T,2F]
+        tensor = nn.functional.glu(tensor, dim=-1)  # [B,T,F]
 
         # conv layers expect shape [B,F,T] so we have to transpose here
         tensor = tensor.transpose(1, 2)  # [B,F,T]
-
-        tensor = self.pointwise_conv1(tensor)  # [B,2F,T]
-        tensor = nn.functional.glu(tensor, dim=1)  # [B,F,T]
-
         tensor = self.depthwise_conv(tensor)
         tensor = self.batch_norm(tensor)
-        tensor = self.activation(tensor)
+        tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
 
+        tensor = self.activation(tensor)
         tensor = self.pointwise_conv2(tensor)
 
-        return self.dropout(tensor.transpose(1, 2))
+        return self.dropout(tensor)
