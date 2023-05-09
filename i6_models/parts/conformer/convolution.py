@@ -14,9 +14,6 @@ class ConformerConvolutionV1(nn.Module):
         """
         super().__init__()
 
-        # kernel size has to be odd to get same input length when using odd strides. here we use stride 1.
-        assert (kernel_size - 1) % 2 == 0
-
         self.pointwise_conv1 = nn.Conv1d(
             in_channels=channels,
             out_channels=2 * channels,
@@ -26,7 +23,7 @@ class ConformerConvolutionV1(nn.Module):
             in_channels=channels,
             out_channels=channels,
             kernel_size=kernel_size,
-            padding=(kernel_size - 1) // 2,
+            padding="same",
             groups=channels,
         )
         self.pointwise_conv2 = nn.Conv1d(
