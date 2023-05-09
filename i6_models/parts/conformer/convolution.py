@@ -42,7 +42,7 @@ class ConformerConvolutionV1(nn.Module):
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        :param torch.Tensor tensor: input tensor of shape [B,T,F]
+        :param tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T,F]
         """
         tensor = self.layer_norm(tensor)
