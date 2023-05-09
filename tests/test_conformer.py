@@ -2,7 +2,7 @@ from i6_models.parts.conformer.convolution import ConformerConvolutionV1
 import torch
 
 
-def test_conformer_convolution():
+def test_conformer_convolution_output_shape():
     def get_output_shape(batch, time, features, kernel_size=31, dropout=0.1):
         x = torch.randn(batch, time, features)
         conformer_conv_part = ConformerConvolutionV1(channels=features, kernel_size=kernel_size, dropout=dropout)
