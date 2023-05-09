@@ -25,12 +25,12 @@ class ConformerMHSAV1(torch.nn.Module):
 
     def forward(self, input: torch.Tensor):
 
-        residual = input
+        residual = input # [B,T,F]
 
         # layer norm, Multi-head self attention with dropout and residual connection
-        output = self.layernorm(input)
-        output, _ = self.mhsa(output)
-        output = self.dropout(output)
-        output = output + residual
+        output = self.layernorm(input) # [B,T,F]
+        output, _ = self.mhsa(output) # [B,T,F]
+        output = self.dropout(output) # [B,T,F]
+        output = output + residual # [B,T,F]
 
         return output
