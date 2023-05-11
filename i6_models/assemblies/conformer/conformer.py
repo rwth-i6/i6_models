@@ -110,6 +110,9 @@ class ConformerFrontendV1(nn.Module):
     """
 
     def __init__(self, cfg: ConformerFrontendV1Config):
+        """
+        :param cfg: Conformer Frontend Configuration
+        """
         super().__init__()
 
         self.feature_dim = cfg.feature_dim
@@ -150,6 +153,9 @@ class ConformerFrontendV1(nn.Module):
 
 class ConformerEncoderV1(nn.Module):
     def __init__(self, cfg: ConformerV1Config):
+        """
+        :param cfg: Conformer Encoder Configuration with subunits for Frontend and Conformer blocks
+        """
         super().__init__()
 
         self.num_layers = cfg.num_layers
