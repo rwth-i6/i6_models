@@ -91,7 +91,7 @@ class ConformerBlockV1(nn.Module):
         :return: torch.Tensor of shape [B, T, F]
         """
         residual = tensor  #  [B, T, F]
-        x = self.ff_1(tensor)  #  [B, T, F]
+        x = self.ff_1(residual)  #  [B, T, F]
         residual = 0.5 * x + residual  #  [B, T, F]
         x = self.mhsa(residual)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
