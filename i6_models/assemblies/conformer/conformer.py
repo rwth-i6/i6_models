@@ -14,7 +14,7 @@ from i6_models.parts.conformer.mhsa import ConformerMHSAV1
 
 
 @dataclass
-class ConformerFeedForwardV1Config(ModelConfiguration):
+class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
     dim: int
 
 
@@ -24,19 +24,16 @@ class ConformerMHSAV1Config(ModelConfiguration):
 
 
 @dataclass
-class ConformerConvV1Config(ModelConfiguration):
+class ConformerConvolutionV1Config(ModelConfiguration):
     pass
 
 
 @dataclass
 class ConformerBlockV1Config(ModelConfiguration):
-    # hyperparameters
-    norm_dim: int
-
     # nested configurations
-    ff_cfg: ConformerFeedForwardV1Config  # Configuration for ConformerPositionwiseFeedForwardV1
+    ff_cfg: ConformerPositionwiseFeedForwardV1  # Configuration for ConformerPositionwiseFeedForwardV1
     mhsa_cfg: ConformerMHSAV1Config  # Configuration for ConformerMHSAV1
-    conv_cfg: ConformerConvV1Config  # Configuration for ConformerConvolutionV1
+    conv_cfg: ConformerConvolutionV1Config  # Configuration for ConformerConvolutionV1
 
 
 @dataclass
@@ -48,14 +45,13 @@ class ConformerFrontendV1Config(ModelConfiguration):
     # TODO: Maybe put this in own config?
     conv_stride: int
     conv_kernel: int
-    conv_stride: int
     conv_padding: int
 
     spec_aug_cfg: ModelConfiguration  # TODO
 
 
 @dataclass
-class ConformerV1Config(ModelConfiguration):
+class ConformerEncoderV1Config(ModelConfiguration):
     # hyperparameters
     num_layers: int
 
@@ -71,7 +67,7 @@ class ConformerBlockV1(nn.Module):
 
     def __init__(self, cfg: ConformerBlockV1Config):
         """
-        :param cfg: Conformer Block Configuration with subunits for the different Conformer parts
+        :param cfg: conformer block configuration with subunits for the different conformer parts
         """
         super().__init__()
 
@@ -98,7 +94,7 @@ class ConformerBlockV1(nn.Module):
         x = self.conv(residual)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
         x = self.ff_2(residual)  #  [B, T, F]
-        x = 0.5 * x + residual #  [B, T, F]
+        x = 0.5 * x + residual  #  [B, T, F]
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
 
@@ -110,7 +106,7 @@ class ConformerFrontendV1(nn.Module):
 
     def __init__(self, cfg: ConformerFrontendV1Config):
         """
-        :param cfg: Conformer Frontend Configuration
+        :param cfg: conformer frontend configuration
         """
         super().__init__()
 
@@ -151,9 +147,9 @@ class ConformerFrontendV1(nn.Module):
 
 
 class ConformerEncoderV1(nn.Module):
-    def __init__(self, cfg: ConformerV1Config):
+    def __init__(self, cfg: ConformerEncoderV1Config):
         """
-        :param cfg: Conformer Encoder Configuration with subunits for Frontend and Conformer blocks
+        :param cfg: conformer encoder configuration with subunits for frontend and conformer blocks
         """
         super().__init__()
 
