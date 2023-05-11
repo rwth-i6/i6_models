@@ -38,14 +38,14 @@ class ConformerBlockV1Config(ModelConfiguration):
 
 @dataclass
 class ConformerFrontendV1Config(ModelConfiguration):
-    feature_dim: int
-    hidden_dim: int
-    dropout: float
+    feature_dim: int  # Feature dimension of the input data
+    hidden_dim: int  # Hidden dimension used in the model internally
+    dropout: float  # Dropout value after linear transformation
 
     # TODO: Maybe put this in own config?
-    conv_stride: int
-    conv_kernel: int
-    conv_padding: int
+    conv_stride: int  # Stride of down-sampling cov
+    conv_kernel: int  # Kernel size of down-sampling conv
+    conv_padding: int  # Padding factor of down-sampling conv
 
     spec_aug_cfg: ModelConfiguration  # TODO
 
@@ -53,11 +53,11 @@ class ConformerFrontendV1Config(ModelConfiguration):
 @dataclass
 class ConformerEncoderV1Config(ModelConfiguration):
     # hyperparameters
-    num_layers: int
+    num_layers: int  # Number of conformer layers in the conformer encoder
 
     # nested configurations
-    front_cfg: ConformerFrontendV1Config
-    block_cfg: ConformerBlockV1Config
+    front_cfg: ConformerFrontendV1Config  # Configuration for ConformerFrontendV1
+    block_cfg: ConformerBlockV1Config  # Configuration for ConformerBlockV1
 
 
 class ConformerBlockV1(nn.Module):
@@ -70,16 +70,11 @@ class ConformerBlockV1(nn.Module):
         :param cfg: conformer block configuration with subunits for the different conformer parts
         """
         super().__init__()
-
-        self.ff_config = cfg.ff_cfg
-        self.mhsa_config = cfg.mhsa_cfg
-        self.conv_config = cfg.conv_cfg
-
-        self.ff_1 = ConformerPositionwiseFeedForwardV1(cfg=self.ff_config)
-        self.mhsa = ConformerMHSAV1(cfg=self.mhsa_config)
-        self.conv = ConformerConvolutionV1(cfg=self.conv_config)
-        self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=self.ff_config)
-        self.final_layer_norm = torch.nn.LayerNorm(self.ff_config.dim)
+        self.ff_1 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_config)
+        self.mhsa = ConformerMHSAV1(cfg=cfg.mhsa_config)
+        self.conv = ConformerConvolutionV1(cfg=cfg.conv_config)
+        self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_config)
+        self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_config.dim)
 
     def forward(self, tensor: torch.Tensor):
         """
@@ -109,24 +104,16 @@ class ConformerFrontendV1(nn.Module):
         :param cfg: conformer frontend configuration
         """
         super().__init__()
-
-        self.feature_dim = cfg.feature_dim
-        self.hidden_dim = cfg.hidden_dim
-        self.dropout_value = cfg.dropout
-        self.conv_stride = cfg.conv_stride
-        self.conv_kernel = cfg.conv_kernel
-        self.conv_padding = cfg.conv_padding
-
         self.spec_aug = ...  # TODO
         self.subsampling = nn.Conv1d(
-            in_channels=self.feature_dim,
-            out_channels=self.feature_dim,
-            kernel_size=self.conv_kernel,
-            stride=self.conv_stride,
-            padding=self.conv_padding,
+            in_channels=cfg.feature_dim,
+            out_channels=cfg.feature_dim,
+            kernel_size=cfg.conv_kernel,
+            stride=cfg.conv_stride,
+            padding=cfg.conv_padding,
         )
-        self.linear = nn.Linear(in_features=self.feature_dim, out_features=self.hidden_dim)
-        self.dropout = nn.Dropout(p=self.dropout_value)
+        self.linear = nn.Linear(in_features=cfg.feature_dim, out_features=cfg.hidden_dim)
+        self.dropout = nn.Dropout(p=cfg.dropout)
 
     def forward(self, data_tensor: torch.Tensor):
         """
@@ -153,13 +140,8 @@ class ConformerEncoderV1(nn.Module):
         """
         super().__init__()
 
-        self.num_layers = cfg.num_layers
-
-        self.front_cfg = cfg.front_cfg
-        self.block_cfg = cfg.block_cfg
-
-        self.frontend = ConformerFrontendV1(cfg=self.front_cfg)
-        self.block_stack = torch.nn.Sequential(*[ConformerBlockV1(self.block_cfg) for _ in range(self.num_layers)])
+        self.frontend = ConformerFrontendV1(cfg=cfg.front_cfg)
+        self.block_stack = torch.nn.Sequential(*[ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(self, data_tensor: torch.Tensor):
         """
