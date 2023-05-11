@@ -41,7 +41,6 @@ class ConformerBlockV1Config(ModelConfiguration):
 
 @dataclass
 class ConformerFrontendV1Config(ModelConfiguration):
-
     feature_dim: int
     hidden_dim: int
     dropout: float
