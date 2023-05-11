@@ -1,6 +1,8 @@
 from __future__ import annotations
 import torch
 from torch import nn
+
+# TODO probably used for SpecAugment
 from torchaudio.transforms import TimeMasking, TimeStretch, FrequencyMasking
 from dataclasses import dataclass
 
@@ -89,10 +91,14 @@ class ConformerBlockV1(nn.Module):
         :param tensor: input tensor of shape [B, T, F]
         :return: torch.Tensor of shape [B, T, F]
         """
+        residual = tensor  #  [B, T, F]
         x = self.ff_1(tensor)  #  [B, T, F]
-        x = self.mhsa(x)  #  [B, T, F]
-        x = self.conv(x)  #  [B, T, F]
-        x = self.ff_2(x)  #  [B, T, F]
+        residual = 0.5 * x + residual  #  [B, T, F]
+        x = self.mhsa(residual)  #  [B, T, F]
+        residual = x + residual  # [B, T, F]
+        x = self.conv(residual)  #  [B, T, F]
+        residual = x + residual  # [B, T, F]
+        x = self.ff_2(residual)  #  [B, T, F]
         x = 0.5 * x + tensor  #  [B, T, F]
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
