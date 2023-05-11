@@ -98,7 +98,7 @@ class ConformerBlockV1(nn.Module):
         x = self.conv(residual)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
         x = self.ff_2(residual)  #  [B, T, F]
-        x = 0.5 * x + tensor  #  [B, T, F]
+        x = 0.5 * x + residual #  [B, T, F]
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
 
