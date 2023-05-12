@@ -16,5 +16,3 @@ def test_ConformerPositionwiseFeedForwardV1():
     ):
         input_shape = (10, 100, input_dim)
         assert get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation) == input_shape
-
-
