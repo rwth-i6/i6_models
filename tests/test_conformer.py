@@ -1,13 +1,19 @@
-from i6_models.parts.conformer.feedforward import ConformerPositionwiseFeedForwardV1
+from itertools import product
+
 import torch
 from torch import nn
-from itertools import product
+
+from i6_models.parts.conformer.feedforward import (
+    ConformerPositionwiseFeedForwardV1,
+    ConformerPositionwiseFeedForwardV1Config,
+)
 
 
 def test_ConformerPositionwiseFeedForwardV1():
     def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
         x = torch.randn(input_shape)
-        conf_ffn_part = ConformerPositionwiseFeedForwardV1(input_dim, hidden_dim, dropout, activation)
+        cfg = ConformerPositionwiseFeedForwardV1Config(input_dim, hidden_dim, dropout, activation)
+        conf_ffn_part = ConformerPositionwiseFeedForwardV1(cfg)
         y = conf_ffn_part(x)
         return y.shape
 
