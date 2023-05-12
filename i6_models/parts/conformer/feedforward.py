@@ -24,12 +24,10 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         """
         super().__init__()
 
+        self.layer_norm = nn.LayerNorm(input_dim)
         self.linear_ff = nn.Linear(in_features=input_dim, out_features=hidden_dim, bias=True)
-
         self.activation = activation
-
         self.linear_out = nn.Linear(in_features=hidden_dim, out_features=input_dim, bias=True)
-
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -37,14 +35,10 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         :param tensor: shape [B,T,F], F=input_dim
         :return: shape [B,T,F], F=input_dim
         """
-        out_tensor = self.linear_ff(tensor)  # [B,T,F]
-
-        out_tensor = self.activation(out_tensor)  # [B,T,F]
-
-        out_tensor = self.dropout(out_tensor)  # [B,T,F]
-
-        out_tensor = self.linear_out(out_tensor)  # [B,T,F]
-
-        out_tensor = self.dropout(out_tensor)  # [B,T,F]
-
+        tensor = self.layer_norm(tensor)
+        tensor = self.linear_ff(tensor)  # [B,T,F]
+        tensor = self.activation(tensor)  # [B,T,F]
+        tensor = self.dropout(tensor)  # [B,T,F]
+        tensor = self.linear_out(tensor)  # [B,T,F]
+        tensor = self.dropout(tensor)  # [B,T,F]
         return tensor
