@@ -22,7 +22,6 @@ class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
     activation: Callable[[torch.Tensor], torch.Tensor]  # activation function
 
 
-
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
     embed_dim: int  # model dimension, `embed_dim // num_att_heads` becomes the key and value projection dimensions
@@ -113,7 +112,7 @@ class ConformerFrontendV1(nn.Module):
         :param cfg: conformer frontend configuration
         """
         super().__init__()
-        #self.spec_aug = ...  # TODO
+        # self.spec_aug = ...  # TODO
         self.subsampling = nn.Conv1d(
             in_channels=cfg.feature_dim,
             out_channels=cfg.feature_dim,
