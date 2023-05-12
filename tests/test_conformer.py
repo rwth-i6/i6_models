@@ -6,9 +6,7 @@ from itertools import product
 def test_ConformerPositionwiseFeedForwardV1():
     def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
         x = torch.randn(input_shape)
-        conf_ffn_part = ConformerPositionwiseFeedForwardV1(
-            input_dim, hidden_dim, dropout, activation
-        )
+        conf_ffn_part = ConformerPositionwiseFeedForwardV1(input_dim, hidden_dim, dropout, activation)
         y = conf_ffn_part(x)
         return y.shape
 
