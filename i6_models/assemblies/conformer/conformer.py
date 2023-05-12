@@ -41,7 +41,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
 @dataclass
 class ConformerBlockV1Config(ModelConfiguration):
     # nested configurations
-    ff_cfg: ConformerPositionwiseFeedForwardV1  # Configuration for ConformerPositionwiseFeedForwardV1
+    ff_cfg: ConformerPositionwiseFeedForwardV1Config  # Configuration for ConformerPositionwiseFeedForwardV1
     mhsa_cfg: ConformerMHSAV1Config  # Configuration for ConformerMHSAV1
     conv_cfg: ConformerConvolutionV1Config  # Configuration for ConformerConvolutionV1
 
