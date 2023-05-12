@@ -4,7 +4,8 @@ from torch import nn
 
 # TODO probably used for SpecAugment
 from torchaudio.transforms import TimeMasking, TimeStretch, FrequencyMasking
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from typing import Callable
 
 from i6_models.config import ModelConfiguration
 
@@ -15,17 +16,27 @@ from i6_models.parts.conformer.mhsa import ConformerMHSAV1
 
 @dataclass
 class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
-    dim: int
+    input_dim: int  # input dimension
+    hidden_dim: int  # hidden dimension (normally set to 4*input_dim as suggested by the paper)
+    dropout: float  # dropout probability
+    activation: Callable[[torch.Tensor], torch.Tensor]  # activation function
+
 
 
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
-    pass
+    embed_dim: int  # model dimension, `embed_dim // num_att_heads` becomes the key and value projection dimensions
+    num_att_heads: int  # number of attention heads
+    att_weights_dropout: float  # attention weights dropout
+    dropout: float  # multi-headed self attention output dropout
 
 
 @dataclass
 class ConformerConvolutionV1Config(ModelConfiguration):
-    pass
+    channels: int  # number of channels for conv layers
+    kernel_size: int  # kernel size of conv layers
+    dropout: float  # dropout probability
+    activation: Callable[[torch.Tensor], torch.Tensor]  # activation function applied after batch norm
 
 
 @dataclass
@@ -41,8 +52,6 @@ class ConformerFrontendV1Config(ModelConfiguration):
     feature_dim: int  # Feature dimension of the input data
     hidden_dim: int  # Hidden dimension used in the model internally
     dropout: float  # Dropout value after linear transformation
-
-    # TODO: Maybe put this in own config?
     conv_stride: int  # Stride of down-sampling cov
     conv_kernel: int  # Kernel size of down-sampling conv
     conv_padding: int  # Padding factor of down-sampling conv
@@ -70,11 +79,11 @@ class ConformerBlockV1(nn.Module):
         :param cfg: conformer block configuration with subunits for the different conformer parts
         """
         super().__init__()
-        self.ff_1 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_config)
-        self.mhsa = ConformerMHSAV1(cfg=cfg.mhsa_config)
-        self.conv = ConformerConvolutionV1(cfg=cfg.conv_config)
-        self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_config)
-        self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_config.dim)
+        self.ff_1 = ConformerPositionwiseFeedForwardV1(**asdict(cfg.ff_cfg))
+        self.mhsa = ConformerMHSAV1(**asdict(cfg.mhsa_cfg))
+        self.conv = ConformerConvolutionV1(**asdict(cfg.conv_cfg))
+        self.ff_2 = ConformerPositionwiseFeedForwardV1(**asdict(cfg.ff_cfg))
+        self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
     def forward(self, tensor: torch.Tensor):
         """
@@ -104,7 +113,7 @@ class ConformerFrontendV1(nn.Module):
         :param cfg: conformer frontend configuration
         """
         super().__init__()
-        self.spec_aug = ...  # TODO
+        #self.spec_aug = ...  # TODO
         self.subsampling = nn.Conv1d(
             in_channels=cfg.feature_dim,
             out_channels=cfg.feature_dim,
