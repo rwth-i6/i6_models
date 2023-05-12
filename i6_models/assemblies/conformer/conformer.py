@@ -16,56 +16,79 @@ from i6_models.parts.conformer.mhsa import ConformerMHSAV1
 
 @dataclass
 class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
-    input_dim: int  # input dimension
-    hidden_dim: int  # hidden dimension (normally set to 4*input_dim as suggested by the paper)
-    dropout: float  # dropout probability
-    activation: Callable[[torch.Tensor], torch.Tensor]  # activation function
+    input_dim: int
+    """input dimension"""
+    hidden_dim: int
+    """hidden dimension (normally set to 4*input_dim as suggested by the paper)"""
+    dropout: float
+    """dropout probability"""
+    activation: Callable[[torch.Tensor], torch.Tensor]
+    """activation function"""
 
 
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
-    embed_dim: int  # model dimension, `embed_dim // num_att_heads` becomes the key and value projection dimensions
-    num_att_heads: int  # number of attention heads
-    att_weights_dropout: float  # attention weights dropout
-    dropout: float  # multi-headed self attention output dropout
+    embed_dim: int
+    """model dimension, `embed_dim // num_att_heads` becomes the key and value projection dimensions"""
+    num_att_heads: int
+    """number of attention heads"""
+    att_weights_dropout: float
+    """attention weights dropout"""
+    dropout: float
+    """multi-headed self attention output dropout"""
 
 
 @dataclass
 class ConformerConvolutionV1Config(ModelConfiguration):
-    channels: int  # number of channels for conv layers
-    kernel_size: int  # kernel size of conv layers
-    dropout: float  # dropout probability
-    activation: Callable[[torch.Tensor], torch.Tensor]  # activation function applied after batch norm
+    channels: int
+    """number of channels for conv layers"""
+    kernel_size: int
+    """kernel size of conv layers"""
+    dropout: float
+    """dropout probability"""
+    activation: Callable[[torch.Tensor], torch.Tensor]
+    """activation function applied after batch norm"""
 
 
 @dataclass
 class ConformerBlockV1Config(ModelConfiguration):
     # nested configurations
-    ff_cfg: ConformerPositionwiseFeedForwardV1Config  # Configuration for ConformerPositionwiseFeedForwardV1
-    mhsa_cfg: ConformerMHSAV1Config  # Configuration for ConformerMHSAV1
-    conv_cfg: ConformerConvolutionV1Config  # Configuration for ConformerConvolutionV1
+    ff_cfg: ConformerPositionwiseFeedForwardV1Config
+    """Configuration for ConformerPositionwiseFeedForwardV1"""
+    mhsa_cfg: ConformerMHSAV1Config
+    """Configuration for ConformerMHSAV1"""
+    conv_cfg: ConformerConvolutionV1Config
+    """Configuration for ConformerConvolutionV1"""
 
 
 @dataclass
 class ConformerFrontendV1Config(ModelConfiguration):
-    feature_dim: int  # Feature dimension of the input data
-    hidden_dim: int  # Hidden dimension used in the model internally
-    dropout: float  # Dropout value after linear transformation
-    conv_stride: int  # Stride of down-sampling cov
-    conv_kernel: int  # Kernel size of down-sampling conv
-    conv_padding: int  # Padding factor of down-sampling conv
+    feature_dim: int
+    """Feature dimension of the input data"""
+    hidden_dim: int
+    """Hidden dimension used in the model internally"""
+    dropout: float
+    """Dropout value after linear transformation"""
+    conv_stride: int
+    """Stride of down-sampling cov"""
+    conv_kernel: int
+    """Kernel size of down-sampling conv"""
+    conv_padding: int
+    """Padding factor of down-sampling conv"""
 
     spec_aug_cfg: ModelConfiguration  # TODO
 
 
 @dataclass
 class ConformerEncoderV1Config(ModelConfiguration):
-    # hyperparameters
-    num_layers: int  # Number of conformer layers in the conformer encoder
+    num_layers: int
+    """Number of conformer layers in the conformer encoder"""
 
     # nested configurations
-    front_cfg: ConformerFrontendV1Config  # Configuration for ConformerFrontendV1
-    block_cfg: ConformerBlockV1Config  # Configuration for ConformerBlockV1
+    front_cfg: ConformerFrontendV1Config
+    """Configuration for ConformerFrontendV1"""
+    block_cfg: ConformerBlockV1Config
+    """Configuration for ConformerBlockV1"""
 
 
 class ConformerBlockV1(nn.Module):
@@ -149,16 +172,21 @@ class ConformerEncoderV1(nn.Module):
         super().__init__()
 
         self.frontend = ConformerFrontendV1(cfg=cfg.front_cfg)
-        self.block_stack = torch.nn.Sequential(*[ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
+        self.module_list = torch.nn.ModuleList([ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
-    def forward(self, data_tensor: torch.Tensor):
+    def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor):
         """
         :param data_tensor: input tensor of shape [B, T, F]
+        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside [B, T]
         :return: torch.Tensor of shape [B, T', F']
 
         F: feature dim after feature extraction, F': internal model feature dim
         T: data time dim, T': down-sampled time dim
         """
         x = self.frontend(data_tensor)  # [B, T', F']
-        x = self.block_stack(x)  # [B, T', F']
+        for module in self.module_list:
+            if isinstance(module, ConformerMHSAV1):
+                x = module(x, sequence_mask)  # [B, T', F']
+            else:
+                x = module(x)  # [B, T', F']
         return x
