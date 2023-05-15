@@ -17,8 +17,6 @@ Similar approach as done in Fairseq: https://github.com/facebookresearch/fairseq
 from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
-from typing import Optional, Callable
-import torch
 
 
 @dataclass
@@ -31,7 +29,7 @@ class ModelConfiguration:
     def _validate_types(self) -> None:
         for field in fields(type(self)):
             try:
-                typeguard.check_type(getattr(self, field.name), eval(field.type))
+                typeguard.check_type(getattr(self, field.name), field.type)
             except typeguard.TypeCheckError as exc:
                 raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {exc}')
 
