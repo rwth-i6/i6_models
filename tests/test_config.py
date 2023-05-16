@@ -58,3 +58,17 @@ def test_config_typing():
     TestConfiguration(num_layers=2, hidden_dim=1)
     with pytest.raises(TypeCheckError):
         TestConfiguration(num_layers=2.0, hidden_dim="One")
+
+def test_value_check():
+
+    @dataclass
+    class TestConfiguration(ModelConfiguration):
+        num_layers: int = 4
+        hidden_dim: int = 2
+
+        def _value_check(self) -> None:
+            assert self.num_layers % self.hidden_dim == 0, "Needs to be divisible"
+
+    TestConfiguration()
+    with pytest.raises(AssertionError):
+        TestConfiguration(num_layers=6, hidden_dim=5)

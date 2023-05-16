@@ -33,5 +33,12 @@ class ModelConfiguration:
             except typeguard.TypeCheckError as exc:
                 raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {exc}')
 
+    def _value_check(self) -> None:
+        """
+        Base case for the function supposed to hold the value check of a config.
+        """
+        pass
+
     def __post_init__(self) -> None:
         self._validate_types()
+        self._value_check()
