@@ -36,7 +36,7 @@ class ModelConfiguration:
                     import sys
 
                     cls_globals = vars(sys.modules[self.__class__.__module__])
-                    memo = TypeCheckMemo(globals=globals, locals=cls_globals)
+                    memo = TypeCheckMemo(globals=cls_globals, locals=cls_globals)
                     t = ForwardRef(field.type)
                     check_type_internal(getattr(self, field.name), t, memo)
                 else:
