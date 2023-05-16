@@ -29,7 +29,18 @@ class ModelConfiguration:
     def _validate_types(self) -> None:
         for field in fields(type(self)):
             try:
-                typeguard.check_type(getattr(self, field.name), field.type)
+                if isinstance(field.type, str):
+                    from typeguard._functions import check_type_internal
+                    from typeguard._memo import TypeCheckMemo
+                    from typing import ForwardRef
+                    import sys
+
+                    cls_globals = vars(sys.modules[self.__class__.__module__])
+                    memo = TypeCheckMemo(globals=globals, locals=cls_globals)
+                    t = ForwardRef(field.type)
+                    check_type_internal(getattr(self, field.name), t, memo)
+                else:
+                    typeguard.check_type(getattr(self, field.name), field.type)
             except typeguard.TypeCheckError as exc:
                 raise typeguard.TypeCheckError(f'In field "{field.name}" of "{type(self)}": {exc}')
 
