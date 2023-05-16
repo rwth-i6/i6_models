@@ -8,6 +8,7 @@ from i6_models.parts.conformer.feedforward import (
     ConformerPositionwiseFeedForwardV1Config,
 )
 
+
 def test_conformer_convolution_output_shape():
     def get_output_shape(batch, time, features, kernel_size=31, dropout=0.1):
         x = torch.randn(batch, time, features)

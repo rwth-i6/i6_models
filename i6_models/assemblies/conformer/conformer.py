@@ -10,20 +10,8 @@ from typing import Callable
 from i6_models.config import ModelConfiguration
 
 from i6_models.parts.conformer.convolution import ConformerConvolutionV1
-from i6_models.parts.conformer.feedforward import ConformerPositionwiseFeedForwardV1
+from i6_models.parts.conformer.feedforward import ConformerPositionwiseFeedForwardV1, ConformerPositionwiseFeedForwardV1Config
 from i6_models.parts.conformer.mhsa import ConformerMHSAV1
-
-
-@dataclass
-class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
-    input_dim: int
-    """input dimension"""
-    hidden_dim: int
-    """hidden dimension (normally set to 4*input_dim as suggested by the paper)"""
-    dropout: float
-    """dropout probability"""
-    activation: Callable[[torch.Tensor], torch.Tensor]
-    """activation function"""
 
 
 @dataclass
@@ -101,10 +89,10 @@ class ConformerBlockV1(nn.Module):
         :param cfg: conformer block configuration with subunits for the different conformer parts
         """
         super().__init__()
-        self.ff_1 = ConformerPositionwiseFeedForwardV1(**asdict(cfg.ff_cfg))
+        self.ff_1 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.mhsa = ConformerMHSAV1(**asdict(cfg.mhsa_cfg))
         self.conv = ConformerConvolutionV1(**asdict(cfg.conv_cfg))
-        self.ff_2 = ConformerPositionwiseFeedForwardV1(**asdict(cfg.ff_cfg))
+        self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
     def forward(self, tensor: torch.Tensor):
