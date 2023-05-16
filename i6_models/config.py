@@ -30,9 +30,11 @@ class ModelConfiguration:
         for field in fields(type(self)):
             try:
                 if isinstance(field.type, str):
-                    # there field.type most of the time is a str object which needs to be resolved to the type itself
-                    # at the moment is does not look like there is typeguard support for it, thus manual fixes
-                    # c.f. https://github.com/agronholm/typeguard/issues/358
+                    # Later Python versions use forward references,
+                    # and then field.type is a str object.
+                    # This needs to be resolved to the type itself.
+                    # At the moment is does not look like there is typeguard support for it, thus manual fixes.
+                    # C.f. https://github.com/agronholm/typeguard/issues/358
                     from typeguard._functions import check_type_internal
                     from typeguard._memo import TypeCheckMemo
                     from typing import ForwardRef
