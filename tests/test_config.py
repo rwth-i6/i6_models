@@ -59,8 +59,8 @@ def test_config_typing():
     with pytest.raises(TypeCheckError):
         TestConfiguration(num_layers=2.0, hidden_dim="One")
 
-def test_value_check():
 
+def test_value_check():
     @dataclass
     class TestConfiguration(ModelConfiguration):
         num_layers: int = 4
