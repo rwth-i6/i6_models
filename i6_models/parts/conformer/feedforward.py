@@ -32,7 +32,7 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         self.linear_ff = nn.Linear(in_features=cfg.input_dim, out_features=cfg.hidden_dim, bias=True)
         self.activation = cfg.activation
         self.linear_out = nn.Linear(in_features=cfg.hidden_dim, out_features=cfg.input_dim, bias=True)
-        self.dropout = nn.Dropout(p=cfg.dropout)
+        self.dropout = cfg.dropout
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
@@ -42,7 +42,7 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         tensor = self.layer_norm(tensor)
         tensor = self.linear_ff(tensor)  # [B,T,F]
         tensor = self.activation(tensor)  # [B,T,F]
-        tensor = self.dropout(tensor)  # [B,T,F]
+        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
         tensor = self.linear_out(tensor)  # [B,T,F]
-        tensor = self.dropout(tensor)  # [B,T,F]
+        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
         return tensor
