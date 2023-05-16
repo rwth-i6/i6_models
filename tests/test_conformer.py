@@ -5,10 +5,10 @@ from i6_models.parts.conformer.mhsa import ConformerMHSAV1Config, ConformerMHSAV
 
 
 def test_ConformerMHSAV1():
-    def get_output_shape(input_shape, cfg):
+    def get_output_shape(input_shape, cfg, **kwargs):
 
         input = torch.randn(input_shape)
-        output = ConformerMHSAV1(cfg)(input)
+        output = ConformerMHSAV1(cfg)(input, **kwargs)
 
         return list(output.shape)
 
@@ -19,8 +19,5 @@ def test_ConformerMHSAV1():
 
     # all parameters
     input_shape = [4, 15, 32]  # B,T,F
-    cfg = ConformerMHSAV1Config(
-        32, 8, key_padding_mask=torch.randint(0, 2, input_shape[:2]) > 0, att_weights_dropout=0.2, dropout=0.3
-    )
-
-    assert get_output_shape(input_shape, cfg) == [4, 15, 32]
+    cfg = ConformerMHSAV1Config(32, 8, att_weights_dropout=0.2, dropout=0.3)
+    assert get_output_shape(input_shape, cfg, key_padding_mask=torch.randint(0, 2, input_shape[:2]) > 0) == [4, 15, 32]
