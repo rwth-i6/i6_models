@@ -1,6 +1,19 @@
 from __future__ import annotations
+
+from dataclasses import dataclass
+
 import torch
 from torch import nn
+from i6_models.config import ModelConfiguration
+from typing import Callable, Union, Any, Type
+
+
+@dataclass
+class ConformerConvolutionV1Config(ModelConfiguration):
+    channels: int
+    kernel_size: int
+    dropout: float
+    activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
 
 class ConformerConvolutionV1(nn.Module):
@@ -9,14 +22,16 @@ class ConformerConvolutionV1(nn.Module):
     see also: https://github.com/espnet/espnet/blob/713e784c0815ebba2053131307db5f00af5159ea/espnet/nets/pytorch_backend/conformer/convolution.py#L13
     """
 
-    def __init__(self, channels: int, kernel_size: int, dropout: float = 0.1, activation: nn.Module = nn.SiLU()):
+    def __init__(self, model_cfg: ConformerConvolutionV1Config):
         """
-        :param channels: number of channels for conv layers
-        :param kernel_size: kernel size of conv layers
-        :param dropout: dropout probability
-        :param activation: activation function applied after batch norm
+        :param model_cfg: model configuration for this module
         """
         super().__init__()
+
+        channels = model_cfg.channels
+        kernel_size = model_cfg.kernel_size
+        dropout = model_cfg.dropout
+        activation = model_cfg.activation
 
         self.pointwise_conv1 = nn.Linear(in_features=channels, out_features=2 * channels)
         self.depthwise_conv = nn.Conv1d(
