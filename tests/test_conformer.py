@@ -34,11 +34,6 @@ def test_layer_norm():
         out = norm(x)
         return out
 
-    torch.allclose(get_output([10, 50, 250], nn.LayerNorm(250)), get_output([10, 50, 250], LayerNorm(250)))
-    torch.allclose(get_output([10, 1, 250], nn.LayerNorm(250)), get_output([10, 1, 250], LayerNorm(250)))
-    torch.allclose(get_output([10, 1, 20], nn.LayerNorm(20)), get_output([10, 1, 20], LayerNorm(20)))
-    torch.allclose(get_output([1, 50, 250], nn.LayerNorm(250)), get_output([1, 50, 250], LayerNorm(250)))
-
     # test with different shape
     torch_ln = get_output([10, 50, 250], nn.LayerNorm(250))
     custom_ln = get_output([10, 250, 50], LayerNorm(250))

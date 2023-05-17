@@ -3,27 +3,25 @@ import torch.nn as nn
 from typing import Union
 
 
-class LayerNorm(nn.Module):
+class LayerNorm(nn.LayerNorm):
     """
-    Generic LayerNorm that accepts any input shape
+    LayerNorm that accepts [N,C,*] tensors and normalizes over C (channels) dimension.
     see here: https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     """
 
-    def __init__(self, normalized_shape: Union[int, list[int], torch.Size]):
+    def __init__(self, features: int):
         """
-        :param normalized_shape: shape for normalization
+        :param channels: number of channels for normalization
         """
-        super().__init__()
-
-        self.normalized_shape = normalized_shape
-        self.layer_norm = nn.LayerNorm(normalized_shape)
+        super().__init__(features)
+        self.layer_norm = nn.LayerNorm(features)
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        :param tensor: input tensor of any shape
+        :param tensor: input tensor with shape [N,C,*]
+        :return: normalized tensor with shape [N,C,*]
         """
-        shape = tensor.shape
-        tensor = tensor.reshape(-1, self.normalized_shape)
+        tensor = tensor.transpose(1, -1)  # swap C to last dim
         tensor = self.layer_norm(tensor)
-        tensor = tensor.reshape(shape)
+        tensor = tensor.transpose(-1, 1)  # transpose back
         return tensor
