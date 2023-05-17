@@ -41,7 +41,8 @@ class ConformerMHSAV1(torch.nn.Module):
 
         """
         Apply layer norm and multi-head self attention and dropout
-        key_padding_mask could be a binary or float mask of shape (B, T) which will be applied/added to dot product
+        :param Optional[torch.Tensor] key_padding_mask: could be a binary or float mask of shape (B, T)
+        which will be applied/added to dot product, used to mask padded key positions out
         """
 
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
