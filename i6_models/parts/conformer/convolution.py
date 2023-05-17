@@ -50,7 +50,7 @@ class ConformerConvolutionV1(nn.Module):
         )
         self.pointwise_conv2 = nn.Linear(in_features=channels, out_features=channels)
         self.layer_norm = nn.LayerNorm(channels)
-        self.norm = norm(channels)
+        self.norm = norm
         self.dropout = nn.Dropout(dropout)
         self.activation = activation
 
