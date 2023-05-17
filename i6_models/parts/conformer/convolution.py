@@ -19,7 +19,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """activation function applied after norm"""
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    """normalization layer with input of shape [N,C,*]"""
+    """normalization layer with input of shape [N,C,T]"""
 
 
 class ConformerConvolutionV1(nn.Module):
