@@ -12,9 +12,9 @@ class ConformerMHSAV1Config(ModelConfiguration):
     """input dim and total dimension for query/key and value projections, should be dividable by `num_att_heads`"""
     num_att_heads: int
     """number of attention heads"""
-    att_weights_dropout: float = 0.1
+    att_weights_dropout: float
     """attention weights dropout"""
-    dropout: float = 0.1
+    dropout: float
     """multi-headed self attention output dropout"""
 
 
