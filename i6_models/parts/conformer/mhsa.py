@@ -9,7 +9,7 @@ from i6_models.config import ModelConfiguration
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
     input_dim: int
-    """input dim and total dimension for query/key and value projections, should be dividable by `num_att_heads`"""
+    """input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`"""
     num_att_heads: int
     """number of attention heads"""
     att_weights_dropout: float
@@ -19,7 +19,7 @@ class ConformerMHSAV1Config(ModelConfiguration):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert self.input_dim % self.num_att_heads == 0, "input_dim must be dividable by num_att_heads"
+        assert self.input_dim % self.num_att_heads == 0, "input_dim must be divisible by num_att_heads"
 
 
 class ConformerMHSAV1(torch.nn.Module):
