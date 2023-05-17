@@ -8,11 +8,11 @@ class LayerNormNC(nn.LayerNorm):
     see here: https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     """
 
-    def __init__(self, features: int):
+    def __init__(self, channels: int):
         """
         :param channels: number of channels for normalization
         """
-        super(LayerNormNC, self).__init__(features)
+        super(LayerNormNC, self).__init__(channels)
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
