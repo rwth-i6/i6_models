@@ -18,6 +18,8 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """activation function applied after norm"""
+    norm: Union[nn.BatchNorm1d, nn.LayerNorm]
+    """Type of normalization layer"""
 
 
 class ConformerConvolutionV1(nn.Module):
@@ -36,6 +38,7 @@ class ConformerConvolutionV1(nn.Module):
         kernel_size = model_cfg.kernel_size
         dropout = model_cfg.dropout
         activation = model_cfg.activation
+        norm = model_cfg.norm
 
         self.pointwise_conv1 = nn.Linear(in_features=channels, out_features=2 * channels)
         self.depthwise_conv = nn.Conv1d(
@@ -47,7 +50,7 @@ class ConformerConvolutionV1(nn.Module):
         )
         self.pointwise_conv2 = nn.Linear(in_features=channels, out_features=channels)
         self.layer_norm = nn.LayerNorm(channels)
-        self.batch_norm = nn.BatchNorm1d(channels)
+        self.norm = norm(channels)
         self.dropout = nn.Dropout(dropout)
         self.activation = activation
 
@@ -63,8 +66,13 @@ class ConformerConvolutionV1(nn.Module):
         # conv layers expect shape [B,F,T] so we have to transpose here
         tensor = tensor.transpose(1, 2)  # [B,F,T]
         tensor = self.depthwise_conv(tensor)
-        tensor = self.batch_norm(tensor)
-        tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
+        if isinstance(self.norm, nn.LayerNorm):
+            # LN expect feature dim as last dim
+            tensor = tensor.transpose(1, 2)  # [B,T,F]
+            tensor = self.norm(tensor)  # [B,T,F]
+        else:
+            tensor = self.norm(tensor)  # [B,F,T]
+            tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
 
         tensor = self.activation(tensor)
         tensor = self.pointwise_conv2(tensor)
