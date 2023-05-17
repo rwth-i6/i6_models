@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from typing import Union
 
 
 class LayerNorm(nn.Module):
@@ -8,7 +9,7 @@ class LayerNorm(nn.Module):
     see here: https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     """
 
-    def __init__(self, normalized_shape):
+    def __init__(self, normalized_shape: Union[int, list[int], torch.Size]):
         """
         :param normalized_shape: shape for normalization
         """
