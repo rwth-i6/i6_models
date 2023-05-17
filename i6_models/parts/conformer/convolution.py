@@ -19,7 +19,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """activation function applied after norm"""
-    norm: Union[nn.BatchNorm1d, LayerNorm, nn.LayerNorm]
+    norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """Type of normalization layer"""
 
 
