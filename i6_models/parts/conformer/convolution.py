@@ -11,9 +11,13 @@ from typing import Callable, Union, Any, Type
 @dataclass
 class ConformerConvolutionV1Config(ModelConfiguration):
     channels: int
+    """number of channels for conv layers"""
     kernel_size: int
+    """kernel size of conv layers"""
     dropout: float
+    """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+    """activation function applied after norm"""
 
 
 class ConformerConvolutionV1(nn.Module):
