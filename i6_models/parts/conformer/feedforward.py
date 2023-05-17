@@ -16,7 +16,7 @@ class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
     """hidden dimension (normally set to 4*input_dim as suggested by the paper)"""
     dropout: float
     """dropout probability"""
-    activation: Callable[[torch.Tensor], torch.Tensor]
+    activation: Callable[[torch.Tensor], torch.Tensor] = nn.functional.silu
     """activation function"""
 
 
