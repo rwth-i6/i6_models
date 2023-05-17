@@ -5,8 +5,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 from i6_models.config import ModelConfiguration
-from i6_models.parts.conformer.norm import LayerNorm
-from typing import Callable, Union, Any, Type
+from typing import Callable, Union
 
 
 @dataclass
