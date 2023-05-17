@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 from i6_models.config import ModelConfiguration
+from i6_models.parts.conformer.norm import LayerNorm
 from typing import Callable, Union, Any, Type
 
 
@@ -18,7 +19,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """activation function applied after norm"""
-    norm: Union[nn.BatchNorm1d, nn.LayerNorm]
+    norm: Union[nn.BatchNorm1d, LayerNorm, nn.LayerNorm]
     """Type of normalization layer"""
 
 
@@ -66,13 +67,9 @@ class ConformerConvolutionV1(nn.Module):
         # conv layers expect shape [B,F,T] so we have to transpose here
         tensor = tensor.transpose(1, 2)  # [B,F,T]
         tensor = self.depthwise_conv(tensor)
-        if isinstance(self.norm, nn.LayerNorm):
-            # LN expect feature dim as last dim
-            tensor = tensor.transpose(1, 2)  # [B,T,F]
-            tensor = self.norm(tensor)  # [B,T,F]
-        else:
-            tensor = self.norm(tensor)  # [B,F,T]
-            tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
+
+        tensor = self.norm(tensor)
+        tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
 
         tensor = self.activation(tensor)
         tensor = self.pointwise_conv2(tensor)

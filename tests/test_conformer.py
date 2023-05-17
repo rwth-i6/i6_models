@@ -1,4 +1,5 @@
 from i6_models.parts.conformer.convolution import ConformerConvolutionV1, ConformerConvolutionV1Config
+from i6_models.parts.conformer.norm import LayerNorm
 import torch
 import torch.nn as nn
 
@@ -17,9 +18,32 @@ def test_conformer_convolution_output_shape():
 
     assert get_output_shape(10, 50, 250) == (10, 50, 250)
     assert get_output_shape(10, 50, 250, activation=nn.functional.relu) == (10, 50, 250)  # different activation
-    assert get_output_shape(10, 50, 250, norm=nn.LayerNorm(250)) == (10, 50, 250)  # different norm
+    assert get_output_shape(10, 50, 250, norm=LayerNorm(250)) == (10, 50, 250)  # different norm
     assert get_output_shape(1, 50, 100) == (1, 50, 100)  # test with batch size 1
     assert get_output_shape(10, 1, 50) == (10, 1, 50)  # time dim 1
     assert get_output_shape(10, 10, 20, dropout=0.0) == (10, 10, 20)  # dropout 0
     assert get_output_shape(10, 10, 20, kernel_size=3) == (10, 10, 20)  # odd kernel size
     assert get_output_shape(10, 10, 20, kernel_size=32) == (10, 10, 20)  # even kernel size
+
+
+def test_layer_norm():
+    torch.manual_seed(42)
+
+    def get_output(shape, norm):
+        x = torch.randn(shape)
+        out = norm(x)
+        return out
+
+    torch.allclose(get_output([10, 50, 250], nn.LayerNorm(250)), get_output([10, 50, 250], LayerNorm(250)))
+    torch.allclose(get_output([10, 1, 250], nn.LayerNorm(250)), get_output([10, 1, 250], LayerNorm(250)))
+    torch.allclose(get_output([10, 1, 20], nn.LayerNorm(20)), get_output([10, 1, 20], LayerNorm(20)))
+    torch.allclose(get_output([1, 50, 250], nn.LayerNorm(250)), get_output([1, 50, 250], LayerNorm(250)))
+
+    # test with different shape
+    torch_ln = get_output([10, 50, 250], nn.LayerNorm(250))
+    custom_ln = get_output([10, 250, 50], LayerNorm(250))
+    torch.allclose(torch_ln, custom_ln.transpose(1, 2))
+
+    torch_ln = get_output([10, 8, 23], nn.LayerNorm(23))
+    custom_ln = get_output([10, 23, 8], LayerNorm(23))
+    torch.allclose(torch_ln, custom_ln.transpose(1, 2))
