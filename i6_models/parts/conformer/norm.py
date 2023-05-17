@@ -12,11 +12,11 @@ class LayerNormNC(nn.LayerNorm):
         """
         :param channels: number of channels for normalization
         """
-        super(LayerNormNC, self).__init__(channels)
+        super().__init__(channels)
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
         :param tensor: input tensor with shape [N,C,*]
         :return: normalized tensor with shape [N,C,*]
         """
-        return super(LayerNormNC, self).forward(tensor.transpose(1, -1)).transpose(1, -1)
+        return super().forward(tensor.transpose(1, -1)).transpose(1, -1)
