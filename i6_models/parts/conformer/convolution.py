@@ -34,25 +34,19 @@ class ConformerConvolutionV1(nn.Module):
         """
         super().__init__()
 
-        channels = model_cfg.channels
-        kernel_size = model_cfg.kernel_size
-        dropout = model_cfg.dropout
-        activation = model_cfg.activation
-        norm = model_cfg.norm
-
-        self.pointwise_conv1 = nn.Linear(in_features=channels, out_features=2 * channels)
+        self.pointwise_conv1 = nn.Linear(in_features=model_cfg.channels, out_features=2 * model_cfg.channels)
         self.depthwise_conv = nn.Conv1d(
-            in_channels=channels,
-            out_channels=channels,
-            kernel_size=kernel_size,
+            in_channels=model_cfg.channels,
+            out_channels=model_cfg.channels,
+            kernel_size=model_cfg.kernel_size,
             padding="same",
-            groups=channels,
+            groups=model_cfg.channels,
         )
-        self.pointwise_conv2 = nn.Linear(in_features=channels, out_features=channels)
-        self.layer_norm = nn.LayerNorm(channels)
-        self.norm = norm
-        self.dropout = nn.Dropout(dropout)
-        self.activation = activation
+        self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
+        self.layer_norm = nn.LayerNorm(model_cfg.channels)
+        self.norm = model_cfg.norm
+        self.dropout = nn.Dropout(model_cfg.dropout)
+        self.activation = model_cfg.activation
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
