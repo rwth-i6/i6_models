@@ -38,7 +38,6 @@ class ConformerMHSAV1(torch.nn.Module):
         self.dropout = cfg.dropout
 
     def forward(self, input_tensor: torch.Tensor, key_padding_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-
         """
         Apply layer norm and multi-head self attention and dropout
         :param Optional[torch.Tensor] key_padding_mask: could be a binary or float mask of shape (B, T)
