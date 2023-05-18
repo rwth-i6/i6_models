@@ -1,3 +1,4 @@
+from __future__ import annotations
 from itertools import product
 
 import torch
@@ -8,22 +9,8 @@ from i6_models.parts.conformer.feedforward import (
     ConformerPositionwiseFeedForwardV1,
     ConformerPositionwiseFeedForwardV1Config,
 )
+from i6_models.parts.conformer.mhsa import ConformerMHSAV1Config, ConformerMHSAV1
 from i6_models.parts.conformer.norm import LayerNormNC
-
-
-def test_ConformerPositionwiseFeedForwardV1():
-    def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
-        x = torch.randn(input_shape)
-        cfg = ConformerPositionwiseFeedForwardV1Config(input_dim, hidden_dim, dropout, activation)
-        conf_ffn_part = ConformerPositionwiseFeedForwardV1(cfg)
-        y = conf_ffn_part(x)
-        return y.shape
-
-    for input_dim, hidden_dim, dropout, activation in product(
-        [10, 20], [100, 200], [0.1, 0.3], [nn.functional.silu, nn.functional.relu]
-    ):
-        input_shape = (10, 100, input_dim)
-        assert get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation) == input_shape
 
 
 def test_conformer_convolution_output_shape():
@@ -46,6 +33,40 @@ def test_conformer_convolution_output_shape():
     assert get_output_shape(10, 10, 20, dropout=0.0) == (10, 10, 20)  # dropout 0
     assert get_output_shape(10, 10, 20, kernel_size=3) == (10, 10, 20)  # odd kernel size
     assert get_output_shape(10, 10, 20, kernel_size=32) == (10, 10, 20)  # even kernel size
+
+
+def test_ConformerPositionwiseFeedForwardV1():
+    def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
+        x = torch.randn(input_shape)
+        cfg = ConformerPositionwiseFeedForwardV1Config(input_dim, hidden_dim, dropout, activation)
+        conf_ffn_part = ConformerPositionwiseFeedForwardV1(cfg)
+        y = conf_ffn_part(x)
+        return y.shape
+
+    for input_dim, hidden_dim, dropout, activation in product(
+        [10, 20], [100, 200], [0.1, 0.3], [nn.functional.silu, nn.functional.relu]
+    ):
+        input_shape = (10, 100, input_dim)
+        assert get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation) == input_shape
+
+
+def test_ConformerMHSAV1():
+    def get_output_shape(input_shape, cfg, **kwargs):
+
+        input = torch.randn(input_shape)
+        output = ConformerMHSAV1(cfg)(input, **kwargs)
+
+        return list(output.shape)
+
+    # without key padding mask
+    input_shape = [3, 10, 20]  # B,T,F
+    cfg = ConformerMHSAV1Config(20, 4, 0.1, 0.1)
+    assert get_output_shape(input_shape, cfg) == [3, 10, 20]
+
+    # with key padding mask
+    input_shape = [4, 15, 32]  # B,T,F
+    cfg = ConformerMHSAV1Config(32, 8, 0.2, 0.3)
+    assert get_output_shape(input_shape, cfg, key_padding_mask=torch.randint(0, 2, input_shape[:2]) > 0) == [4, 15, 32]
 
 
 def test_layer_norm_nc():
