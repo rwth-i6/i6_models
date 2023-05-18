@@ -25,7 +25,7 @@ def test_ConformerPositionwiseFeedForwardV1():
         input_shape = (10, 100, input_dim)
         assert get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation) == input_shape
 
-        
+
 def test_conformer_convolution_output_shape():
     def get_output_shape(batch, time, features, norm=None, kernel_size=31, dropout=0.1, activation=nn.functional.silu):
         x = torch.randn(batch, time, features)
@@ -63,5 +63,4 @@ def test_layer_norm_nc():
 
     torch_ln = get_output([10, 8, 23], nn.LayerNorm(23))
     custom_ln = get_output([10, 23, 8], LayerNormNC(23))
-    torch.allclose(torch_ln, custom_ln.transpose(1, 2))   
-        
+    torch.allclose(torch_ln, custom_ln.transpose(1, 2))
