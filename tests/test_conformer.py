@@ -1,9 +1,31 @@
-from i6_models.parts.conformer.convolution import ConformerConvolutionV1, ConformerConvolutionV1Config
-from i6_models.parts.conformer.norm import LayerNormNC
+from itertools import product
+
 import torch
-import torch.nn as nn
+from torch import nn
+
+from i6_models.parts.conformer.convolution import ConformerConvolutionV1, ConformerConvolutionV1Config
+from i6_models.parts.conformer.feedforward import (
+    ConformerPositionwiseFeedForwardV1,
+    ConformerPositionwiseFeedForwardV1Config,
+)
+from i6_models.parts.conformer.norm import LayerNormNC
 
 
+def test_ConformerPositionwiseFeedForwardV1():
+    def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
+        x = torch.randn(input_shape)
+        cfg = ConformerPositionwiseFeedForwardV1Config(input_dim, hidden_dim, dropout, activation)
+        conf_ffn_part = ConformerPositionwiseFeedForwardV1(cfg)
+        y = conf_ffn_part(x)
+        return y.shape
+
+    for input_dim, hidden_dim, dropout, activation in product(
+        [10, 20], [100, 200], [0.1, 0.3], [nn.functional.silu, nn.functional.relu]
+    ):
+        input_shape = (10, 100, input_dim)
+        assert get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation) == input_shape
+
+        
 def test_conformer_convolution_output_shape():
     def get_output_shape(batch, time, features, norm=None, kernel_size=31, dropout=0.1, activation=nn.functional.silu):
         x = torch.randn(batch, time, features)
@@ -41,4 +63,5 @@ def test_layer_norm_nc():
 
     torch_ln = get_output([10, 8, 23], nn.LayerNorm(23))
     custom_ln = get_output([10, 23, 8], LayerNormNC(23))
-    torch.allclose(torch_ln, custom_ln.transpose(1, 2))
+    torch.allclose(torch_ln, custom_ln.transpose(1, 2))   
+        
