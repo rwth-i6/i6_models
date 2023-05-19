@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+__all__ = ["ConformerPositionwiseFeedForwardV1", "ConformerPositionwiseFeedForwardV1Config"]
+
 from dataclasses import dataclass
 from typing import Callable
 
