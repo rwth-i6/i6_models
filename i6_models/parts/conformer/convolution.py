@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["ConformerConvolutionV1", "ConformerConvolutionV1Config"]
+
 from dataclasses import dataclass
 
 import torch
