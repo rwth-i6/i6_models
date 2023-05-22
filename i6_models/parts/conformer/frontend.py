@@ -14,19 +14,24 @@ from i6_models.config import ModelConfiguration
 
 @dataclass
 class ConformerFrontendV1Config(ModelConfiguration):
-    feature_dim: int
-    """Feature dimension of the input data"""
-    hidden_dim: int
-    """Hidden dimension used in the model internally"""
-    dropout: float
-    """Dropout value after linear transformation"""
-    conv_stride: int
-    """Stride of down-sampling cov"""
-    conv_kernel: int
-    """Kernel size of down-sampling conv"""
-    conv_padding: int
-    """Padding factor of down-sampling conv"""
+    """
+    :param feature_dim: Feature dimension of the input data
+    :param hidden_dim: Hidden dimension used in the model internally
+    :param dropout: Dropout value after linear transformation
+    :param conv_stride: Stride of down-sampling cov
+    :param conv_kernel: Kernel size of down-sampling conv
+    :param conv_padding: Padding factor of down-sampling conv
+    :param spec_aug_cfg: TODO
+    """
 
+    feature_dim: int
+    hidden_dim: int
+    dropout: float
+    conv_stride: int
+    conv_kernel: int
+    conv_padding: int
+
+    # nested configurations
     spec_aug_cfg: Optional[ModelConfiguration]  # TODO
 
 

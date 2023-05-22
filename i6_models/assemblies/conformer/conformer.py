@@ -21,25 +21,31 @@ from i6_models.parts.conformer import (
 
 @dataclass
 class ConformerBlockV1Config(ModelConfiguration):
+    """
+    :param ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
+    :param mhsa_cfg: Configuration for ConformerMHSAV1
+    :param conv_cfg: Configuration for ConformerConvolutionV1
+    """
+
     # nested configurations
     ff_cfg: ConformerPositionwiseFeedForwardV1Config
-    """Configuration for ConformerPositionwiseFeedForwardV1"""
     mhsa_cfg: ConformerMHSAV1Config
-    """Configuration for ConformerMHSAV1"""
     conv_cfg: ConformerConvolutionV1Config
-    """Configuration for ConformerConvolutionV1"""
 
 
 @dataclass
 class ConformerEncoderV1Config(ModelConfiguration):
+    """
+    :param num_layers: Number of conformer layers in the conformer encoder
+    :param front_cfg: Configuration for ConformerFrontendV1
+    :param block_cfg: Configuration for ConformerBlockV1
+    """
+
     num_layers: int
-    """Number of conformer layers in the conformer encoder"""
 
     # nested configurations
     front_cfg: ConformerFrontendV1Config
-    """Configuration for ConformerFrontendV1"""
     block_cfg: ConformerBlockV1Config
-    """Configuration for ConformerBlockV1"""
 
 
 class ConformerBlockV1(nn.Module):
@@ -88,17 +94,17 @@ class ConformerEncoderV1(nn.Module):
 
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor):
         """
-        :param data_tensor: input tensor of shape [B, T, F]
-        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside [B, T]
-        :return: torch.Tensor of shape [B, T', F']
+        :param data_tensor: input tensor of shape [B, T', F]
+        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside [B, T']
+        :return: torch.Tensor of shape [B, T, F']
 
         F: feature dim after feature extraction, F': internal model feature dim
-        T: data time dim, T': down-sampled time dim
+        T': data time dim, T: down-sampled time dim (internal time dim)
         """
-        x = self.frontend(data_tensor)  # [B, T', F']
+        x = self.frontend(data_tensor)  # [B, T, F']
         for module in self.module_list:
             if isinstance(module, ConformerMHSAV1):
-                x = module(x, sequence_mask)  # [B, T', F']
+                x = module(x, sequence_mask)  # [B, T, F']
             else:
-                x = module(x)  # [B, T', F']
+                x = module(x)  # [B, T, F']
         return x
