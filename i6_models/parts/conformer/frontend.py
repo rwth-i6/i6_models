@@ -47,7 +47,7 @@ class ConformerFrontendV1(nn.Module):
             raise NotImplementedError
         else:
             self.spec_aug = None
-        self.subsampling = nn.Conv1d(
+        self.conv_subsampling = nn.Conv1d(
             in_channels=cfg.feature_dim,
             out_channels=cfg.feature_dim,
             kernel_size=cfg.conv_kernel,
@@ -69,7 +69,7 @@ class ConformerFrontendV1(nn.Module):
         if self.spec_aug:
             x = self.spec_aug(x)
         x = x.transpose(1, 2)  # [B, F, T]
-        x = self.subsampling(x)  # [B, F, T']
+        x = self.conv_subsampling(x)  # [B, F, T']
         x = x.transpose(2, 1)  # [B, T', F]
         x = self.linear(x)  # [B, T', F']
         x = self.dropout(x)  # [B, T', F']

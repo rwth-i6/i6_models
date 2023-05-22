@@ -33,21 +33,6 @@ class ConformerBlockV1Config(ModelConfiguration):
     conv_cfg: ConformerConvolutionV1Config
 
 
-@dataclass
-class ConformerEncoderV1Config(ModelConfiguration):
-    """
-    :param num_layers: Number of conformer layers in the conformer encoder
-    :param front_cfg: Configuration for ConformerFrontendV1
-    :param block_cfg: Configuration for ConformerBlockV1
-    """
-
-    num_layers: int
-
-    # nested configurations
-    front_cfg: ConformerFrontendV1Config
-    block_cfg: ConformerBlockV1Config
-
-
 class ConformerBlockV1(nn.Module):
     """
     Conformer block module
@@ -82,7 +67,28 @@ class ConformerBlockV1(nn.Module):
         return x
 
 
+@dataclass
+class ConformerEncoderV1Config(ModelConfiguration):
+    """
+    :param num_layers: Number of conformer layers in the conformer encoder
+    :param front_cfg: Configuration for ConformerFrontendV1
+    :param block_cfg: Configuration for ConformerBlockV1
+    """
+
+    num_layers: int
+
+    # nested configurations
+    front_cfg: ConformerFrontendV1Config
+    block_cfg: ConformerBlockV1Config
+
+
 class ConformerEncoderV1(nn.Module):
+    """
+    Implementation of the convolution-augmented Transformer (short Conformer), as in the original publication.
+    The model consists of a frontend and a stack of N conformer blocks.
+    C.f. https://arxiv.org/pdf/2005.08100.pdf
+    """
+
     def __init__(self, cfg: ConformerEncoderV1Config):
         """
         :param cfg: conformer encoder configuration with subunits for frontend and conformer blocks
