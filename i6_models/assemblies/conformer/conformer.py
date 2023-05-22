@@ -98,7 +98,7 @@ class ConformerEncoderV1(nn.Module):
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside [B, T']
         :return: torch.Tensor of shape [B, T, F']
 
-        F: feature dim after feature extraction, F': internal model feature dim
+        F: input feature dim, F': internal and output feature dim
         T': data time dim, T: down-sampled time dim (internal time dim)
         """
         x = self.frontend(data_tensor)  # [B, T, F']
