@@ -1,0 +1,1 @@
+from assemblies.conformer import ConformerEncoderV1

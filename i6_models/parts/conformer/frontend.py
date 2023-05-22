@@ -6,9 +6,6 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-# TODO probably used for SpecAugment
-from torchaudio.transforms import TimeMasking, TimeStretch, FrequencyMasking
-
 from i6_models.config import ModelConfiguration
 
 
