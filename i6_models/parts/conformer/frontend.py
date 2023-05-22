@@ -62,7 +62,7 @@ class ConformerFrontendV1(nn.Module):
         :param data_tensor: input tensor of shape [B, T, F]
         :return: torch.Tensor of shape [B, T', F']
 
-        F: feature dim after feature extraction, F': internal model feature dim
+        F: input feature dim, F': internal and output feature dim
         T: data time dim, T': down-sampled time dim
         """
         x = data_tensor
