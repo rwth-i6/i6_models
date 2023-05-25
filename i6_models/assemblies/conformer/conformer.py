@@ -110,6 +110,6 @@ class ConformerEncoderV1(nn.Module):
         """
         x = self.frontend(data_tensor)  # [B, T, F']
         for module in self.module_list:
-                x = module(x, sequence_mask)  # [B, T, F']
+            x = module(x, sequence_mask)  # [B, T, F']
 
         return x
