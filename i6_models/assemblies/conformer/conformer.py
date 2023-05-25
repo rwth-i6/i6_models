@@ -49,15 +49,16 @@ class ConformerBlockV1(nn.Module):
         self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, tensor: torch.Tensor):
+    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor):
         """
         :param tensor: input tensor of shape [B, T, F]
+        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
         residual = tensor  #  [B, T, F]
         x = self.ff_1(residual)  #  [B, T, F]
         residual = 0.5 * x + residual  #  [B, T, F]
-        x = self.mhsa(residual)  #  [B, T, F]
+        x = self.mhsa(residual, sequence_mask)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
         x = self.conv(residual)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
@@ -101,7 +102,7 @@ class ConformerEncoderV1(nn.Module):
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor):
         """
         :param data_tensor: input tensor of shape [B, T', F]
-        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside [B, T']
+        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T']
         :return: torch.Tensor of shape [B, T, F']
 
         F: input feature dim, F': internal and output feature dim
@@ -109,8 +110,6 @@ class ConformerEncoderV1(nn.Module):
         """
         x = self.frontend(data_tensor)  # [B, T, F']
         for module in self.module_list:
-            if isinstance(module, ConformerMHSAV1):
                 x = module(x, sequence_mask)  # [B, T, F']
-            else:
-                x = module(x)  # [B, T, F']
+
         return x
