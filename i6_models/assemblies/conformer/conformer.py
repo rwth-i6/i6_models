@@ -71,9 +71,10 @@ class ConformerBlockV1(nn.Module):
 @dataclass
 class ConformerEncoderV1Config(ModelConfiguration):
     """
-    :param num_layers: Number of conformer layers in the conformer encoder
-    :param front_cfg: Configuration for ConformerFrontendV1
-    :param block_cfg: Configuration for ConformerBlockV1
+    Attributes:
+        num_layers: Number of conformer layers in the conformer encoder
+        front_cfg: Configuration for ConformerFrontendV1
+        block_cfg: Configuration for ConformerBlockV1
     """
 
     num_layers: int
