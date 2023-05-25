@@ -1,6 +1,8 @@
 from __future__ import annotations
+
+__all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config"]
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Optional
 import torch
 
 from i6_models.config import ModelConfiguration
