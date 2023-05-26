@@ -23,6 +23,13 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """normalization layer with input of shape [N,C,T]"""
 
+    def check_valid(self):
+        assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.check_valid()
+
 
 class ConformerConvolutionV1(nn.Module):
     """
@@ -38,7 +45,7 @@ class ConformerConvolutionV1(nn.Module):
         :param model_cfg: model configuration for this module
         """
         super().__init__()
-        assert model_cfg.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
+        model_cfg.check_valid()
         self.pointwise_conv1 = nn.Linear(in_features=model_cfg.channels, out_features=2 * model_cfg.channels)
         self.depthwise_conv = nn.Conv1d(
             in_channels=model_cfg.channels,
