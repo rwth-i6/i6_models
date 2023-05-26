@@ -28,6 +28,9 @@ class ConformerConvolutionV1(nn.Module):
     """
     Conformer convolution module.
     see also: https://github.com/espnet/espnet/blob/713e784c0815ebba2053131307db5f00af5159ea/espnet/nets/pytorch_backend/conformer/convolution.py#L13
+
+    Uses explicit padding for ONNX exportability, see:
+    https://github.com/pytorch/pytorch/issues/68880
     """
 
     def __init__(self, model_cfg: ConformerConvolutionV1Config):
@@ -35,13 +38,13 @@ class ConformerConvolutionV1(nn.Module):
         :param model_cfg: model configuration for this module
         """
         super().__init__()
-
+        assert model_cfg.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
         self.pointwise_conv1 = nn.Linear(in_features=model_cfg.channels, out_features=2 * model_cfg.channels)
         self.depthwise_conv = nn.Conv1d(
             in_channels=model_cfg.channels,
             out_channels=model_cfg.channels,
             kernel_size=model_cfg.kernel_size,
-            padding="same",
+            padding=(model_cfg.kernel_size - 1) // 2,
             groups=model_cfg.channels,
         )
         self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
