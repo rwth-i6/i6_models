@@ -6,12 +6,10 @@ import torch
 from torch import nn
 from dataclasses import dataclass
 
-from i6_models.config import ModelConfiguration
+from i6_models.config import ModelConfiguration, SubassemblyWithOptions
 from i6_models.parts.conformer import (
     ConformerConvolutionV1,
     ConformerConvolutionV1Config,
-    ConformerFrontendV1,
-    ConformerFrontendV1Config,
     ConformerMHSAV1,
     ConformerMHSAV1Config,
     ConformerPositionwiseFeedForwardV1,
@@ -22,9 +20,10 @@ from i6_models.parts.conformer import (
 @dataclass
 class ConformerBlockV1Config(ModelConfiguration):
     """
-    :param ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
-    :param mhsa_cfg: Configuration for ConformerMHSAV1
-    :param conv_cfg: Configuration for ConformerConvolutionV1
+    Attributes:
+        ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
+        mhsa_cfg: Configuration for ConformerMHSAV1
+        conv_cfg: Configuration for ConformerConvolutionV1
     """
 
     # nested configurations
@@ -80,7 +79,7 @@ class ConformerEncoderV1Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    front_cfg: ConformerFrontendV1Config
+    frontend: SubassemblyWithOptions
     block_cfg: ConformerBlockV1Config
 
 
@@ -97,7 +96,7 @@ class ConformerEncoderV1(nn.Module):
         """
         super().__init__()
 
-        self.frontend = ConformerFrontendV1(cfg=cfg.front_cfg)
+        self.frontend = cfg.frontend.construct()
         self.module_list = torch.nn.ModuleList([ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor):

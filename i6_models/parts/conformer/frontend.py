@@ -12,6 +12,7 @@ from i6_models.config import ModelConfiguration
 @dataclass
 class ConformerFrontendV1Config(ModelConfiguration):
     """
+    Attributes:
     :param feature_dim: Feature dimension of the input data
     :param hidden_dim: Hidden dimension used in the model internally
     :param dropout: Dropout value after linear transformation

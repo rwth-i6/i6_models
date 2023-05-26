@@ -13,11 +13,12 @@ from typing import Callable, Union
 @dataclass
 class ConformerConvolutionV1Config(ModelConfiguration):
     """
-    :param: channels: number of channels for conv layers
-    :param: kernel_size: kernel size of conv layers
-    :param: dropout: dropout probability
-    :param: activation: activation function applied after normalization
-    :param: norm: normalization layer with input of shape [N,C,T]
+    Attributes:
+        channels: number of channels for conv layers
+        kernel_size: kernel size of conv layers
+        dropout: dropout probability
+        activation: activation function applied after normalization
+        norm: normalization layer with input of shape [N,C,T]
     """
 
     channels: int

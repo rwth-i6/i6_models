@@ -14,10 +14,11 @@ from i6_models.config import ModelConfiguration
 @dataclass
 class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
     """
-    :param: input_dim: input dimension
-    :param: hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
-    :param: dropout: dropout probability
-    :param: activation: activation function
+    Attributes:
+        input_dim: input dimension
+        hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
+        dropout: dropout probability
+        activation: activation function
     """
 
     input_dim: int
