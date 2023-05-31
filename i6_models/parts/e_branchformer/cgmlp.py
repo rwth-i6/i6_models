@@ -25,6 +25,10 @@ class ConvolutionalGatingMLPV1Config(ModelConfiguration):
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConvolutionalGatingMLPV1 only supports odd kernel sizes"
 
+    def __post__init__(self):
+        super().__post_init__()
+        self.check_valid()
+
 
 class ConvolutionalGatingMLPV1(nn.Module):
     """Convolutional Gating MLP (cgMLP)."""
