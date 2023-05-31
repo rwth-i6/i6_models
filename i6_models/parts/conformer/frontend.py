@@ -13,20 +13,23 @@ from i6_models.config import ModelConfiguration
 
 @dataclass()
 class ConformerVGGFrontendV1Config(ModelConfiguration):
+    """
+    Attributes:
+        channels: number of channels for conv layers
+        conv_kernel_size: kernel size of conv layers
+        pool_1_kernel_size: kernel size of first pooling layer
+        pool_1_strides: strides of first pooling layer
+        pool_2_kernel_size: kernel size of second pooling layer
+        pool_2_strides: strides of second pooling layer
+        activation: activation function applied after norm
+    """
     channels: int
-    """number of channels for conv layers"""
     conv_kernel_size: int
-    """kernel size of conv layers"""
     pool_1_kernel_size: int
-    """kernel size of first pooling layer"""
     pool_1_strides: int
-    """strides of first pooling layer"""
     pool_2_kernel_size: int
-    """kernel size of second pooling layer"""
     pool_2_strides: int
-    """strides of second pooling layer"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    """activation function applied after norm"""
 
 
 class ConformerVGGFrontendV1(nn.Module):
@@ -101,16 +104,19 @@ class ConformerVGGFrontendV1(nn.Module):
 
 @dataclass()
 class ConformerVGGFrontendV2Config(ModelConfiguration):
+    """
+    Attributes:
+        channels: number of channels for conv layers
+        conv_kernel_size: kernel size of conv layers
+        pool_kernel_size: kernel size of first pooling layer
+        pool_strides: strides of first pooling layer
+        activation: activation function applied after norm
+    """
     channels: int
-    """number of channels for conv layers"""
     conv_kernel_size: int
-    """kernel size of conv layers"""
     pool_kernel_size: int
-    """kernel size of pooling layer"""
     pool_strides: int
-    """strides of pooling layer"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    """activation function applied after norm"""
 
 
 class ConformerVGGFrontendV2(nn.Module):
