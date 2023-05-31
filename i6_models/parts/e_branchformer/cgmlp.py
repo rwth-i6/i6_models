@@ -61,12 +61,12 @@ class ConvolutionalGatingMLPV1(nn.Module):
 
         # convolutional spatial gating unit (csgu)
         tensor_r, tensor_g = tensor.chunk(2, dim=-1)  # (B,T,3*F), (B,T,3*F)
-        tensor_g = self.layer_norm_csgu(tensor_g)  # (B,T,3*F)
+        tensor_g = self.layer_norm_csgu(tensor_g)
         # conv layers expect shape [B,F,T] so we have to transpose here
         tensor_g = tensor_g.transpose(1, 2)  # [B,3*F,T]
-        tensor_g = self.depthwise_conv(tensor_g)  # [B,3*F,T]
+        tensor_g = self.depthwise_conv(tensor_g)
         tensor_g = tensor_g.transpose(1, 2)  # [B,T,3*F]
-        tensor = tensor_r * tensor_g  # [B,T,3*F]
+        tensor = tensor_r * tensor_g
         tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)
 
         tensor = self.linear_out(tensor)  # [B,T,F]
