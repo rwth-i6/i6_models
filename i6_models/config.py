@@ -67,4 +67,4 @@ class SubassemblyWithOptions:
 
     def construct(self) -> nn.Module:
         """Constructs an instance of the given module class"""
-        return self.module_class(cfg=self.cfg)
+        return self.module_class(self.cfg)

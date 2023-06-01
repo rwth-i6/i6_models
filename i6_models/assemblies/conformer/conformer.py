@@ -72,7 +72,7 @@ class ConformerEncoderV1Config(ModelConfiguration):
     """
     Attributes:
         num_layers: Number of conformer layers in the conformer encoder
-        front_cfg: Configuration for ConformerFrontendV1
+        frontend: A pair of ConformerFrontend and corresponding config
         block_cfg: Configuration for ConformerBlockV1
     """
 
