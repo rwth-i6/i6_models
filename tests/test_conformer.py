@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from itertools import product
 
 import torch
@@ -8,6 +9,12 @@ from i6_models.parts.conformer.convolution import ConformerConvolutionV1, Confor
 from i6_models.parts.conformer.feedforward import (
     ConformerPositionwiseFeedForwardV1,
     ConformerPositionwiseFeedForwardV1Config,
+)
+from i6_models.parts.conformer.frontend import (
+    ConformerVGGFrontendV1,
+    ConformerVGGFrontendV1Config,
+    ConformerVGGFrontendV2Config,
+    ConformerVGGFrontendV2,
 )
 from i6_models.parts.conformer.mhsa import ConformerMHSAV1Config, ConformerMHSAV1
 from i6_models.parts.conformer.norm import LayerNormNC
@@ -84,3 +91,69 @@ def test_layer_norm_nc():
     torch_ln = get_output([10, 8, 23], nn.LayerNorm(23))
     custom_ln = get_output([10, 23, 8], LayerNormNC(23))
     torch.allclose(torch_ln, custom_ln.transpose(1, 2))
+
+
+def test_conformer_vgg_frontend_v1():
+    torch.manual_seed(42)
+
+    def get_output_shape(
+        batch,
+        time,
+        features,
+        channels_conv_1_2,
+        channels_conv_3_4,
+        pool_red_1,
+        pool_red_2,
+    ):
+        data_input = torch.randn(batch, time, features)
+
+        cfg = ConformerVGGFrontendV1Config(
+            features=features,
+            channels_conv_1_2=channels_conv_1_2,
+            channels_conv_3_4=channels_conv_3_4,
+            conv_kernel_size=(3, 3),
+            pool_1_kernel_size=(pool_red_1, 1),
+            pool_1_strides=(pool_red_1, 1),
+            pool_2_kernel_size=(pool_red_2, 1),
+            pool_2_strides=(pool_red_2, 1),
+            activation=nn.functional.relu,
+        )
+
+        output = ConformerVGGFrontendV1(cfg)(data_input)
+
+        return list(output.shape)
+
+    assert get_output_shape(10, 100, 50, 32, 64, 1, 1) == [10, 100, 64]
+    assert get_output_shape(10, 100, 50, 32, 64, 2, 1) == [10, 50, 64]
+    assert get_output_shape(10, 100, 50, 32, 64, 1, 2) == [10, 50, 64]
+    assert get_output_shape(10, 100, 50, 32, 64, 2, 2) == [10, 25, 64]
+
+
+def test_conformer_vgg_frontend_v2():
+    torch.manual_seed(42)
+
+    def get_output_shape(
+        batch,
+        time,
+        features,
+        channels,
+        pool_red,
+    ):
+        data_input = torch.randn(batch, time, features)
+
+        cfg = ConformerVGGFrontendV2Config(
+            features=features,
+            channels=channels,
+            conv_kernel_size=(3, 3),
+            pool_kernel_size=(pool_red, 1),
+            pool_strides=(pool_red, 1),
+            activation=nn.functional.relu,
+        )
+
+        output = ConformerVGGFrontendV2(cfg)(data_input)
+
+        return list(output.shape)
+
+    assert get_output_shape(10, 100, 40, 64, 1) == [10, 100, 64]
+    assert get_output_shape(10, 100, 40, 64, 2) == [10, 50, 64]
+    assert get_output_shape(10, 100, 40, 64, 3) == [10, 33, 64]
