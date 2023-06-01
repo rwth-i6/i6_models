@@ -29,7 +29,7 @@ def test_MergerV1():
         e_branchformer_merge_part = MergerV1(cfg)
         tensor_local = torch.randn(input_shape)
         tensor_global = torch.randn(input_shape)
-        y = e_branchformer_merge_part
+        y = e_branchformer_merge_part(tensor_local, tensor_global)
         return y.shape
 
     for input_shape, kernel_size, dropout in product([(100, 5, 20), (200, 30, 10)], [15, 31], [0.1, 0.3]):
