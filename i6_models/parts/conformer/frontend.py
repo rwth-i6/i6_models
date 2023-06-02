@@ -16,7 +16,7 @@ from torch import nn
 from i6_models.config import ModelConfiguration
 
 
-@dataclass()
+@dataclass
 class ConformerVGGFrontendV1Config(ModelConfiguration):
     """
     Attributes:
@@ -146,7 +146,7 @@ class ConformerVGGFrontendV1(nn.Module):
         return get_padding(input_size)
 
 
-@dataclass()
+@dataclass
 class ConformerVGGFrontendV2Config(ModelConfiguration):
     """
     Attributes:
