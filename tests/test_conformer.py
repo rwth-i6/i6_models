@@ -109,7 +109,7 @@ def test_conformer_vgg_frontend_v1():
 
         cfg = ConformerVGGFrontendV1Config(
             features=features,
-            channels_conv_1_2=channels_conv_1_2,
+            conv1_channels=channels_conv_1_2,
             channels_conv_3_4=channels_conv_3_4,
             conv_kernel_size=(3, 3),
             pool1_kernel_size=(pool_red_1, 1),
