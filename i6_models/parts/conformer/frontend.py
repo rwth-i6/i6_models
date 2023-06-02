@@ -20,7 +20,7 @@ from i6_models.config import ModelConfiguration
 class ConformerVGGFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        features: number of features for the initial conv layer
+        in_features: feature dimension of input
         conv1_channels: number of channels for first conv layers
         conv2_channels: number of channels for second conv layers
         conv3_channels: number of channels for third conv layers
@@ -33,7 +33,7 @@ class ConformerVGGFrontendV1Config(ModelConfiguration):
         activation: activation function applied after norm
     """
 
-    features: int
+    in_features: int
     conv1_channels: int
     conv2_channels: int
     conv3_channels: int
@@ -79,7 +79,7 @@ class ConformerVGGFrontendV1(nn.Module):
         pool2_padding = self._get_padding(model_cfg.pool2_kernel_size)
 
         self.conv1 = nn.Conv2d(
-            in_channels=model_cfg.features,
+            in_channels=model_cfg.in_features,
             out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,

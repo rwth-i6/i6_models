@@ -100,17 +100,21 @@ def test_conformer_vgg_frontend_v1():
         batch,
         time,
         features,
-        channels_conv_1_2,
-        channels_conv_3_4,
+        conv1_channels,
+        conv2_channels,
+        conv3_channels,
+        conv4_channels,
         pool_red_1,
         pool_red_2,
     ):
         data_input = torch.randn(batch, time, features)
 
         cfg = ConformerVGGFrontendV1Config(
-            features=features,
-            conv1_channels=channels_conv_1_2,
-            channels_conv_3_4=channels_conv_3_4,
+            in_features=features,
+            conv1_channels=conv1_channels,
+            conv2_channels=conv2_channels,
+            conv3_channels=conv3_channels,
+            conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
             pool1_kernel_size=(pool_red_1, 1),
             pool1_strides=(pool_red_1, 1),
@@ -123,10 +127,10 @@ def test_conformer_vgg_frontend_v1():
 
         return list(output.shape)
 
-    assert get_output_shape(10, 100, 50, 32, 64, 1, 1) == [10, 100, 64]
-    assert get_output_shape(10, 100, 50, 32, 64, 2, 1) == [10, 50, 64]
-    assert get_output_shape(10, 100, 50, 32, 64, 1, 2) == [10, 50, 64]
-    assert get_output_shape(10, 100, 50, 32, 64, 2, 2) == [10, 25, 64]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 1, 1) == [10, 100, 64]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 2, 1) == [10, 50, 64]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 1, 2) == [10, 50, 64]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 2, 2) == [10, 25, 64]
 
 
 def test_conformer_vgg_frontend_v2():
