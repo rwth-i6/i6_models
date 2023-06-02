@@ -74,9 +74,9 @@ class EbranchformerBlockV1(nn.Module):
 class EbranchformerEncoderV1Config(ModelConfiguration):
     """
     Attributes:
-        num_layers: Number of conformer layers in the conformer encoder
-        front_cfg: Configuration for ConformerFrontendV1
-        block_cfg: Configuration for ConformerBlockV1
+        num_layers: Number of e-branchformer layers in the e-branchformer encoder
+        front_cfg: Configuration for FrontendV1
+        block_cfg: Configuration for EbranchformerBlockV1
     """
 
     num_layers: int
@@ -88,9 +88,9 @@ class EbranchformerEncoderV1Config(ModelConfiguration):
 
 class EbranchformerrEncoderV1(nn.Module):
     """
-    Implementation of the convolution-augmented Transformer (short Conformer), as in the original publication.
-    The model consists of a frontend and a stack of N conformer blocks.
-    C.f. https://arxiv.org/pdf/2005.08100.pdf
+    Implementation of the Branchformer with Enhanced merging (short Conformer), as in the original publication.
+    The model consists of a frontend and a stack of N e-branchformer blocks.
+    C.f. https://arxiv.org/pdf/2210.00077.pdf
     """
 
     def __init__(self, cfg: EbranchformerEncoderV1Config):
