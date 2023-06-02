@@ -23,10 +23,10 @@ class ConformerVGGFrontendV1Config(ModelConfiguration):
         features: number of features for the initial conv layer
         channels_conv_1_2: number of channels for conv layers
         conv_kernel_size: kernel size of conv layers
-        pool_1_kernel_size: kernel size of first pooling layer
-        pool_1_strides: strides of first pooling layer
-        pool_2_kernel_size: kernel size of second pooling layer
-        pool_2_strides: strides of second pooling layer
+        pool1_kernel_size: kernel size of first pooling layer
+        pool1_strides: strides of first pooling layer
+        pool2_kernel_size: kernel size of second pooling layer
+        pool2_strides: strides of second pooling layer
         activation: activation function applied after norm
     """
 
@@ -34,19 +34,19 @@ class ConformerVGGFrontendV1Config(ModelConfiguration):
     channels_conv_1_2: int
     channels_conv_3_4: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
-    pool_1_kernel_size: Union[int, Tuple[int, ...]]
-    pool_1_strides: Optional[Union[int, Tuple[int, ...]]]
-    pool_2_kernel_size: Union[int, Tuple[int, ...]]
-    pool_2_strides: Optional[Union[int, Tuple[int, ...]]]
+    pool1_kernel_size: Union[int, Tuple[int, ...]]
+    pool1_strides: Optional[Union[int, Tuple[int, ...]]]
+    pool2_kernel_size: Union[int, Tuple[int, ...]]
+    pool2_strides: Optional[Union[int, Tuple[int, ...]]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
         if isinstance(self.conv_kernel_size, int):
             assert self.conv_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
-        if isinstance(self.pool_1_kernel_size, int):
-            assert self.pool_1_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
-        if isinstance(self.pool_2_kernel_size, int):
-            assert self.pool_2_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
+        if isinstance(self.pool1_kernel_size, int):
+            assert self.pool1_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
+        if isinstance(self.pool2_kernel_size, int):
+            assert self.pool2_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
 
     def __post__init__(self):
         super().__post_init__()
@@ -70,8 +70,8 @@ class ConformerVGGFrontendV1(nn.Module):
         model_cfg.check_valid()
 
         conv_padding = self._get_padding(model_cfg.conv_kernel_size)
-        pool_1_padding = self._get_padding(model_cfg.pool_1_kernel_size)
-        pool_2_padding = self._get_padding(model_cfg.pool_2_kernel_size)
+        pool1_padding = self._get_padding(model_cfg.pool1_kernel_size)
+        pool2_padding = self._get_padding(model_cfg.pool2_kernel_size)
 
         self.conv1 = nn.Conv2d(
             in_channels=model_cfg.features,
@@ -85,10 +85,10 @@ class ConformerVGGFrontendV1(nn.Module):
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
-        self.pooling1 = nn.MaxPool2d(
-            kernel_size=model_cfg.pool_1_kernel_size,
-            stride=model_cfg.pool_1_strides,
-            padding=pool_1_padding,
+        self.pool1 = nn.MaxPool2d(
+            kernel_size=model_cfg.pool1_kernel_size,
+            stride=model_cfg.pool1_strides,
+            padding=pool1_padding,
         )
         self.conv3 = nn.Conv2d(
             in_channels=model_cfg.channels_conv_1_2,
@@ -102,10 +102,10 @@ class ConformerVGGFrontendV1(nn.Module):
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
-        self.pooling2 = nn.MaxPool2d(
-            kernel_size=model_cfg.pool_2_kernel_size,
-            stride=model_cfg.pool_2_strides,
-            padding=pool_2_padding,
+        self.pool2 = nn.MaxPool2d(
+            kernel_size=model_cfg.pool2_kernel_size,
+            stride=model_cfg.pool2_strides,
+            padding=pool2_padding,
         )
         self.activation = model_cfg.activation
 
@@ -126,7 +126,7 @@ class ConformerVGGFrontendV1(nn.Module):
         tensor = torch.squeeze(tensor)  # [B,T,F]
 
         tensor = self.activation(tensor)
-        tensor = self.pooling1(tensor)
+        tensor = self.pool1(tensor)
 
         # conv 2d layers expect shape [B,F,T,C] so we have to transpose here
         tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
@@ -137,7 +137,7 @@ class ConformerVGGFrontendV1(nn.Module):
         tensor = torch.squeeze(tensor)  # [B,T,F]
 
         tensor = self.activation(tensor)
-        tensor = self.pooling2(tensor)
+        tensor = self.pool2(tensor)
 
         return tensor
 
@@ -206,7 +206,7 @@ class ConformerVGGFrontendV2(nn.Module):
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
-        self.pooling = nn.MaxPool2d(
+        self.pool = nn.MaxPool2d(
             kernel_size=model_cfg.pool_kernel_size,
             stride=model_cfg.pool_strides,
             padding=pool_padding,
@@ -240,7 +240,7 @@ class ConformerVGGFrontendV2(nn.Module):
         tensor = torch.squeeze(tensor)  # [B,T,F]
 
         tensor = self.activation(tensor)
-        tensor = self.pooling(tensor)
+        tensor = self.pool(tensor)
 
         tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
         tensor = tensor[:, :, :, None]  # [B,F,T,C]

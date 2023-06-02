@@ -112,10 +112,10 @@ def test_conformer_vgg_frontend_v1():
             channels_conv_1_2=channels_conv_1_2,
             channels_conv_3_4=channels_conv_3_4,
             conv_kernel_size=(3, 3),
-            pool_1_kernel_size=(pool_red_1, 1),
-            pool_1_strides=(pool_red_1, 1),
-            pool_2_kernel_size=(pool_red_2, 1),
-            pool_2_strides=(pool_red_2, 1),
+            pool1_kernel_size=(pool_red_1, 1),
+            pool1_strides=(pool_red_1, 1),
+            pool2_kernel_size=(pool_red_2, 1),
+            pool2_strides=(pool_red_2, 1),
             activation=nn.functional.relu,
         )
 
