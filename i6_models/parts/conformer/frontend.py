@@ -146,10 +146,6 @@ class ConformerVGGFrontendV1(nn.Module):
 
         return tensor
 
-    @staticmethod
-    def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
-        return get_padding(input_size)
-
 
 @dataclass
 class ConformerVGGFrontendV2Config(ModelConfiguration):
@@ -271,12 +267,8 @@ class ConformerVGGFrontendV2(nn.Module):
 
         return tensor
 
-    @staticmethod
-    def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
-        return get_padding(input_size)
 
-
-def get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
+def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
     if isinstance(input_size, int):
         out = (input_size - 1) // 2
     elif isinstance(input_size, tuple):
