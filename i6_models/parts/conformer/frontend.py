@@ -30,7 +30,7 @@ class ConformerVGGFrontendV1Config(ModelConfiguration):
         pool1_strides: strides of first pooling layer
         pool2_kernel_size: kernel size of second pooling layer
         pool2_strides: strides of second pooling layer
-        activation: activation function applied after norm
+        activation: activation function at the end
     """
 
     in_features: int
@@ -155,7 +155,7 @@ class ConformerVGGFrontendV2Config(ModelConfiguration):
         conv_kernel_size: kernel size of conv layers
         pool_kernel_size: kernel size of first pooling layer
         pool_strides: strides of first pooling layer
-        activation: activation function applied after norm
+        activation: activation function at the end
     """
 
     features: int
