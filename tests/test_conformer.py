@@ -139,14 +139,20 @@ def test_conformer_vgg_frontend_v2():
         batch,
         time,
         features,
-        channels,
+        conv1_channels,
+        conv2_channels,
+        conv3_channels,
+        conv4_channels,
         pool_red,
     ):
         data_input = torch.randn(batch, time, features)
 
         cfg = VGG4LayerPoolFrontendV1Config(
-            features=features,
-            channels=channels,
+            in_features=features,
+            conv1_channels=conv1_channels,
+            conv2_channels=conv2_channels,
+            conv3_channels=conv3_channels,
+            conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
             pool_kernel_size=(pool_red, 1),
             pool_stride=(pool_red, 1),
@@ -157,6 +163,6 @@ def test_conformer_vgg_frontend_v2():
 
         return list(output.shape)
 
-    assert get_output_shape(10, 100, 40, 64, 1) == [10, 100, 64]
-    assert get_output_shape(10, 100, 40, 64, 2) == [10, 50, 64]
-    assert get_output_shape(10, 100, 40, 64, 3) == [10, 33, 64]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 1) == [10, 100, 64]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 2) == [10, 50, 64]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 3) == [10, 33, 64]

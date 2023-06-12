@@ -153,15 +153,22 @@ class VGG4LayerActFrontendV1(nn.Module):
 class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        channels: number of channels for conv layers
+        in_features: feature dimension of input
+        conv1_channels: number of channels for first conv layers
+        conv2_channels: number of channels for second conv layers
+        conv3_channels: number of channels for third conv layers
+        conv4_channels: number of channels for fourth dconv layers
         conv_kernel_size: kernel size of conv layers
         pool_kernel_size: kernel size of first pooling layer
         pool_stride: stride of first pooling layer
         activation: activation function at the end
     """
 
-    features: int
-    channels: int
+    in_features: int
+    conv1_channels: int
+    conv2_channels: int
+    conv3_channels: int
+    conv4_channels: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
     pool_kernel_size: Union[int, Tuple[int, ...]]
     pool_stride : Optional[Union[int, Tuple[int, ...]]]
@@ -200,14 +207,14 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         pool_padding = _get_padding(model_cfg.pool_kernel_size)
 
         self.conv1 = nn.Conv2d(
-            in_channels=model_cfg.features,
-            out_channels=model_cfg.channels,
+            in_channels=model_cfg.in_features,
+            out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
         self.conv2 = nn.Conv2d(
-            in_channels=model_cfg.channels,
-            out_channels=model_cfg.channels,
+            in_channels=model_cfg.conv1_channels,
+            out_channels=model_cfg.conv2_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
@@ -217,14 +224,14 @@ class VGG4LayerPoolFrontendV1(nn.Module):
             padding=pool_padding,
         )
         self.conv3 = nn.Conv2d(
-            in_channels=model_cfg.channels,
-            out_channels=model_cfg.channels,
+            in_channels=model_cfg.conv2_channels,
+            out_channels=model_cfg.conv3_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
         self.conv4 = nn.Conv2d(
-            in_channels=model_cfg.channels,
-            out_channels=model_cfg.channels,
+            in_channels=model_cfg.conv3_channels,
+            out_channels=model_cfg.conv4_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
