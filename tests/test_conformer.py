@@ -10,10 +10,10 @@ from i6_models.parts.conformer.feedforward import (
     ConformerPositionwiseFeedForwardV1Config,
 )
 from i6_models.parts.conformer.frontend import (
-    ConformerVGGFrontendV1,
-    ConformerVGGFrontendV1Config,
-    ConformerVGGFrontendV2Config,
-    ConformerVGGFrontendV2,
+    VGG4LayerActFrontendV1,
+    VGG4LayerActFrontendV1Config,
+    VGG4LayerPoolFrontendV1,
+    VGG4LayerPoolFrontendV1Config,
 )
 from i6_models.parts.conformer.mhsa import ConformerMHSAV1Config, ConformerMHSAV1
 from i6_models.parts.conformer.norm import LayerNormNC
@@ -108,7 +108,7 @@ def test_conformer_vgg_frontend_v1():
     ):
         data_input = torch.randn(batch, time, features)
 
-        cfg = ConformerVGGFrontendV1Config(
+        cfg = VGG4LayerActFrontendV1Config(
             in_features=features,
             conv1_channels=conv1_channels,
             conv2_channels=conv2_channels,
@@ -122,7 +122,7 @@ def test_conformer_vgg_frontend_v1():
             activation=nn.functional.relu,
         )
 
-        output = ConformerVGGFrontendV1(cfg)(data_input)
+        output = VGG4LayerActFrontendV1(cfg)(data_input)
 
         return list(output.shape)
 
@@ -144,7 +144,7 @@ def test_conformer_vgg_frontend_v2():
     ):
         data_input = torch.randn(batch, time, features)
 
-        cfg = ConformerVGGFrontendV2Config(
+        cfg = VGG4LayerPoolFrontendV1Config(
             features=features,
             channels=channels,
             conv_kernel_size=(3, 3),
@@ -153,7 +153,7 @@ def test_conformer_vgg_frontend_v2():
             activation=nn.functional.relu,
         )
 
-        output = ConformerVGGFrontendV2(cfg)(data_input)
+        output = VGG4LayerPoolFrontendV1(cfg)(data_input)
 
         return list(output.shape)
 

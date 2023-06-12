@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 __all__ = [
-    "ConformerVGGFrontendV1Config",
-    "ConformerVGGFrontendV1",
-    "ConformerVGGFrontendV2Config",
-    "ConformerVGGFrontendV2",
+    "VGG4LayerActFrontendV1",
+    "VGG4LayerActFrontendV1Config",
+    "VGG4LayerPoolFrontendV1",
+    "VGG4LayerPoolFrontendV1Config",
 ]
 
 from dataclasses import dataclass
@@ -17,7 +17,7 @@ from i6_models.config import ModelConfiguration
 
 
 @dataclass
-class ConformerVGGFrontendV1Config(ModelConfiguration):
+class VGG4LayerActFrontendV1Config(ModelConfiguration):
     """
     Attributes:
         in_features: feature dimension of input
@@ -58,7 +58,7 @@ class ConformerVGGFrontendV1Config(ModelConfiguration):
         self.check_valid()
 
 
-class ConformerVGGFrontendV1(nn.Module):
+class VGG4LayerActFrontendV1(nn.Module):
     """
     Convolutional Front-End
 
@@ -66,7 +66,7 @@ class ConformerVGGFrontendV1(nn.Module):
     https://github.com/pytorch/pytorch/issues/68880
     """
 
-    def __init__(self, model_cfg: ConformerVGGFrontendV1Config):
+    def __init__(self, model_cfg: VGG4LayerActFrontendV1Config):
         """
         :param model_cfg: model configuration for this module
         """
@@ -148,7 +148,7 @@ class ConformerVGGFrontendV1(nn.Module):
 
 
 @dataclass
-class ConformerVGGFrontendV2Config(ModelConfiguration):
+class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     """
     Attributes:
         channels: number of channels for conv layers
@@ -176,7 +176,7 @@ class ConformerVGGFrontendV2Config(ModelConfiguration):
         self.check_valid()
 
 
-class ConformerVGGFrontendV2(nn.Module):
+class VGG4LayerPoolFrontendV1(nn.Module):
     """
     Convolutional Front-End
 
@@ -184,7 +184,7 @@ class ConformerVGGFrontendV2(nn.Module):
     https://github.com/pytorch/pytorch/issues/68880
     """
 
-    def __init__(self, model_cfg: ConformerVGGFrontendV2Config):
+    def __init__(self, model_cfg: VGG4LayerPoolFrontendV1Config):
         """
         :param model_cfg: model configuration for this module
         """
