@@ -27,9 +27,9 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         conv4_channels: number of channels for fourth dconv layers
         conv_kernel_size: kernel size of conv layers
         pool1_kernel_size: kernel size of first pooling layer
-        pool1_stride: strides of first pooling layer
+        pool1_stride: stride of first pooling layer
         pool2_kernel_size: kernel size of second pooling layer
-        pool2_stride: strides of second pooling layer
+        pool2_stride: stride of second pooling layer
         activation: activation function at the end
     """
 
@@ -156,7 +156,7 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
         channels: number of channels for conv layers
         conv_kernel_size: kernel size of conv layers
         pool_kernel_size: kernel size of first pooling layer
-        pool_stride: strides of first pooling layer
+        pool_stride: stride of first pooling layer
         activation: activation function at the end
     """
 
