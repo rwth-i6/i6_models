@@ -27,9 +27,9 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         conv4_channels: number of channels for fourth dconv layers
         conv_kernel_size: kernel size of conv layers
         pool1_kernel_size: kernel size of first pooling layer
-        pool1_strides: strides of first pooling layer
+        pool1_stride: strides of first pooling layer
         pool2_kernel_size: kernel size of second pooling layer
-        pool2_strides: strides of second pooling layer
+        pool2_stride: strides of second pooling layer
         activation: activation function at the end
     """
 
@@ -40,9 +40,9 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv4_channels: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
     pool1_kernel_size: Union[int, Tuple[int, ...]]
-    pool1_strides: Optional[Union[int, Tuple[int, ...]]]
+    pool1_stride: Optional[Union[int, Tuple[int, ...]]]
     pool2_kernel_size: Union[int, Tuple[int, ...]]
-    pool2_strides: Optional[Union[int, Tuple[int, ...]]]
+    pool2_stride: Optional[Union[int, Tuple[int, ...]]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -94,7 +94,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         )
         self.pool1 = nn.MaxPool2d(
             kernel_size=model_cfg.pool1_kernel_size,
-            stride=model_cfg.pool1_strides,
+            stride=model_cfg.pool1_stride,
             padding=pool1_padding,
         )
         self.conv3 = nn.Conv2d(
@@ -111,7 +111,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         )
         self.pool2 = nn.MaxPool2d(
             kernel_size=model_cfg.pool2_kernel_size,
-            stride=model_cfg.pool2_strides,
+            stride=model_cfg.pool2_stride,
             padding=pool2_padding,
         )
         self.activation = model_cfg.activation
@@ -156,7 +156,7 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
         channels: number of channels for conv layers
         conv_kernel_size: kernel size of conv layers
         pool_kernel_size: kernel size of first pooling layer
-        pool_strides: strides of first pooling layer
+        pool_stride: strides of first pooling layer
         activation: activation function at the end
     """
 
@@ -164,7 +164,7 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     channels: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
     pool_kernel_size: Union[int, Tuple[int, ...]]
-    pool_strides: Optional[Union[int, Tuple[int, ...]]]
+    pool_stride : Optional[Union[int, Tuple[int, ...]]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -213,7 +213,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         )
         self.pool = nn.MaxPool2d(
             kernel_size=model_cfg.pool_kernel_size,
-            stride=model_cfg.pool_strides,
+            stride=model_cfg.pool_stride,
             padding=pool_padding,
         )
         self.conv3 = nn.Conv2d(

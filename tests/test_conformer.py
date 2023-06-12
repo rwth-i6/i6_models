@@ -116,9 +116,9 @@ def test_conformer_vgg_frontend_v1():
             conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
             pool1_kernel_size=(pool1_red, 1),
-            pool1_strides=(pool1_red, 1),
+            pool1_stride=(pool1_red, 1),
             pool2_kernel_size=(pool2_red, 1),
-            pool2_strides=(pool2_red, 1),
+            pool2_stride=(pool2_red, 1),
             activation=nn.functional.relu,
         )
 
@@ -149,7 +149,7 @@ def test_conformer_vgg_frontend_v2():
             channels=channels,
             conv_kernel_size=(3, 3),
             pool_kernel_size=(pool_red, 1),
-            pool_strides=(pool_red, 1),
+            pool_stride=(pool_red, 1),
             activation=nn.functional.relu,
         )
 
