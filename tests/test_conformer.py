@@ -9,7 +9,7 @@ from i6_models.parts.conformer.feedforward import (
     ConformerPositionwiseFeedForwardV1,
     ConformerPositionwiseFeedForwardV1Config,
 )
-from i6_models.parts.conformer.frontend import (
+from i6_models.parts.frontend.vgg import (
     VGG4LayerActFrontendV1,
     VGG4LayerActFrontendV1Config,
     VGG4LayerPoolFrontendV1,
