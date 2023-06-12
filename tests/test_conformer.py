@@ -103,8 +103,8 @@ def test_conformer_vgg_frontend_v1():
         conv2_channels,
         conv3_channels,
         conv4_channels,
-        pool_red_1,
-        pool_red_2,
+        pool1_red,
+        pool2_red,
     ):
         data_input = torch.randn(batch, time, features)
 
@@ -115,10 +115,10 @@ def test_conformer_vgg_frontend_v1():
             conv3_channels=conv3_channels,
             conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
-            pool1_kernel_size=(pool_red_1, 1),
-            pool1_strides=(pool_red_1, 1),
-            pool2_kernel_size=(pool_red_2, 1),
-            pool2_strides=(pool_red_2, 1),
+            pool1_kernel_size=(pool1_red, 1),
+            pool1_strides=(pool1_red, 1),
+            pool2_kernel_size=(pool2_red, 1),
+            pool2_strides=(pool2_red, 1),
             activation=nn.functional.relu,
         )
 
