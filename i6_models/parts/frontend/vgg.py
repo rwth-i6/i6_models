@@ -74,9 +74,9 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         model_cfg.check_valid()
 
-        conv_padding = self._get_padding(model_cfg.conv_kernel_size)
-        pool1_padding = self._get_padding(model_cfg.pool1_kernel_size)
-        pool2_padding = self._get_padding(model_cfg.pool2_kernel_size)
+        conv_padding = _get_padding(model_cfg.conv_kernel_size)
+        pool1_padding = _get_padding(model_cfg.pool1_kernel_size)
+        pool2_padding = _get_padding(model_cfg.pool2_kernel_size)
 
         self.conv1 = nn.Conv2d(
             in_channels=model_cfg.in_features,
@@ -192,8 +192,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         model_cfg.check_valid()
 
-        conv_padding = self._get_padding(model_cfg.conv_kernel_size)
-        pool_padding = self._get_padding(model_cfg.pool_kernel_size)
+        conv_padding = _get_padding(model_cfg.conv_kernel_size)
+        pool_padding = _get_padding(model_cfg.pool_kernel_size)
 
         self.conv1 = nn.Conv2d(
             in_channels=model_cfg.features,
