@@ -121,7 +121,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         T might be reduced to T' depending on ...
 
         :param tensor: input tensor of shape [B,T,F]
-        :return: torch.Tensor of shape [B,T',F]
+        :return: torch.Tensor of shape [B,T',F']
         """
         # conv 2d layers expect shape [B,F,T,C] so we have to transpose here
         tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
@@ -129,22 +129,18 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = tensor[:, None, :, :]  # [B,C=1,F,T]
         tensor = self.conv1(tensor)
         tensor = self.conv2(tensor)
-        tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T,F,C]
-        tensor = torch.squeeze(tensor)  # [B,T,F]
 
         tensor = self.activation(tensor)
-        tensor = self.pool1(tensor)
+        tensor = self.pool1(tensor)  # [B,C,F,T']
 
-        # conv 2d layers expect shape [B,F,T,C] so we have to transpose here
-        tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
-        tensor = tensor[:, :, :, None]  # [B,F,T,C]
         tensor = self.conv3(tensor)
         tensor = self.conv4(tensor)
-        tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T,F,C]
-        tensor = torch.squeeze(tensor)  # [B,T,F]
 
         tensor = self.activation(tensor)
-        tensor = self.pool2(tensor)
+        tensor = self.pool2(tensor)  # [B,C,F,T"]
+
+        tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T,F,C]
+        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T,F*C]
 
         return tensor
 
