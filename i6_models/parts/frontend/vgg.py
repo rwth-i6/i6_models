@@ -275,5 +275,5 @@ def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
         out = min(input_size) // 2
     else:
         raise TypeError(f"unexpected size type {type(input_size)}")
-        
+
     return out
