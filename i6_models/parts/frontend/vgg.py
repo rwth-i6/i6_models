@@ -124,7 +124,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         # conv 2d layers expect shape [B,F,T,C] so we have to transpose here
         tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
         # and add a dim
-        tensor = tensor[:, :, :, None]  # [B,F,T,C]
+        tensor = tensor[:, None, :, :]  # [B,C=1,F,T]
         tensor = self.conv1(tensor)
         tensor = self.conv2(tensor)
         tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T,F,C]
