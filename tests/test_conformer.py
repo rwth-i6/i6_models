@@ -163,8 +163,10 @@ def test_conformer_vgg_frontend_v2():
             conv3_channels=conv3_channels,
             conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
-            pool_kernel_size=(pool_red, 1),
-            pool_stride=(pool_red, 1),
+            conv_padding=None,
+            pool_kernel_size=pool_red,
+            pool_stride=pool_red,
+            pool_padding=None,
             activation=nn.functional.relu,
         )
 
@@ -172,6 +174,8 @@ def test_conformer_vgg_frontend_v2():
 
         return list(output.shape)
 
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 1) == [10, 100, 64]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 2) == [10, 50, 64]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, 3) == [10, 33, 64]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (1, 1)) == [10, 100, 2560]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (2, 1)) == [10, 50, 2560]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 1)) == [10, 33, 2560]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 2)) == [10, 33, 1280]
+    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 4)) == [10, 33, 640]
