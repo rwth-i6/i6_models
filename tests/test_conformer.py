@@ -109,7 +109,6 @@ def test_conformer_vgg_frontend_v1():
         data_input = torch.randn(batch, time, features)
 
         cfg = VGG4LayerActFrontendV1Config(
-            in_features=features,
             conv1_channels=conv1_channels,
             conv2_channels=conv2_channels,
             conv3_channels=conv3_channels,
@@ -148,7 +147,6 @@ def test_conformer_vgg_frontend_v2():
         data_input = torch.randn(batch, time, features)
 
         cfg = VGG4LayerPoolFrontendV1Config(
-            in_features=features,
             conv1_channels=conv1_channels,
             conv2_channels=conv2_channels,
             conv3_channels=conv3_channels,

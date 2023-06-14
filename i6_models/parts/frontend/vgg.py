@@ -20,7 +20,6 @@ from i6_models.config import ModelConfiguration
 class VGG4LayerActFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        in_features: feature dimension of input
         conv1_channels: number of channels for first conv layers
         conv2_channels: number of channels for second conv layers
         conv3_channels: number of channels for third conv layers
@@ -33,7 +32,6 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         activation: activation function at the end
     """
 
-    in_features: int
     conv1_channels: int
     conv2_channels: int
     conv3_channels: int
@@ -81,7 +79,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         pool2_padding = _get_padding(model_cfg.pool2_kernel_size)
 
         self.conv1 = nn.Conv2d(
-            in_channels=model_cfg.in_features,
+            in_channels=1,
             out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
@@ -123,25 +121,23 @@ class VGG4LayerActFrontendV1(nn.Module):
         :param tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T",F']
         """
-        # conv 2d layers expect shape [B,F,T,C] so we have to transpose here
-        tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
         # and add a dim
-        tensor = tensor[:, None, :, :]  # [B,C=1,F,T]
+        tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
         tensor = self.conv1(tensor)
         tensor = self.conv2(tensor)
 
         tensor = self.activation(tensor)
-        tensor = self.pool1(tensor)  # [B,C,F,T']
+        tensor = self.pool1(tensor)  # [B,C,T',F]
 
         tensor = self.conv3(tensor)
         tensor = self.conv4(tensor)
 
         tensor = self.activation(tensor)
-        tensor = self.pool2(tensor)  # [B,C,F,T"]
+        tensor = self.pool2(tensor)  # [B,C,T",F]
 
-        tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T",F,C]
-        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",F*C]
+        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
+        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
 
         return tensor
 
@@ -150,7 +146,6 @@ class VGG4LayerActFrontendV1(nn.Module):
 class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        in_features: feature dimension of input
         conv1_channels: number of channels for first conv layers
         conv2_channels: number of channels for second conv layers
         conv3_channels: number of channels for third conv layers
@@ -161,14 +156,13 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
         activation: activation function at the end
     """
 
-    in_features: int
     conv1_channels: int
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
     pool_kernel_size: Union[int, Tuple[int, ...]]
-    pool_stride : Optional[Union[int, Tuple[int, ...]]]
+    pool_stride: Optional[Union[int, Tuple[int, ...]]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -204,7 +198,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         pool_padding = _get_padding(model_cfg.pool_kernel_size)
 
         self.conv1 = nn.Conv2d(
-            in_channels=model_cfg.in_features,
+            in_channels=1,
             out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
@@ -241,13 +235,11 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         :param tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T',F']
         """
-        # conv layers expect shape [B,F,T] so we have to transpose here
-        tensor = torch.transpose(tensor, 1, 2)  # [B,F,T]
-        tensor = tensor[:, None, :, :]  # [B,C=1,F,T]
+        tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
         tensor = self.conv1(tensor)
         tensor = self.activation(tensor)
-        tensor = self.pool(tensor)  # [B,C,F,T']
+        tensor = self.pool(tensor)  # [B,C,T',F]
 
         tensor = self.conv2(tensor)
         tensor = self.activation(tensor)
@@ -257,8 +249,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = self.conv4(tensor)
 
-        tensor = torch.transpose(tensor, 1, 2)  # transpose back to [B,T',F,C]
-        tensor = torch.flatten(tensor, )  # [B,T',F*C]
+        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T',C,F]
+        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T',C*F]
 
         return tensor
 
