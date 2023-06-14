@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setup-tools>=61.0"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "rwth_i6_hlt_pytorch_models"
