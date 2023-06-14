@@ -114,10 +114,13 @@ def test_conformer_vgg_frontend_v1():
             conv3_channels=conv3_channels,
             conv4_channels=conv4_channels,
             conv_kernel_size=(3, 3),
-            pool1_kernel_size=(pool1_red, 1),
-            pool1_stride=(pool1_red, 1),
-            pool2_kernel_size=(pool2_red, 1),
-            pool2_stride=(pool2_red, 1),
+            conv_padding=None,
+            pool1_kernel_size=pool1_red,
+            pool1_stride=pool1_red,
+            pool1_padding=None,
+            pool2_kernel_size=pool2_red,
+            pool2_stride=pool2_red,
+            pool2_padding=None,
             activation=nn.functional.relu,
         )
 
@@ -125,10 +128,18 @@ def test_conformer_vgg_frontend_v1():
 
         return list(output.shape)
 
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 1, 1) == [10, 100, 64]
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 2, 1) == [10, 50, 64]
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 1, 2) == [10, 50, 64]
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, 2, 2) == [10, 25, 64]
+    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (1, 1), (1, 1)) == [10, 100, 50]
+    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (2, 1), (1, 1)) == [10, 50, 50]
+    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (1, 1), (2, 1)) == [10, 50, 50]
+    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (2, 1), (2, 1)) == [10, 25, 50]
+    assert get_output_shape(10, 100, 50, 2, 2, 2, 2, (1, 1), (1, 1)) == [10, 100, 100]
+    assert get_output_shape(10, 100, 50, 3, 3, 3, 3, (1, 1), (1, 1)) == [10, 100, 150]
+    assert get_output_shape(10, 100, 50, 4, 4, 4, 4, (1, 1), (1, 1)) == [10, 100, 200]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, (1, 1), (1, 1)) == [10, 100, 3200]
+    assert get_output_shape(10, 100, 60, 4, 4, 4, 4, (1, 2), (1, 2)) == [10, 100, 60]
+    assert get_output_shape(10, 100, 50, 3, 3, 3, 3, (2, 3), (1, 1)) == [10, 50, 48]
+    assert get_output_shape(10, 100, 70, 4, 4, 4, 4, (1, 2), (1, 2)) == [10, 100, 68]
+    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, (4, 3), (1, 3)) == [10, 25, 320]
 
 
 def test_conformer_vgg_frontend_v2():

@@ -25,10 +25,13 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         conv3_channels: number of channels for third conv layers
         conv4_channels: number of channels for fourth dconv layers
         conv_kernel_size: kernel size of conv layers
+        conv_padding: padding for the convolution
         pool1_kernel_size: kernel size of first pooling layer
         pool1_stride: stride of first pooling layer
+        pool1_padding: padding for first pooling layer
         pool2_kernel_size: kernel size of second pooling layer
         pool2_stride: stride of second pooling layer
+        pool2_padding: padding for second pooling layer
         activation: activation function at the end
     """
 
@@ -37,10 +40,13 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv3_channels: int
     conv4_channels: int
     conv_kernel_size: Union[int, Tuple[int, ...]]
+    conv_padding: Optional[Union[int, Tuple[int, ...]]]
     pool1_kernel_size: Union[int, Tuple[int, ...]]
     pool1_stride: Optional[Union[int, Tuple[int, ...]]]
+    pool1_padding: Optional[Union[int, Tuple[int, ...]]]
     pool2_kernel_size: Union[int, Tuple[int, ...]]
     pool2_stride: Optional[Union[int, Tuple[int, ...]]]
+    pool2_padding: Optional[Union[int, Tuple[int, ...]]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -74,9 +80,11 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         model_cfg.check_valid()
 
-        conv_padding = _get_padding(model_cfg.conv_kernel_size)
-        pool1_padding = _get_padding(model_cfg.pool1_kernel_size)
-        pool2_padding = _get_padding(model_cfg.pool2_kernel_size)
+        conv_padding = (
+            model_cfg.conv_padding if model_cfg.conv_padding is not None else _get_padding(model_cfg.conv_kernel_size)
+        )
+        pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
+        pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
 
         self.conv1 = nn.Conv2d(
             in_channels=1,
@@ -194,8 +202,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         model_cfg.check_valid()
 
-        conv_padding = _get_padding(model_cfg.conv_kernel_size)
-        pool_padding = _get_padding(model_cfg.pool_kernel_size)
+        conv_padding = 0  # _get_padding(model_cfg.conv_kernel_size)
+        pool_padding = 0  # _get_padding(model_cfg.pool_kernel_size)
 
         self.conv1 = nn.Conv2d(
             in_channels=1,
@@ -255,12 +263,15 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         return tensor
 
 
-def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> int:
+def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
+    """
+    get padding for operations in order to not reduce the
+    :param input_size:
+    :return:
+    """
     if isinstance(input_size, int):
-        out = (input_size - 1) // 2
+        return (input_size - 1) // 2
     elif isinstance(input_size, tuple):
-        out = min(input_size) // 2
+        return tuple((s - 1) // 2 for s in input_size)
     else:
         raise TypeError(f"unexpected size type {type(input_size)}")
-
-    return out
