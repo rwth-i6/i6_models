@@ -1,3 +1,33 @@
+[build-system]
+requires = ["setup-tools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "rwth_i6_hlt_pytorch_models"
+version = "0.0.1"
+authors = [
+{ name="Christopy Lüscher", email="luescher@cs.rwth-aachen.de" },
+{ name="Nick Rossenbach", email="rossenbach@cs.rwth-aachen.de" },
+{ name="Benedikt Hilmes", email="hilmes@cs.rwth-aachen.de" },
+{ name="Jingjing Xu", email="jxu@cs.rwth-aachen.de" },
+{ name="Mohammad Zeineldeen", email="zeineldeen@cs.rwth-aachen.de" },
+{ name="Albert Zeyer", email="zeyer@cs.rwth-aachen.de" },
+{ name="Peter Vieting", email="vieting@cs.rwth-aachen.de" },
+{ name="Simon Berger", email="berger@cs.rwth-aachen.de" },
+{ name="Eugen Beck", email="ebeck@apptek.com" },
+{ name="Ping Zheng", email="pzheng@apptek.com" },
+{ name="Wilfried Michel", email="wmichel@apptek.com" },
+]
+description = "A collection of PyTorch NN models and parts. TO be used with the RETURNN framework."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+"Programming Language :: Python :: 3",
+"License :: Mozilla Public License 2.0",
+"Operating System :: OS Independent",
+]
+[project.urls]
+"Homepage" = "https://github.com/rwth-i6/i6_models"
+"Bug Tracker" = "https://github.com/rwth-i6/i6_models/issues"
 [tool.black]
 line-length = 120
 target-version = ["py38"]
