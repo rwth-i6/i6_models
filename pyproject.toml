@@ -17,7 +17,7 @@ authors = [
 { name="Ping Zheng", email="pzheng@apptek.com" },
 { name="Wilfried Michel", email="wmichel@apptek.com" },
 ]
-description = "A collection of PyTorch NN models and parts. TO be used with the RETURNN framework."
+description = "A collection of PyTorch NN models and parts."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
