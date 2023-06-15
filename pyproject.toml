@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 name = "rwth_i6_hlt_pytorch_models"
 version = "0.0.1"
 authors = [
-{ name="Christopy Lüscher", email="luescher@cs.rwth-aachen.de" },
+{ name="Christoph Lüscher", email="luescher@cs.rwth-aachen.de" },
 { name="Nick Rossenbach", email="rossenbach@cs.rwth-aachen.de" },
 { name="Benedikt Hilmes", email="hilmes@cs.rwth-aachen.de" },
 { name="Jingjing Xu", email="jxu@cs.rwth-aachen.de" },
