@@ -14,7 +14,7 @@ authors = [
 { name="Peter Vieting", email="vieting@cs.rwth-aachen.de" },
 { name="Simon Berger", email="sberger@cs.rwth-aachen.de" },
 { name="Eugen Beck", email="ebeck@apptek.com" },
-{ name="Ping Zheng", email="pzheng@apptek.com" },
+{ name="Ping Zheng", email="p.zheng@apptek.com" },
 { name="Wilfried Michel", email="wmichel@apptek.com" },
 ]
 description = "A collection of PyTorch NN models and parts."
