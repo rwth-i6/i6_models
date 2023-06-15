@@ -2,7 +2,7 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 [project]
-name = "rwth_i6_hlt_pytorch_models"
+name = "i6_models"
 version = "0.0.1"
 authors = [
 { name="Christoph Lüscher", email="luescher@cs.rwth-aachen.de" },
