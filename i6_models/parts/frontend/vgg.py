@@ -66,6 +66,10 @@ class VGG4LayerActFrontendV1(nn.Module):
     """
     Convolutional Front-End
 
+    The frond-end utilizes convolutional and pooling layers, as well as activation functions
+    to transform a feature vector, typically Log-Mel or Gammatone for audio, into an intermediate
+    representation.
+
     Structure of the front-end:
       - Conv
       - Conv
@@ -199,6 +203,10 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
 class VGG4LayerPoolFrontendV1(nn.Module):
     """
     Convolutional Front-End
+
+    The frond-end utilizes convolutional and pooling layers, as well as activation functions
+    to transform a feature vector, typically Log-Mel or Gammatone for audio, into an intermediate
+    representation.
 
     Structure of the front-end:
       - Conv
