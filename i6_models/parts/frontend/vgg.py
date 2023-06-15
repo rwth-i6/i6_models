@@ -66,7 +66,15 @@ class VGG4LayerActFrontendV1(nn.Module):
     """
     Convolutional Front-End
 
-    Structure: Conv, Conv, Activation, Pool, Conv, Conv, Activation, Pool
+    Structure of the front-end:
+      - Conv
+      - Conv
+      - Activation
+      - Pool
+      - Conv
+      - Conv
+      - Activation
+      - Pool
 
     Uses explicit padding for ONNX exportability, see:
     https://github.com/pytorch/pytorch/issues/68880
@@ -192,7 +200,15 @@ class VGG4LayerPoolFrontendV1(nn.Module):
     """
     Convolutional Front-End
 
-    Structure: Conv, Activation, Pool, Conv, Activation, Conv, Activation, Conv
+    Structure of the front-end:
+      - Conv
+      - Activation
+      - Pool
+      - Conv
+      - Activation
+      - Conv
+      - Activation
+      - Conv
 
     Uses explicit padding for ONNX exportability, see:
     https://github.com/pytorch/pytorch/issues/68880
