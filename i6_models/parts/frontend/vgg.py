@@ -124,7 +124,7 @@ class VGG4LayerActFrontendV1(nn.Module):
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        T might be reduced to T' depending on ...
+        T might be reduced to T' or T'' depending on stride of the layers
 
         :param tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T",F']
@@ -244,7 +244,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        T might be reduced to T' depending on ...
+        T might be reduced to T' depending on the stride of the layers
 
         :param tensor: input tensor of shape [B,T,F]
         :return: torch.Tensor of shape [B,T',F']
