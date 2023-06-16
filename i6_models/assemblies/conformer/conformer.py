@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from dataclasses import dataclass
 
-from i6_models.config import ModelConfiguration, SubassemblyWithOptions
+from i6_models.config import ModelConfiguration, SubassemblyWithConfig
 from i6_models.parts.conformer import (
     ConformerConvolutionV1,
     ConformerConvolutionV1Config,
@@ -42,10 +42,10 @@ class ConformerBlockV1(nn.Module):
         :param cfg: conformer block configuration with subunits for the different conformer parts
         """
         super().__init__()
-        self.ff_1 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
+        self.ff1 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.mhsa = ConformerMHSAV1(cfg=cfg.mhsa_cfg)
         self.conv = ConformerConvolutionV1(model_cfg=cfg.conv_cfg)
-        self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
+        self.ff2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
@@ -55,13 +55,13 @@ class ConformerBlockV1(nn.Module):
         :return: torch.Tensor of shape [B, T, F]
         """
         residual = tensor  #  [B, T, F]
-        x = self.ff_1(residual)  #  [B, T, F]
+        x = self.ff1(residual)  #  [B, T, F]
         residual = 0.5 * x + residual  #  [B, T, F]
         x = self.mhsa(residual, sequence_mask)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
         x = self.conv(residual)  #  [B, T, F]
         residual = x + residual  # [B, T, F]
-        x = self.ff_2(residual)  #  [B, T, F]
+        x = self.ff2(residual)  #  [B, T, F]
         x = 0.5 * x + residual  #  [B, T, F]
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
@@ -79,7 +79,7 @@ class ConformerEncoderV1Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    frontend: SubassemblyWithOptions
+    frontend: SubassemblyWithConfig
     block_cfg: ConformerBlockV1Config
 
 
