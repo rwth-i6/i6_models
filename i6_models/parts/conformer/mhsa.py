@@ -12,7 +12,7 @@ from i6_models.config import ModelConfiguration
 class ConformerMHSAV1Config(ModelConfiguration):
     """
     Attributes:
-        nput_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
+        input_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
         num_att_heads: number of attention heads
         att_weights_dropout: attention weights dropout
         dropout: multi-headed self attention output dropout
