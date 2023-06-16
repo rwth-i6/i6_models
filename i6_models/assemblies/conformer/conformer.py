@@ -48,7 +48,7 @@ class ConformerBlockV1(nn.Module):
         self.ff_2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor):
+    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
         :param tensor: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
