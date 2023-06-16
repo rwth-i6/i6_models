@@ -5,6 +5,7 @@ __all__ = ["ConformerBlockV1Config", "ConformerEncoderV1Config", "ConformerBlock
 import torch
 from torch import nn
 from dataclasses import dataclass
+from typing import Tuple
 
 from i6_models.config import ModelConfiguration, SubassemblyWithConfig
 from i6_models.parts.conformer import (
