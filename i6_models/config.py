@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
 from torch import nn
-from typing import Callable
+from typing import Callable, Generic, TypeVar
 
 
 @dataclass
@@ -55,16 +55,20 @@ class ModelConfiguration:
         self._validate_types()
 
 
+ConfigType = TypeVar("ConfigType", bound=ModelConfiguration)
+ModuleType = TypeVar("ModuleType", bound=nn.Module)
+
+
 @dataclass
 class SubassemblyWithOptions:
     """
-    Dataclass for a combination of an Subassembly/Part and the corresponding configuration.
+    Dataclass for a combination of a Subassembly/Part and the corresponding configuration.
     Also provides a function to construct the corresponding object through this dataclass
     """
 
-    module_class: Callable[[ModelConfiguration], nn.Module]
-    cfg: ModelConfiguration
+    module_class: Callable[[ConfigType], ModuleType]
+    cfg: ConfigType
 
-    def construct(self) -> nn.Module:
+    def construct(self) -> ModuleType:
         """Constructs an instance of the given module class"""
         return self.module_class(self.cfg)

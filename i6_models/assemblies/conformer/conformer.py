@@ -108,8 +108,8 @@ class ConformerEncoderV1(nn.Module):
         F: input feature dim, F': internal and output feature dim
         T': data time dim, T: down-sampled time dim (internal time dim)
         """
-        x = self.frontend(data_tensor)  # [B, T, F']
+        x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
         for module in self.module_list:
             x = module(x, sequence_mask)  # [B, T, F']
 
-        return x
+        return x, sequence_mask
