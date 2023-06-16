@@ -99,7 +99,7 @@ class ConformerEncoderV1(nn.Module):
         self.frontend = cfg.frontend.construct()
         self.module_list = torch.nn.ModuleList([ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
-    def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor):
+    def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T']
