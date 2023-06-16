@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
 from torch import nn
-from typing import Callable, Generic, TypeVar
+from typing import TypeVar, Type
 
 
 @dataclass
@@ -66,7 +66,7 @@ class SubassemblyWithConfig:
     Also provides a function to construct the corresponding object through this dataclass
     """
 
-    module_class: ModuleType
+    module_class: Type[ModuleType]
     cfg: ConfigType
 
     def construct(self) -> ModuleType:

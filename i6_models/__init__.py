@@ -1,1 +1,1 @@
-from i6_models.assemblies.conformer import ConformerEncoderV1
+
