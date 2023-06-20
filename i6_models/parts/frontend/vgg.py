@@ -16,7 +16,7 @@ from torch import nn
 from i6_models.config import ModelConfiguration
 
 
-IntTupleInt = Union[int, Tuple[int, int]]
+IntTupleIntType = Union[int, Tuple[int, int]]
 
 
 @dataclass
@@ -42,14 +42,14 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
-    conv_kernel_size: IntTupleInt
-    conv_padding: Optional[IntTupleInt]
-    pool1_kernel_size: IntTupleInt
-    pool1_stride: Optional[IntTupleInt]
-    pool1_padding: Optional[IntTupleInt]
-    pool2_kernel_size: IntTupleInt
-    pool2_stride: Optional[IntTupleInt]
-    pool2_padding: Optional[IntTupleInt]
+    conv_kernel_size: IntTupleIntType
+    conv_padding: Optional[IntTupleIntType]
+    pool1_kernel_size: IntTupleIntType
+    pool1_stride: Optional[IntTupleIntType]
+    pool1_padding: Optional[IntTupleIntType]
+    pool2_kernel_size: IntTupleIntType
+    pool2_stride: Optional[IntTupleIntType]
+    pool2_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -193,11 +193,12 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
-    conv_kernel_size: IntTupleInt
-    conv_padding: Optional[IntTupleInt]
-    pool_kernel_size: IntTupleInt
-    pool_stride: Optional[IntTupleInt]
-    pool_padding: Optional[IntTupleInt]
+    conv2_stride: IntTupleIntType
+    conv_kernel_size: IntTupleIntType
+    conv_padding: Optional[IntTupleIntType]
+    pool_kernel_size: IntTupleIntType
+    pool_stride: Optional[IntTupleIntType]
+    pool_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
@@ -255,16 +256,17 @@ class VGG4LayerPoolFrontendV1(nn.Module):
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
         )
-        self.conv2 = nn.Conv2d(
-            in_channels=model_cfg.conv1_channels,
-            out_channels=model_cfg.conv2_channels,
-            kernel_size=model_cfg.conv_kernel_size,
-            padding=conv_padding,
-        )
         self.pool = nn.MaxPool2d(
             kernel_size=model_cfg.pool_kernel_size,
             stride=model_cfg.pool_stride,
             padding=pool_padding,
+        )
+        self.conv2 = nn.Conv2d(
+            in_channels=model_cfg.conv1_channels,
+            out_channels=model_cfg.conv2_channels,
+            kernel_size=model_cfg.conv_kernel_size,
+            stride=model_cfg.conv2_stride,
+            padding=conv_padding,
         )
         self.conv3 = nn.Conv2d(
             in_channels=model_cfg.conv2_channels,
@@ -282,7 +284,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        T might be reduced to T' depending on the stride of the layers
+        T might be reduced to T'' depending on the stride of the layers
 
         :param tensor: input tensor of shape [B,T,F]
         :param sequence_mask: masking tensor of shape [B,T], contains length information of the sequences
@@ -293,9 +295,9 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         tensor = self.conv1(tensor)
         tensor = self.activation(tensor)
         tensor = self.pool(tensor)  # [B,C,T',F]
-        sequence_mask = sequence_mask // self.time_red
+        # sequence_mask = self.pool(sequence_mask) >= 0.5
 
-        tensor = self.conv2(tensor)
+        tensor = self.conv2(tensor)  # [B,C,T",F]
         tensor = self.activation(tensor)
 
         tensor = self.conv3(tensor)
@@ -303,8 +305,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = self.conv4(tensor)
 
-        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T',C,F]
-        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T',C*F]
+        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
+        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
 
         return tensor, sequence_mask
 
@@ -321,14 +323,3 @@ def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[in
         return tuple((s - 1) // 2 for s in input_size)
     else:
         raise TypeError(f"unexpected size type {type(input_size)}")
-
-
-def _reduce_sequence_length(sequence_mask: torch.Tensor, reduction_factor: int) -> torch.Tensor:
-    """
-    reduce the sequence length stored in the sequence_mask by a certain factor
-
-    :param sequence_mask: stored as [B,T] either as floats or bools
-    :param reduction_factor:
-    :return:
-    """
-    pass

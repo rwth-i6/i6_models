@@ -92,12 +92,13 @@ def test_layer_norm_nc():
     torch.allclose(torch_ln, custom_ln.transpose(1, 2))
 
 
-def test_conformer_vgg_frontend_v1():
+def test_conformer_vgg_layer_act_frontend_v1():
     torch.manual_seed(42)
 
     def get_output_shape(
         batch,
         time,
+        time_padding,
         features,
         conv1_channels,
         conv2_channels,
@@ -107,6 +108,15 @@ def test_conformer_vgg_frontend_v1():
         pool2_red,
     ):
         data_input = torch.randn(batch, time, features)
+        data_input = torch.cat((data_input, torch.zeros(batch, time_padding, features)), dim=1)
+        data_input = torch.cat((data_input, torch.randn(batch, time + time_padding, features)), dim=0)
+
+        sequence_mask = torch.zeros(batch, time)
+        sequence_mask = torch.cat((sequence_mask, torch.ones(batch, time_padding)), dim=1)
+        sequence_mask = torch.cat((sequence_mask, torch.zeros(batch, time + time_padding)), dim=0)
+
+        print(data_input.shape)
+        print(sequence_mask.shape)
 
         cfg = VGG4LayerActFrontendV1Config(
             conv1_channels=conv1_channels,
@@ -124,44 +134,57 @@ def test_conformer_vgg_frontend_v1():
             activation=nn.functional.relu,
         )
 
-        output = VGG4LayerActFrontendV1(cfg)(data_input)
+        output, sequence_mask = VGG4LayerActFrontendV1(cfg)(data_input, sequence_mask)
 
-        return list(output.shape)
+        return list(output.shape), list(sequence_mask)
 
-    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (1, 1), (1, 1)) == [10, 100, 50]
-    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (2, 1), (1, 1)) == [10, 50, 50]
-    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (1, 1), (2, 1)) == [10, 50, 50]
-    assert get_output_shape(10, 100, 50, 1, 1, 1, 1, (2, 1), (2, 1)) == [10, 25, 50]
-    assert get_output_shape(10, 100, 50, 2, 2, 2, 2, (1, 1), (1, 1)) == [10, 100, 100]
-    assert get_output_shape(10, 100, 50, 3, 3, 3, 3, (1, 1), (1, 1)) == [10, 100, 150]
-    assert get_output_shape(10, 100, 50, 4, 4, 4, 4, (1, 1), (1, 1)) == [10, 100, 200]
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, (1, 1), (1, 1)) == [10, 100, 3200]
-    assert get_output_shape(10, 100, 60, 4, 4, 4, 4, (1, 2), (1, 2)) == [10, 100, 60]
-    assert get_output_shape(10, 100, 50, 3, 3, 3, 3, (2, 3), (1, 1)) == [10, 50, 48]
-    assert get_output_shape(10, 100, 70, 4, 4, 4, 4, (1, 2), (1, 2)) == [10, 100, 68]
-    assert get_output_shape(10, 100, 50, 32, 32, 64, 64, (4, 3), (1, 3)) == [10, 25, 320]
+    for test_inputs, test_outputs, mask_outputs in [
+        [(10, 50, 50, 50, 1, 1, 1, 1, (1, 1), (1, 1)), [20, 100, 50], []],
+        [(10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (1, 1)), [20, 50, 50], []],
+        [(10, 50, 50, 50, 1, 1, 1, 1, (1, 1), (2, 1)), [20, 50, 50], []],
+        [(10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (2, 1)), [20, 25, 50], []],
+        [(10, 50, 50, 50, 2, 2, 2, 2, (1, 1), (1, 1)), [20, 100, 100], []],
+        [(10, 50, 50, 50, 3, 3, 3, 3, (1, 1), (1, 1)), [20, 100, 150], []],
+        [(10, 50, 50, 50, 4, 4, 4, 4, (1, 1), (1, 1)), [20, 100, 200], []],
+        [(10, 50, 50, 50, 32, 32, 64, 64, (1, 1), (1, 1)), [20, 100, 3200], []],
+        [(10, 50, 50, 60, 4, 4, 4, 4, (1, 2), (1, 2)), [20, 100, 60], []],
+        [(10, 50, 50, 50, 3, 3, 3, 3, (2, 3), (1, 1)), [20, 50, 48], []],
+        [(10, 50, 50, 70, 4, 4, 4, 4, (1, 2), (1, 2)), [20, 100, 68], []],
+        [(10, 50, 50, 50, 32, 32, 64, 64, (4, 3), (1, 3)), [20, 25, 320], []],
+    ]:
+        shape, seq_mask = get_output_shape(*test_inputs)
+        assert shape == test_outputs
 
 
-def test_conformer_vgg_frontend_v2():
+def test_conformer_vgg_layer_pool_frontend_v1():
     torch.manual_seed(42)
 
     def get_output_shape(
         batch,
         time,
+        time_padding,
         features,
         conv1_channels,
         conv2_channels,
         conv3_channels,
         conv4_channels,
+        conv2_stride,
         pool_red,
     ):
         data_input = torch.randn(batch, time, features)
+        data_input = torch.cat((data_input, torch.zeros(batch, time_padding, features)), dim=1)
+        data_input = torch.cat((data_input, torch.randn(batch, time + time_padding, features)), dim=0)
+
+        sequence_mask = torch.zeros(batch, time)
+        sequence_mask = torch.cat((sequence_mask, torch.ones(batch, time_padding)), dim=1)
+        sequence_mask = torch.cat((sequence_mask, torch.zeros(batch, time + time_padding)), dim=0)
 
         cfg = VGG4LayerPoolFrontendV1Config(
             conv1_channels=conv1_channels,
             conv2_channels=conv2_channels,
             conv3_channels=conv3_channels,
             conv4_channels=conv4_channels,
+            conv2_stride=conv2_stride,
             conv_kernel_size=(3, 3),
             conv_padding=None,
             pool_kernel_size=pool_red,
@@ -170,12 +193,108 @@ def test_conformer_vgg_frontend_v2():
             activation=nn.functional.relu,
         )
 
-        output = VGG4LayerPoolFrontendV1(cfg)(data_input)
+        output, sequence_mask = VGG4LayerPoolFrontendV1(cfg)(data_input, sequence_mask)
 
-        return list(output.shape)
+        return output.shape, sequence_mask
 
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (1, 1)) == [10, 100, 2560]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (2, 1)) == [10, 50, 2560]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 1)) == [10, 33, 2560]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 2)) == [10, 33, 1280]
-    assert get_output_shape(10, 100, 40, 32, 32, 64, 64, (3, 4)) == [10, 33, 640]
+    for test_inputs, test_outputs, mask_outputs in [
+        [
+            (2, 5, 5, 40, 32, 32, 64, 64, (1, 1), (1, 32)),
+            [4, 10, 64],
+            torch.Tensor(
+                [
+                    5 * [False] + 5 * [True],
+                    5 * [False] + 5 * [True],
+                    10 * [False],
+                    10 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (1, 1)),
+            [20, 100, 2560],
+            torch.Tensor(
+                10
+                * [
+                    50 * [False] + 50 * [True],
+                ]
+                + 10
+                * [
+                    100 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (2, 1)),
+            [20, 50, 2560],
+            torch.Tensor(
+                10
+                * [
+                    25 * [False] + 25 * [True],
+                ]
+                + 10
+                * [
+                    50 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 1)),
+            [20, 33, 2560],
+            torch.Tensor(
+                10
+                * [
+                    17 * [False] + 16 * [True],
+                ]
+                + 10
+                * [
+                    33 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 2)),
+            [20, 33, 1280],
+            torch.Tensor(
+                10
+                * [
+                    17 * [False] + 16 * [True],
+                ]
+                + 10
+                * [
+                    33 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 4)),
+            [20, 33, 640],
+            torch.Tensor(
+                10
+                * [
+                    17 * [False] + 16 * [True],
+                ]
+                + 10
+                * [
+                    33 * [False],
+                ]
+            ),
+        ],
+        [
+            (10, 50, 50, 40, 32, 32, 64, 64, (2, 1), (1, 4)),
+            [20, 50, 640],
+            torch.Tensor(
+                10
+                * [
+                    25 * [False] + 25 * [True],
+                ]
+                + 10
+                * [
+                    50 * [False],
+                ]
+            ),
+        ],
+    ]:
+        shape, seq_mask = get_output_shape(*test_inputs)
+        assert list(shape) == test_outputs
+        assert torch.equal(seq_mask, mask_outputs), (seq_mask.shape, mask_outputs.shape)
