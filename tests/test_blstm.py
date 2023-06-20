@@ -8,9 +8,7 @@ from i6_models.parts.blstm import BlstmEncoder, BlstmEncoderConfig
 
 def test_blstm_onnx_export():
     with torch.no_grad(), tempfile.NamedTemporaryFile() as f:
-        config = BlstmEncoderConfig(
-            num_layers=4, input_dimension=50, hidden_dimension=128, dropout=0.1, enforce_sorted=True
-        )
+        config = BlstmEncoderConfig(num_layers=4, input_dim=50, hidden_dim=128, dropout=0.1, enforce_sorted=True)
         model = BlstmEncoder(config=config)
         scripted_model = torch.jit.optimize_for_inference(torch.jit.script(model.eval()))
 
