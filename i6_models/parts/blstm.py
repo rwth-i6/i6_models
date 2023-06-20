@@ -7,25 +7,27 @@ from i6_models.config import ModelConfiguration
 
 @dataclass()
 class BlstmEncoderConfig(ModelConfiguration):
+    """
+    Attributes:
+        num_layers: number of bi-directional LSTM layers, minimum 2
+        input_dim: input dimension size
+        hidden_dim: hidden dimension of one direction of LSTM, the total output size is twice of this
+        dropout: nn.LSTM supports internal Dropout applied between each layer of BLSTM (but not on input/output)
+        enforce_sorted: keep activated for ONNX-Export, requires that the lengths are sorted decreasing from longest
+
+            Sorting can for example be performed independent of the ONNX export in e.g. train_step:
+
+                audio_features_len, indices = torch.sort(audio_features_len, descending=True)
+                audio_features = audio_features[indices, :, :]
+                labels = labels[indices, :]
+                labels_len = labels_len[indices]
+    """
+
     num_layers: int
-    """number of bi-directional LSTM layers, minimum 2"""
-    input_dimension: int
-    """input dimension size"""
-    hidden_dimension: int
-    """hidden dimension of one direction of LSTM, the total output size is twice of this"""
+    input_dim: int
+    hidden_dim: int
     dropout: float
-    """nn.LSTM supports an internal Dropout layer"""
     enforce_sorted: bool = True
-    """
-        keep activated for ONNX-Export, requires that the lengths are sorted decreasing from longest
-
-        Sorting can performed using something like:    
-
-            audio_features_len, indices = torch.sort(audio_features_len, descending=True)
-            audio_features = audio_features[indices, :, :]
-            labels = labels[indices, :]
-            labels_len = labels_len[indices]
-    """
 
 
 class BlstmEncoder(torch.nn.Module):
@@ -44,8 +46,8 @@ class BlstmEncoder(torch.nn.Module):
         self.dropout = config.dropout
         self.enforce_sorted = config.enforce_sorted
         self.blstm_stack = nn.LSTM(
-            input_size=config.input_dimension,
-            hidden_size=config.hidden_dimension,
+            input_size=config.input_dim,
+            hidden_size=config.hidden_dim,
             bidirectional=True,
             num_layers=config.num_layers,
             batch_first=False,
@@ -54,9 +56,9 @@ class BlstmEncoder(torch.nn.Module):
 
     def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> torch.Tensor:
         """
-        :param x: [B, T, input_dimension]
+        :param x: [B, T, input_dim]
         :param seq_len: [B], should be on CPU for Script/Trace mode
-        :return [B, T, 2 * hidden_dimension]
+        :return [B, T, 2 * hidden_dim]
         """
         if not torch.jit.is_scripting() and not torch.jit.is_tracing():
             # during graph mode we have to assume all Tensors are on the correct device,
