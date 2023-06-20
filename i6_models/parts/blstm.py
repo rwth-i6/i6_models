@@ -6,7 +6,7 @@ from i6_models.config import ModelConfiguration
 
 
 @dataclass()
-class BlstmEncoderConfig(ModelConfiguration):
+class BlstmEncoderV1Config(ModelConfiguration):
     """
     Attributes:
         num_layers: number of bi-directional LSTM layers, minimum 2
@@ -30,7 +30,7 @@ class BlstmEncoderConfig(ModelConfiguration):
     enforce_sorted: bool = True
 
 
-class BlstmEncoder(torch.nn.Module):
+class BlstmEncoderV1(torch.nn.Module):
     """
     Simple multi-layer BLSTM model including dropout, batch-first variant,
     hardcoded to use B,T,F input
@@ -38,7 +38,7 @@ class BlstmEncoder(torch.nn.Module):
     supports: TorchScript, ONNX-export
     """
 
-    def __init__(self, config: BlstmEncoderConfig):
+    def __init__(self, config: BlstmEncoderV1Config):
         """
         :param config: configuration object
         """

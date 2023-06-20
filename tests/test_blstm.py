@@ -3,13 +3,13 @@ import tempfile
 import torch
 from torch.onnx import export as export_onnx
 
-from i6_models.parts.blstm import BlstmEncoder, BlstmEncoderConfig
+from i6_models.parts.blstm import BlstmEncoderV1, BlstmEncoderV1Config
 
 
 def test_blstm_onnx_export():
     with torch.no_grad(), tempfile.NamedTemporaryFile() as f:
-        config = BlstmEncoderConfig(num_layers=4, input_dim=50, hidden_dim=128, dropout=0.1, enforce_sorted=True)
-        model = BlstmEncoder(config=config)
+        config = BlstmEncoderV1Config(num_layers=4, input_dim=50, hidden_dim=128, dropout=0.1, enforce_sorted=True)
+        model = BlstmEncoderV1(config=config)
         scripted_model = torch.jit.optimize_for_inference(torch.jit.script(model.eval()))
 
         dummy_data = torch.randn(3, 30, 50)
