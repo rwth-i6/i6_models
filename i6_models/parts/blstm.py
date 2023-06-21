@@ -13,7 +13,13 @@ class BlstmEncoderV1Config(ModelConfiguration):
         input_dim: input dimension size
         hidden_dim: hidden dimension of one direction of LSTM, the total output size is twice of this
         dropout: nn.LSTM supports internal Dropout applied between each layer of BLSTM (but not on input/output)
-        enforce_sorted: keep activated for ONNX-Export, requires that the lengths are sorted decreasing from longest
+        enforce_sorted:
+            True: expects that sequences are sorted by sequence length in decreasing order.
+                Will not do any sorting.
+                This is required for ONNX-Export.
+            False: no expectation.
+                It will internally enforce that they are sorted
+                and undo the reordering at the output.        
 
             Sorting can for example be performed independent of the ONNX export in e.g. train_step:
 
