@@ -50,7 +50,7 @@ class BlstmEncoderV1(torch.nn.Module):
             hidden_size=config.hidden_dim,
             bidirectional=True,
             num_layers=config.num_layers,
-            batch_first=False,
+            batch_first=True,
             dropout=self.dropout,
         )
 
