@@ -19,7 +19,7 @@ class BlstmEncoderV1Config(ModelConfiguration):
                 This is required for ONNX-Export.
             False: no expectation.
                 It will internally enforce that they are sorted
-                and undo the reordering at the output.        
+                and undo the reordering at the output.
 
             Sorting can for example be performed independent of the ONNX export in e.g. train_step:
 
