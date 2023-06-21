@@ -36,6 +36,8 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         pool2_stride: stride of second pooling layer
         pool2_padding: padding for second pooling layer
         activation: activation function at the end
+        linear_input_dim: input size of the final linear layer
+        linear_output_dim: output size of the final linear layer
     """
 
     conv1_channels: int
@@ -51,6 +53,8 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     pool2_stride: Optional[IntTupleIntType]
     pool2_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+    linear_input_dim: Optional[int]
+    linear_output_dim: Optional[int]
 
     def check_valid(self):
         if isinstance(self.conv_kernel_size, int):
@@ -106,6 +110,8 @@ class VGG4LayerActFrontendV1(nn.Module):
         pool2_stride = model_cfg.pool2_stride
         self.time2_red = pool2_stride[0] if isinstance(pool2_stride, tuple) else pool2_stride
 
+        self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
+
         self.conv1 = nn.Conv2d(
             in_channels=1,
             out_channels=model_cfg.conv1_channels,
@@ -141,6 +147,12 @@ class VGG4LayerActFrontendV1(nn.Module):
             padding=pool2_padding,
         )
         self.activation = model_cfg.activation
+        if self.include_linear_layer:
+            self.linear = nn.Linear(
+                in_features=model_cfg.linear_input_dim,
+                out_features=model_cfg.linear_output_dim,
+                bias=True,
+            )
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -170,6 +182,9 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
 
+        if self.include_linear_layer:
+            tensor = self.linear(tensor)
+
         return tensor, sequence_mask
 
 
@@ -187,6 +202,8 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
         pool_stride: stride of pooling layer
         pool_padding: padding for pooling layer
         activation: activation function at the end
+        linear_input_dim: input size of the final linear layer
+        linear_output_dim: output size of the final linear layer
     """
 
     conv1_channels: int
@@ -200,6 +217,8 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     pool_stride: Optional[IntTupleIntType]
     pool_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+    linear_input_dim: Optional[int]
+    linear_output_dim: Optional[int]
 
     def check_valid(self):
         if isinstance(self.conv_kernel_size, int):
@@ -250,6 +269,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         pool_stride = model_cfg.pool_stride
         self.time_red = pool_stride[0] if isinstance(pool_stride, tuple) else pool_stride
 
+        self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
+
         self.conv1 = nn.Conv2d(
             in_channels=1,
             out_channels=model_cfg.conv1_channels,
@@ -281,6 +302,12 @@ class VGG4LayerPoolFrontendV1(nn.Module):
             padding=conv_padding,
         )
         self.activation = model_cfg.activation
+        if self.include_linear_layer:
+            self.linear = nn.Linear(
+                in_features=model_cfg.linear_input_dim,
+                out_features=model_cfg.linear_output_dim,
+                bias=True,
+            )
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -295,7 +322,6 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         tensor = self.conv1(tensor)
         tensor = self.activation(tensor)
         tensor = self.pool(tensor)  # [B,C,T',F]
-        # sequence_mask = self.pool(sequence_mask) >= 0.5
 
         tensor = self.conv2(tensor)  # [B,C,T",F]
         tensor = self.activation(tensor)
@@ -307,6 +333,9 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
+
+        if self.include_linear_layer:
+            tensor = self.linear(tensor)
 
         return tensor, sequence_mask
 
