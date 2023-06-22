@@ -276,9 +276,6 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         )
         pool_padding = model_cfg.pool_padding if model_cfg.pool_padding is not None else 0
 
-        pool_stride = model_cfg.pool_stride
-        self.time_red = pool_stride[0] if isinstance(pool_stride, tuple) else pool_stride
-
         self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
 
         self.conv1 = nn.Conv2d(
