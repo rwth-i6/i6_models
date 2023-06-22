@@ -140,7 +140,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
 
         output, sequence_mask = VGG4LayerActFrontendV1(cfg)(data_input, sequence_mask)
 
-        return list(output.shape), list(sequence_mask)
+        return output.shape, sequence_mask
 
     for test_inputs, test_outputs, mask_outputs in [
         [(10, 50, 50, 50, 1, 1, 1, 1, (1, 1), (1, 1), 50, 50), [20, 100, 50], []],
@@ -158,7 +158,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [(10, 50, 50, 50, 32, 32, 64, 64, (4, 3), (1, 3), None, None), [20, 25, 320], []],
     ]:
         shape, seq_mask = get_output_shape(*test_inputs)
-        assert shape == test_outputs
+        assert list(shape) == test_outputs
         assert torch.equal(seq_mask, mask_outputs), (seq_mask.shape, mask_outputs.shape)
 
 
