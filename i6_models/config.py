@@ -17,6 +17,8 @@ Similar approach as done in Fairseq: https://github.com/facebookresearch/fairseq
 from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
+from torch import nn
+from typing import TypeVar, Type
 
 
 @dataclass
@@ -51,3 +53,22 @@ class ModelConfiguration:
 
     def __post_init__(self) -> None:
         self._validate_types()
+
+
+ConfigType = TypeVar("ConfigType", bound=ModelConfiguration)
+ModuleType = TypeVar("ModuleType", bound=nn.Module)
+
+
+@dataclass
+class SubassemblyFactory:
+    """
+    Dataclass for a combination of a Subassembly/Part and the corresponding configuration.
+    Also provides a function to construct the corresponding object through this dataclass
+    """
+
+    module_class: Type[ModuleType]
+    cfg: ConfigType
+
+    def construct(self) -> ModuleType:
+        """Constructs an instance of the given module class"""
+        return self.module_class(self.cfg)
