@@ -39,17 +39,17 @@ class ConformerMHSAV1(torch.nn.Module):
         )
         self.dropout = cfg.dropout
 
-    def forward(self, input_tensor: torch.Tensor, key_padding_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, input_tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
-        :param Optional[torch.Tensor] key_padding_mask: could be a binary or float mask of shape (B, T)
+        :param Optional[torch.Tensor] sequence_mask: could be a binary or float mask of shape (B, T), 1 signals within sequence, 0 outside, will be inverted to match the torch.nn.MultiheadAttention module
         which will be applied/added to dot product, used to mask padded key positions out
         """
-
+        inv_sequence_mask = 1 - sequence_mask
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
 
         output_tensor, _ = self.mhsa(
-            output_tensor, output_tensor, output_tensor, key_padding_mask=key_padding_mask, need_weights=False
+            output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
         )  # [B,T,F]
         output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
 
