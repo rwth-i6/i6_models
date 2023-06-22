@@ -333,7 +333,12 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         sequence_mask = _mask_pool(
             sequence_mask, self.conv1.kernel_size[0], self.conv1.stride[0], self.conv1.padding[0]
         )
-        sequence_mask = _mask_pool(sequence_mask, self.pool.kernel_size[0], self.pool.stride[0], self.pool.padding[0])
+        sequence_mask = _mask_pool(
+            sequence_mask,
+            _get_int_tuple_int(self.pool.kernel_size, 0),
+            _get_int_tuple_int(self.pool.stride, 0),
+            _get_int_tuple_int(self.pool.padding, 0),
+        )
         sequence_mask = _mask_pool(
             sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
         )
@@ -380,3 +385,7 @@ def _mask_pool(seq_mask, kernel_size, stride, padding):
     seq_mask = nn.functional.max_pool1d(seq_mask, kernel_size, stride, padding)  # [B,1,T']
     seq_mask = torch.squeeze(seq_mask, 1)  # [B,T']
     return seq_mask
+
+
+def _get_int_tuple_int(variable: IntTupleIntType, index: int):
+    return variable[index] if isinstance(variable, Tuple) else variable
