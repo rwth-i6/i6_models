@@ -23,10 +23,10 @@ IntTupleIntType = Union[int, Tuple[int, int]]
 class VGG4LayerActFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        conv1_channels: number of channels for first conv layers
-        conv2_channels: number of channels for second conv layers
-        conv3_channels: number of channels for third conv layers
-        conv4_channels: number of channels for fourth dconv layers
+        conv1_channels: number of channels for first conv layer
+        conv2_channels: number of channels for second conv layer
+        conv3_channels: number of channels for third conv layer
+        conv4_channels: number of channels for fourth conv layer
         conv_kernel_size: kernel size of conv layers
         conv_padding: padding for the convolution
         pool1_kernel_size: kernel size of first pooling layer
@@ -202,14 +202,16 @@ class VGG4LayerActFrontendV1(nn.Module):
 class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        conv1_channels: number of channels for first conv layers
-        conv2_channels: number of channels for second conv layers
-        conv3_channels: number of channels for third conv layers
-        conv_padding: padding for the convolution
-        conv_kernel_size: kernel size of conv layers
+        conv1_channels: number of channels for first conv layer
         pool_kernel_size: kernel size of pooling layer
-        pool_stride: stride of pooling layer
         pool_padding: padding for pooling layer
+        conv2_channels: number of channels for second conv layer
+        conv2_stride: stride param for second conv layer
+        conv3_channels: number of channels for third conv layer
+        conv3_stride: stride param for third conv layer
+        conv4_channels: number of channels for fourth layer
+        conv_kernel_size: kernel size of conv layers
+        conv_padding: padding for the convolution
         activation: activation function at the end
         linear_input_dim: input size of the final linear layer
         linear_output_dim: output size of the final linear layer
