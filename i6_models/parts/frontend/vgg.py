@@ -221,10 +221,10 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     conv3_channels: int
     conv4_channels: int
     conv2_stride: IntTupleIntType
+    conv3_stride: IntTupleIntType
     conv_kernel_size: IntTupleIntType
     conv_padding: Optional[IntTupleIntType]
     pool_kernel_size: IntTupleIntType
-    pool_stride: Optional[IntTupleIntType]
     pool_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     linear_input_dim: Optional[int]
@@ -289,7 +289,6 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         )
         self.pool = nn.MaxPool2d(
             kernel_size=model_cfg.pool_kernel_size,
-            stride=model_cfg.pool_stride,
             padding=pool_padding,
         )
         self.conv2 = nn.Conv2d(
@@ -303,12 +302,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
             in_channels=model_cfg.conv2_channels,
             out_channels=model_cfg.conv3_channels,
             kernel_size=model_cfg.conv_kernel_size,
-            padding=conv_padding,
-        )
-        self.conv4 = nn.Conv2d(
-            in_channels=model_cfg.conv3_channels,
-            out_channels=model_cfg.conv4_channels,
-            kernel_size=model_cfg.conv_kernel_size,
+            stride=model_cfg.conv3_stride,
             padding=conv_padding,
         )
         self.activation = model_cfg.activation
@@ -334,30 +328,18 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         tensor = self.pool(tensor)  # [B,C,T',F']
 
         tensor = self.conv2(tensor)  # [B,C,T",F"]
-        tensor = self.activation(tensor)
-
-        tensor = self.conv3(tensor)
-        tensor = self.activation(tensor)
-
-        tensor = self.conv4(tensor)
-        sequence_mask = _mask_pool(
-            sequence_mask, self.conv1.kernel_size[0], self.conv1.stride[0], self.conv1.padding[0]
-        )
-        sequence_mask = _mask_pool(
-            sequence_mask,
-            _get_int_tuple_int(self.pool.kernel_size, 0),
-            _get_int_tuple_int(self.pool.stride, 0),
-            _get_int_tuple_int(self.pool.padding, 0),
-        )
         sequence_mask = _mask_pool(
             sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
         )
+        tensor = self.activation(tensor)
+
+        tensor = self.conv3(tensor)
         sequence_mask = _mask_pool(
             sequence_mask, self.conv3.kernel_size[0], self.conv3.stride[0], self.conv3.padding[0]
         )
-        sequence_mask = _mask_pool(
-            sequence_mask, self.conv4.kernel_size[0], self.conv4.stride[0], self.conv4.padding[0]
-        )
+        tensor = self.activation(tensor)
+
+        tensor = self.conv4(tensor)
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
