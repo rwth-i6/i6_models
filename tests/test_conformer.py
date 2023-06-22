@@ -387,4 +387,6 @@ def test_conformer_vgg_layer_pool_frontend_v1():
     ]:
         shape, seq_mask = get_output_shape(**test_inputs)
         assert list(shape) == test_outputs
+        print(seq_mask)
+        print(mask_outputs)
         assert torch.equal(seq_mask, mask_outputs), (seq_mask.shape, mask_outputs.shape)
