@@ -146,7 +146,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 1, 1, 1, 1, (1, 1), (1, 1), 50, 50),
             [20, 100, 50],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (1, 1), 50, 50),
@@ -161,37 +161,37 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (2, 1), 50, 50),
             [20, 25, 50],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [13 * [False] + 12 * [True]] + 10 * [25 * [False]]),
         ],
         [
             (10, 50, 50, 50, 2, 2, 2, 2, (1, 1), (1, 1), 100, 100),
             [20, 100, 100],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 3, 3, 3, 3, (1, 1), (1, 1), 150, 150),
             [20, 100, 150],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 4, 4, 4, 4, (1, 1), (1, 1), 200, 200),
             [20, 100, 200],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 32, 32, 64, 64, (1, 1), (1, 1), 3200, 3200),
             [20, 100, 3200],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 32, 32, 64, 64, (1, 1), (1, 1), 3200, 50),
             [20, 100, 50],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 60, 4, 4, 4, 4, (1, 2), (1, 2), None, None),
             [20, 100, 60],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 3, 3, 3, 3, (2, 3), (1, 1), None, None),
@@ -201,12 +201,12 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 70, 4, 4, 4, 4, (1, 2), (1, 2), None, None),
             [20, 100, 68],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [50 * [False] + 50 * [True]] + 10 * [100 * [False]]),
         ],
         [
             (10, 50, 50, 50, 32, 32, 64, 64, (4, 3), (1, 3), None, None),
             [20, 25, 320],
-            torch.Tensor(10 * [25 * [False] + 25 * [True]] + 10 * [50 * [False]]),
+            torch.Tensor(10 * [13 * [False] + 12 * [True]] + 10 * [25 * [False]]),
         ],
     ]:
         shape, seq_mask = get_output_shape(*test_inputs)
