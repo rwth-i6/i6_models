@@ -117,9 +117,6 @@ def test_conformer_vgg_layer_act_frontend_v1():
         sequence_mask = torch.cat((sequence_mask, torch.ones(batch, time_padding)), dim=1)
         sequence_mask = torch.cat((sequence_mask, torch.zeros(batch, time + time_padding)), dim=0)
 
-        print(data_input.shape)
-        print(sequence_mask.shape)
-
         cfg = VGG4LayerActFrontendV1Config(
             conv1_channels=conv1_channels,
             conv2_channels=conv2_channels,
@@ -161,7 +158,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (2, 1), 50, 50),
             [20, 25, 50],
-            torch.Tensor(10 * [13 * [False] + 12 * [True]] + 10 * [25 * [False]]),
+            torch.Tensor(10 * [12 * [False] + 13 * [True]] + 10 * [25 * [False]]),
         ],
         [
             (10, 50, 50, 50, 2, 2, 2, 2, (1, 1), (1, 1), 100, 100),
@@ -206,7 +203,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 32, 32, 64, 64, (4, 3), (1, 3), None, None),
             [20, 25, 320],
-            torch.Tensor(10 * [13 * [False] + 12 * [True]] + 10 * [25 * [False]]),
+            torch.Tensor(10 * [12 * [False] + 13 * [True]] + 10 * [25 * [False]]),
         ],
     ]:
         shape, seq_mask = get_output_shape(*test_inputs)
