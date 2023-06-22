@@ -383,7 +383,7 @@ def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[in
         raise TypeError(f"unexpected size type {type(input_size)}")
 
 
-def _mask_pool(seq_mask, kernel_size, stride, padding):
+def _mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
     """
     :param seq_mask: [B,T]
     :param kernel_size:
@@ -397,5 +397,5 @@ def _mask_pool(seq_mask, kernel_size, stride, padding):
     return seq_mask
 
 
-def _get_int_tuple_int(variable: IntTupleIntType, index: int):
+def _get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
     return variable[index] if isinstance(variable, Tuple) else variable
