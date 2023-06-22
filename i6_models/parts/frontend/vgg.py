@@ -321,15 +321,30 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = self.conv1(tensor)
         tensor = self.activation(tensor)
-        tensor = self.pool(tensor)  # [B,C,T',F]
+        tensor = self.pool(tensor)  # [B,C,T',F']
 
-        tensor = self.conv2(tensor)  # [B,C,T",F]
+        tensor = self.conv2(tensor)  # [B,C,T",F"]
         tensor = self.activation(tensor)
 
         tensor = self.conv3(tensor)
         tensor = self.activation(tensor)
 
         tensor = self.conv4(tensor)
+        sequence_mask = _mask_pool(
+            sequence_mask, self.conv1.kernel_size[0], self.conv1.stride[0], self.conv1.padding[0]
+        )
+        sequence_mask = _mask_pool(
+            sequence_mask, self.pool.kernel_size[0], self.pool.stride[0], self.pool.padding[0]
+        )
+        sequence_mask = _mask_pool(
+            sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
+        )
+        sequence_mask = _mask_pool(
+            sequence_mask, self.conv3.kernel_size[0], self.conv3.stride[0], self.conv3.padding[0]
+        )
+        sequence_mask = _mask_pool(
+            sequence_mask, self.conv4.kernel_size[0], self.conv4.stride[0], self.conv4.padding[0]
+        )
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
@@ -343,6 +358,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
     """
     get padding in order to not reduce the time dimension
+
     :param input_size:
     :return:
     """
@@ -352,3 +368,17 @@ def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[in
         return tuple((s - 1) // 2 for s in input_size)
     else:
         raise TypeError(f"unexpected size type {type(input_size)}")
+
+
+def _mask_pool(seq_mask, kernel_size, stride, padding):
+    """
+    :param seq_mask: [B,T]
+    :param kernel_size:
+    :param stride:
+    :param padding:
+    :return: [B,T'] using maxpool
+    """
+    seq_mask = torch.unsqueeze(seq_mask, 1)  # [B,1,T]
+    seq_mask = nn.functional.max_pool1d(seq_mask, kernel_size, stride, padding)  # [B,1,T']
+    seq_mask = torch.squeeze(seq_mask, 1)  # [B,T']
+    return seq_mask
