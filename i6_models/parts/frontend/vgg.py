@@ -333,9 +333,7 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         sequence_mask = _mask_pool(
             sequence_mask, self.conv1.kernel_size[0], self.conv1.stride[0], self.conv1.padding[0]
         )
-        sequence_mask = _mask_pool(
-            sequence_mask, self.pool.kernel_size[0], self.pool.stride[0], self.pool.padding[0]
-        )
+        sequence_mask = _mask_pool(sequence_mask, self.pool.kernel_size[0], self.pool.stride[0], self.pool.padding[0])
         sequence_mask = _mask_pool(
             sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
         )
