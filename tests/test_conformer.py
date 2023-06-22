@@ -158,7 +158,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 1, 1, 1, 1, (2, 1), (2, 1), 50, 50),
             [20, 25, 50],
-            torch.Tensor(10 * [12 * [True] + 13 * [False]] + 10 * [25 * [True]]),
+            torch.Tensor(10 * [13 * [True] + 12 * [False]] + 10 * [25 * [True]]),
         ],
         [
             (10, 50, 50, 50, 2, 2, 2, 2, (1, 1), (1, 1), 100, 100),
@@ -203,7 +203,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         [
             (10, 50, 50, 50, 32, 32, 64, 64, (4, 3), (1, 3), None, None),
             [20, 25, 320],
-            torch.Tensor(10 * [12 * [True] + 13 * [False]] + 10 * [25 * [True]]),
+            torch.Tensor(10 * [13 * [True] + 12 * [False]] + 10 * [25 * [True]]),
         ],
     ]:
         shape, seq_mask = get_output_shape(*test_inputs)
