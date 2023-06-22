@@ -12,16 +12,20 @@ from typing import Callable, Union
 
 @dataclass
 class ConformerConvolutionV1Config(ModelConfiguration):
+    """
+    Attributes:
+        channels: number of channels for conv layers
+        kernel_size: kernel size of conv layers
+        dropout: dropout probability
+        activation: activation function applied after normalization
+        norm: normalization layer with input of shape [N,C,T]
+    """
+
     channels: int
-    """number of channels for conv layers"""
     kernel_size: int
-    """kernel size of conv layers"""
     dropout: float
-    """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    """activation function applied after norm"""
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    """normalization layer with input of shape [N,C,T]"""
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
