@@ -247,7 +247,7 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             conv_kernel_size=(3, 3),
             conv_padding=None,
             pool_kernel_size=pool_kernel_size,
-            pool_padding=None,
+            pool_padding=0,
             activation=nn.functional.relu,
             linear_input_dim=in_dim,
             linear_output_dim=out_dim,
@@ -257,8 +257,8 @@ def test_conformer_vgg_layer_pool_frontend_v1():
 
         return output.shape, sequence_mask
 
-    for test_inputs, test_outputs, mask_outputs in [
-        [
+    test_cases = [
+        [  # small
             {
                 "batch": 2,
                 "time": 5,
@@ -270,123 +270,190 @@ def test_conformer_vgg_layer_pool_frontend_v1():
                 "conv4_channels": 32,
                 "conv2_stride": (1, 1),
                 "conv3_stride": (1, 1),
-                "pool_kernel_size": (1, 32),
+                "pool_kernel_size": (1, 1),
                 "in_dim": None,
                 "out_dim": None,
             },
-            [4, 10, 64],
+            [4, 10, 1280],
             torch.Tensor(
                 [
-                    5 * [True] + 5 * [False],
-                    5 * [True] + 5 * [False],
+                    7 * [True] + 3 * [False],
+                    7 * [True] + 3 * [False],
                     10 * [True],
                     10 * [True],
                 ]
             ),
         ],
-        """
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (1, 1), None, None),
-            [20, 100, 2560],
+        [  # simple
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (1, 1),
+                "conv3_stride": (1, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": None,
+                "out_dim": None,
+            },
+            [20, 100, 1280],
             torch.Tensor(
                 10
                 * [
-                    50 * [False] + 50 * [True],
+                    52 * [True] + 48 * [False],
                 ]
                 + 10
                 * [
-                    100 * [False],
+                    100 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (2, 1), None, None),
-            [20, 50, 2560],
+        [  # linear layer
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (1, 1),
+                "conv3_stride": (1, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": 1280,
+                "out_dim": 256,
+            },
+            [20, 100, 256],
             torch.Tensor(
                 10
                 * [
-                    25 * [False] + 25 * [True],
+                    52 * [True] + 48 * [False],
                 ]
                 + 10
                 * [
-                    50 * [False],
+                    100 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 1), None, None),
-            [20, 33, 2560],
+        [  # subsampling first layer
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (2, 1),
+                "conv3_stride": (1, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": 1280,
+                "out_dim": 512,
+            },
+            [20, 50, 512],
             torch.Tensor(
                 10
                 * [
-                    16 * [False] + 17 * [True],
+                    27 * [True] + 23 * [False],
                 ]
                 + 10
                 * [
-                    33 * [False],
+                    50 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 1), 2560, 100),
-            [20, 33, 100],
+        [  # subsampling second layer
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (1, 1),
+                "conv3_stride": (2, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": 1280,
+                "out_dim": 512,
+            },
+            [20, 50, 512],
             torch.Tensor(
                 10
                 * [
-                    16 * [False] + 17 * [True],
+                    26 * [True] + 24 * [False],
                 ]
                 + 10
                 * [
-                    33 * [False],
+                    50 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 2), None, None),
-            [20, 33, 1280],
+        [  # subsampling both layers
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (2, 1),
+                "conv3_stride": (2, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": 1280,
+                "out_dim": 512,
+            },
+            [20, 25, 512],
             torch.Tensor(
                 10
                 * [
-                    16 * [False] + 17 * [True],
+                    14 * [True] + 11 * [False],
                 ]
                 + 10
                 * [
-                    33 * [False],
+                    25 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (1, 1), (3, 4), None, None),
-            [20, 33, 640],
+        [  # subsampling first layer factor 3
+            {
+                "batch": 10,
+                "time": 50,
+                "time_padding": 50,
+                "features": 40,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (3, 1),
+                "conv3_stride": (1, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": 1280,
+                "out_dim": 512,
+            },
+            [20, 34, 512],
             torch.Tensor(
                 10
                 * [
-                    16 * [False] + 17 * [True],
+                    18 * [True] + 16 * [False],
                 ]
                 + 10
                 * [
-                    33 * [False],
+                    34 * [True],
                 ]
             ),
         ],
-        [
-            (10, 50, 50, 40, 32, 32, 64, 64, (2, 1), (1, 4), None, None),
-            [20, 50, 640],
-            torch.Tensor(
-                10
-                * [
-                    25 * [False] + 25 * [True],
-                ]
-                + 10
-                * [
-                    50 * [False],
-                ]
-            ),
-        ],
-        """,
-    ]:
+    ]
+    for test_inputs, test_outputs, mask_outputs in test_cases:
         shape, seq_mask = get_output_shape(**test_inputs)
         assert list(shape) == test_outputs
-        print(seq_mask)
-        print(mask_outputs)
         assert torch.equal(seq_mask, mask_outputs), (seq_mask.shape, mask_outputs.shape)

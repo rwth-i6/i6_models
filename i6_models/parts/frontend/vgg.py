@@ -105,11 +105,6 @@ class VGG4LayerActFrontendV1(nn.Module):
         pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
 
-        pool1_stride = model_cfg.pool1_stride
-        self.time1_red = pool1_stride[0] if isinstance(pool1_stride, tuple) else pool1_stride
-        pool2_stride = model_cfg.pool2_stride
-        self.time2_red = pool2_stride[0] if isinstance(pool2_stride, tuple) else pool2_stride
-
         self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
 
         self.conv1 = nn.Conv2d(
@@ -332,15 +327,17 @@ class VGG4LayerPoolFrontendV1(nn.Module):
         tensor = self.pool(tensor)  # [B,C,T,F']
 
         tensor = self.conv2(tensor)  # [B,C,T',F']
-        sequence_mask = _mask_pool(
-            sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
-        )
+        if self.conv2.stride[0] > 0:
+            sequence_mask = _mask_pool(
+                sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
+            )
         tensor = self.activation(tensor)
 
         tensor = self.conv3(tensor)  # [B,C,T",F']
-        sequence_mask = _mask_pool(
-            sequence_mask, self.conv3.kernel_size[0], self.conv3.stride[0], self.conv3.padding[0]
-        )
+        if self.conv3.stride[0] > 0:
+            sequence_mask = _mask_pool(
+                sequence_mask, self.conv3.kernel_size[0], self.conv3.stride[0], self.conv3.padding[0]
+            )
         tensor = self.activation(tensor)
 
         tensor = self.conv4(tensor)
