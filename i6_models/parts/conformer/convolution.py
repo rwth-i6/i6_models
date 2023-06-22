@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 from i6_models.config import ModelConfiguration
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 
 @dataclass
@@ -20,7 +20,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     """dropout probability"""
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     """activation function applied after norm"""
-    norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+    norm: Callable[[], nn.Module]
     """normalization layer with input of shape [N,C,T]"""
 
     def check_valid(self):
@@ -56,7 +56,7 @@ class ConformerConvolutionV1(nn.Module):
         )
         self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
         self.layer_norm = nn.LayerNorm(model_cfg.channels)
-        self.norm = model_cfg.norm
+        self.norm = model_cfg.norm()
         self.dropout = nn.Dropout(model_cfg.dropout)
         self.activation = model_cfg.activation
 
