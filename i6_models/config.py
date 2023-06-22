@@ -69,6 +69,6 @@ class SubassemblyFactory:
     module_class: Type[ModuleType]
     cfg: ConfigType
 
-    def construct(self) -> ModuleType:
+    def __call__(self) -> ModuleType:
         """Constructs an instance of the given module class"""
         return self.module_class(self.cfg)
