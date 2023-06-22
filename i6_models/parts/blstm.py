@@ -5,7 +5,7 @@ from torch import nn
 from i6_models.config import ModelConfiguration
 
 
-@dataclass()
+@dataclass
 class BlstmEncoderV1Config(ModelConfiguration):
     """
     Attributes:
@@ -16,7 +16,7 @@ class BlstmEncoderV1Config(ModelConfiguration):
         enforce_sorted:
             True: expects that sequences are sorted by sequence length in decreasing order.
                 Will not do any sorting.
-                This is required for ONNX-Export.
+                This is required for ONNX-Export, and thus the recommended setting.
             False: no expectation.
                 It will internally enforce that they are sorted
                 and undo the reordering at the output.
@@ -33,7 +33,7 @@ class BlstmEncoderV1Config(ModelConfiguration):
     input_dim: int
     hidden_dim: int
     dropout: float
-    enforce_sorted: bool = True
+    enforce_sorted: bool
 
 
 class BlstmEncoderV1(torch.nn.Module):
