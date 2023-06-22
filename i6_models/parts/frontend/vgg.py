@@ -205,7 +205,6 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
         conv1_channels: number of channels for first conv layers
         conv2_channels: number of channels for second conv layers
         conv3_channels: number of channels for third conv layers
-        conv4_channels: number of channels for fourth conv layers
         conv_padding: padding for the convolution
         conv_kernel_size: kernel size of conv layers
         pool_kernel_size: kernel size of pooling layer
@@ -217,15 +216,15 @@ class VGG4LayerPoolFrontendV1Config(ModelConfiguration):
     """
 
     conv1_channels: int
-    conv2_channels: int
-    conv3_channels: int
-    conv4_channels: int
-    conv2_stride: IntTupleIntType
-    conv3_stride: IntTupleIntType
-    conv_kernel_size: IntTupleIntType
-    conv_padding: Optional[IntTupleIntType]
     pool_kernel_size: IntTupleIntType
     pool_padding: Optional[IntTupleIntType]
+    conv2_channels: int
+    conv2_stride: IntTupleIntType
+    conv3_channels: int
+    conv3_stride: IntTupleIntType
+    conv4_channels: int
+    conv_kernel_size: IntTupleIntType
+    conv_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     linear_input_dim: Optional[int]
     linear_output_dim: Optional[int]
@@ -302,6 +301,12 @@ class VGG4LayerPoolFrontendV1(nn.Module):
             stride=model_cfg.conv3_stride,
             padding=conv_padding,
         )
+        self.conv4 = nn.Conv2d(
+            in_channels=model_cfg.conv3_channels,
+            out_channels=model_cfg.conv4_channels,
+            kernel_size=model_cfg.conv_kernel_size,
+            padding=conv_padding,
+        )
         self.activation = model_cfg.activation
         if self.include_linear_layer:
             self.linear = nn.Linear(
@@ -322,15 +327,15 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = self.conv1(tensor)
         tensor = self.activation(tensor)
-        tensor = self.pool(tensor)  # [B,C,T',F']
+        tensor = self.pool(tensor)  # [B,C,T,F']
 
-        tensor = self.conv2(tensor)  # [B,C,T",F"]
+        tensor = self.conv2(tensor)  # [B,C,T',F']
         sequence_mask = _mask_pool(
             sequence_mask, self.conv2.kernel_size[0], self.conv2.stride[0], self.conv2.padding[0]
         )
         tensor = self.activation(tensor)
 
-        tensor = self.conv3(tensor)
+        tensor = self.conv3(tensor)  # [B,C,T",F']
         sequence_mask = _mask_pool(
             sequence_mask, self.conv3.kernel_size[0], self.conv3.stride[0], self.conv3.padding[0]
         )
@@ -338,8 +343,8 @@ class VGG4LayerPoolFrontendV1(nn.Module):
 
         tensor = self.conv4(tensor)
 
-        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F]
-        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F]
+        tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F']
+        tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F']
 
         if self.include_linear_layer:
             tensor = self.linear(tensor)
