@@ -46,7 +46,7 @@ class ConformerMHSAV1(torch.nn.Module):
         which will be applied/added to dot product, used to mask padded key positions out
         """
         if sequence_mask is not None:
-            inv_sequence_mask = (1 - sequence_mask.float()).bool()
+            inv_sequence_mask = torch.logical_not(sequence_mask)
         else:
             inv_sequence_mask = None
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
