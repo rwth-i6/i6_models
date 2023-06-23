@@ -13,14 +13,18 @@ from i6_models.config import ModelConfiguration
 
 @dataclass
 class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
+    """
+    Attributes:
+        input_dim: input dimension
+        hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
+        dropout: dropout probability
+        activation: activation function
+    """
+
     input_dim: int
-    """input dimension"""
     hidden_dim: int
-    """hidden dimension (normally set to 4*input_dim as suggested by the paper)"""
     dropout: float
-    """dropout probability"""
     activation: Callable[[torch.Tensor], torch.Tensor] = nn.functional.silu
-    """activation function"""
 
 
 class ConformerPositionwiseFeedForwardV1(nn.Module):

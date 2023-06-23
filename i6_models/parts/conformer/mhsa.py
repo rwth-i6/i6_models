@@ -10,14 +10,18 @@ from i6_models.config import ModelConfiguration
 
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
+    """
+    Attributes:
+        input_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
+        num_att_heads: number of attention heads
+        att_weights_dropout: attention weights dropout
+        dropout: multi-headed self attention output dropout
+    """
+
     input_dim: int
-    """input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`"""
     num_att_heads: int
-    """number of attention heads"""
     att_weights_dropout: float
-    """attention weights dropout"""
     dropout: float
-    """multi-headed self attention output dropout"""
 
     def __post_init__(self) -> None:
         super().__post_init__()
