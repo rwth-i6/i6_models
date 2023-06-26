@@ -40,4 +40,4 @@ def _mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: i
 
 
 def _get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
-    return variable[index] if isinstance(variable, Tuple) else variable
+    return variable[index] if isinstance(variable, tuple) else variable
