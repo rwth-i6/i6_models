@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
 from torch import nn
-from typing import TypeVar, Type
+from typing import Callable, Generic, TypeVar
 
 
 @dataclass
