@@ -4,8 +4,7 @@ from abc import abstractmethod
 from typing import Protocol, Tuple
 
 
-class BaseFrontendInterface(Protocol):
-    @abstractmethod
+class BaseFrontendInterfaceV1(Protocol):
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param tensor: input tensor of shape [B,T,F]
@@ -15,8 +14,7 @@ class BaseFrontendInterface(Protocol):
         raise NotImplementedError
 
 
-class FrontendInterface(BaseFrontendInterface, nn.Module):
-    @abstractmethod
+class FrontendInterfaceV1(BaseFrontendInterfaceV1, nn.Module):
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param tensor: input tensor of shape [B,T,F]

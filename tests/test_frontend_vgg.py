@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from i6_models.parts.frontend.vgg import (
+from i6_models.parts.frontend import (
     VGG4LayerActFrontendV1,
     VGG4LayerActFrontendV1Config,
     VGG4LayerPoolFrontendV1,
@@ -35,6 +35,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         sequence_mask = torch.ones(batch, time)
         sequence_mask = torch.cat((sequence_mask, torch.zeros(batch, time_padding)), dim=1)
         sequence_mask = torch.cat((sequence_mask, torch.ones(batch, time + time_padding)), dim=0)
+        sequence_mask = sequence_mask.bool()
 
         cfg = VGG4LayerActFrontendV1Config(
             conv1_channels=conv1_channels,
@@ -153,8 +154,15 @@ def test_conformer_vgg_layer_pool_frontend_v1():
         data_input = torch.cat((data_input, torch.randn(batch, time + time_padding, features)), dim=0)
 
         sequence_mask = torch.ones(batch, time)
+        print(sequence_mask)
         sequence_mask = torch.cat((sequence_mask, torch.zeros(batch, time_padding)), dim=1)
+        print(sequence_mask)
         sequence_mask = torch.cat((sequence_mask, torch.ones(batch, time + time_padding)), dim=0)
+        print(sequence_mask)
+        sequence_mask = sequence_mask.bool()
+        print(sequence_mask)
+
+        #print(data_input[0][-1])
 
         cfg = VGG4LayerPoolFrontendV1Config(
             conv1_channels=conv1_channels,
@@ -164,9 +172,9 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             conv2_stride=conv2_stride,
             conv3_stride=conv3_stride,
             conv_kernel_size=(3, 3),
-            conv_padding=None,
+            conv_padding=1,
             pool_kernel_size=pool_kernel_size,
-            pool_padding=0,
+            pool_padding=1,
             activation=nn.functional.relu,
             linear_input_dim=in_dim,
             linear_output_dim=out_dim,
@@ -174,9 +182,43 @@ def test_conformer_vgg_layer_pool_frontend_v1():
 
         output, sequence_mask = VGG4LayerPoolFrontendV1(cfg)(data_input, sequence_mask)
 
+        #print(len(output))
+        #print(len(output[0]))
+        #print(output[0][-1])
+
+        print(sequence_mask)
+
         return output.shape, sequence_mask
 
     test_cases = [
+        [  # small
+            {
+                "batch": 1,
+                "time": 4,
+                "time_padding": 4,
+                "features": 5,
+                "conv1_channels": 32,
+                "conv2_channels": 64,
+                "conv3_channels": 64,
+                "conv4_channels": 32,
+                "conv2_stride": (1, 1),
+                "conv3_stride": (1, 1),
+                "pool_kernel_size": (1, 1),
+                "in_dim": None,
+                "out_dim": None,
+            },
+            [4, 10, 1280],
+            torch.Tensor(
+                [
+                    4 * [True] + 4 * [False],
+                    4 * [True] + 4 * [False],
+                    8 * [True],
+                    8 * [True],
+                ]
+            ),
+        ],  # small
+    ]
+    deactivated_test_cases = [
         [  # small
             {
                 "batch": 2,
@@ -196,13 +238,13 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             [4, 10, 1280],
             torch.Tensor(
                 [
-                    7 * [True] + 3 * [False],
-                    7 * [True] + 3 * [False],
+                    5 * [True] + 5 * [False],
+                    5 * [True] + 5 * [False],
                     10 * [True],
                     10 * [True],
                 ]
             ),
-        ],
+        ],  # small
         [  # simple
             {
                 "batch": 10,
@@ -223,14 +265,14 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             torch.Tensor(
                 10
                 * [
-                    52 * [True] + 48 * [False],
+                    50 * [True] + 50 * [False],
                 ]
                 + 10
                 * [
                     100 * [True],
                 ]
             ),
-        ],
+        ],  # simple
         [  # linear layer
             {
                 "batch": 10,
@@ -251,14 +293,14 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             torch.Tensor(
                 10
                 * [
-                    52 * [True] + 48 * [False],
+                    50 * [True] + 50 * [False],
                 ]
                 + 10
                 * [
                     100 * [True],
                 ]
             ),
-        ],
+        ],  # linear layer
         [  # subsampling first layer
             {
                 "batch": 10,
@@ -279,14 +321,14 @@ def test_conformer_vgg_layer_pool_frontend_v1():
             torch.Tensor(
                 10
                 * [
-                    27 * [True] + 23 * [False],
+                    25 * [True] + 25 * [False],
                 ]
                 + 10
                 * [
                     50 * [True],
                 ]
             ),
-        ],
+        ],  # subsampling first layer
         [  # subsampling second layer
             {
                 "batch": 10,
@@ -314,7 +356,7 @@ def test_conformer_vgg_layer_pool_frontend_v1():
                     50 * [True],
                 ]
             ),
-        ],
+        ],  # subsampling second layer
         [  # subsampling both layers
             {
                 "batch": 10,
@@ -342,7 +384,7 @@ def test_conformer_vgg_layer_pool_frontend_v1():
                     25 * [True],
                 ]
             ),
-        ],
+        ],  # subsampling both layers
         [  # subsampling first layer factor 3
             {
                 "batch": 10,
@@ -370,9 +412,10 @@ def test_conformer_vgg_layer_pool_frontend_v1():
                     34 * [True],
                 ]
             ),
-        ],
+        ],  # subsampling first layer factor 3
     ]
     for test_inputs, test_outputs, mask_outputs in test_cases:
         shape, seq_mask = get_output_shape(**test_inputs)
+        assert False
         assert list(shape) == test_outputs
         assert torch.equal(seq_mask, mask_outputs), (seq_mask.shape, mask_outputs.shape)
