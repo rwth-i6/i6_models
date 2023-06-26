@@ -190,6 +190,3 @@ class VGG4LayerActFrontendV1(nn.Module):
             tensor = self.linear(tensor)
 
         return tensor, sequence_mask
-
-
-
