@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from abc import abstractmethod
 from typing import Protocol, Tuple
 
 
