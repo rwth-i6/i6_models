@@ -66,7 +66,7 @@ class SubassemblyFactory(Generic[ConfigType, ModuleType]):
     Also provides a function to construct the corresponding object through this dataclass
     """
 
-    module_class: Type[ModuleType]
+    module_class: Callable[[ConfigType], ModuleType]
     cfg: ConfigType
 
     def __call__(self) -> ModuleType:
