@@ -60,7 +60,7 @@ ModuleType = TypeVar("ModuleType", bound=nn.Module)
 
 
 @dataclass
-class ModuleFactory(Generic[ConfigType, ModuleType]):
+class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
     """
     Dataclass for a combination of a Subassembly/Part and the corresponding configuration.
     Also provides a function to construct the corresponding object through this dataclass
