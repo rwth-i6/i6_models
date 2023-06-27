@@ -4,6 +4,7 @@ import pytest
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from torch import nn
 
+
 def test_simple_configuration():
     @dataclass
     class TestConfiguration(ModelConfiguration):
