@@ -18,7 +18,8 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
 from torch import nn
-from typing import Callable, Generic, TypeVar
+from typing import Generic, TypeVar, Type
+from inspect import signature
 
 
 @dataclass
@@ -72,3 +73,6 @@ class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
     def __call__(self) -> ModuleType:
         """Constructs an instance of the given module class"""
         return self.module_class(self.cfg)
+
+    def __post_init__(self) -> None:
+        assert signature(self.module_class).parameters["cfg"].annotation == type(self.cfg)

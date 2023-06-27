@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import pytest
 
-from i6_models.config import ModelConfiguration
-
+from i6_models.config import ModelConfiguration, ModuleFactoryV1
+from torch import nn
 
 def test_simple_configuration():
     @dataclass
@@ -58,3 +58,29 @@ def test_config_typing():
     TestConfiguration(num_layers=2, hidden_dim=1)
     with pytest.raises(TypeCheckError):
         TestConfiguration(num_layers=2.0, hidden_dim="One")
+
+
+def test_module_factory():
+    @dataclass
+    class TestConfiguration(ModelConfiguration):
+        param: int = 4
+
+    @dataclass
+    class TestConfiguration2(ModelConfiguration):
+        param: float = 4.3
+
+    class TestModule(nn.Module):
+        def __init__(self, cfg: TestConfiguration):
+            super().__init__()
+            self.cfg = cfg
+
+        def forward(self):
+            pass
+
+    factory = ModuleFactoryV1(module_class=TestModule, cfg=TestConfiguration())
+    obj = factory()
+    assert type(obj) == TestModule
+    obj2 = factory()
+    assert obj != obj2
+    with pytest.raises(AssertionError):
+        ModuleFactoryV1(module_class=TestModule, cfg=TestConfiguration2())
