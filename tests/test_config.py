@@ -83,5 +83,7 @@ def test_module_factory():
     assert type(obj) == TestModule
     obj2 = factory()
     assert obj != obj2
-    with pytest.raises(AssertionError):
+    from typeguard import TypeCheckError
+
+    with pytest.raises(TypeCheckError):
         ModuleFactoryV1(module_class=TestModule, cfg=TestConfiguration2())

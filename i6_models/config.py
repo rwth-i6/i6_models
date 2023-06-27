@@ -75,4 +75,7 @@ class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
         return self.module_class(self.cfg)
 
     def __post_init__(self) -> None:
-        assert signature(self.module_class).parameters["cfg"].annotation == type(self.cfg)
+        parameters = signature(self.module_class).parameters.values()
+        assert len(parameters) == 1
+        cfg_parameter = next(iter(parameters))
+        typeguard.check_type(self.cfg, cfg_parameter.annotation)
