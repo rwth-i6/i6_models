@@ -19,7 +19,7 @@ from dataclasses import dataclass, fields
 import typeguard
 from torch import nn
 from typing import Generic, TypeVar, Type
-from inspect import signature
+import inspect
 
 
 @dataclass
