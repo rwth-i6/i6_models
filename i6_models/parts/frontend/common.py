@@ -31,10 +31,7 @@ def _mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: i
     :return: [B,T'] using maxpool
     """
     seq_mask = torch.unsqueeze(seq_mask, 1)  # [B,1,T]
-    print("mask")
-    print(seq_mask)
     seq_mask = nn.functional.max_pool1d(seq_mask, kernel_size, stride, padding)  # [B,1,T']
-    print(seq_mask)
     seq_mask = torch.squeeze(seq_mask, 1)  # [B,T']
     return seq_mask
 
