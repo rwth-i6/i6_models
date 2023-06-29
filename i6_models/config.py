@@ -75,7 +75,16 @@ class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
         return self.module_class(self.cfg)
 
     def __post_init__(self) -> None:
-        parameters = signature(self.module_class).parameters.values()
-        assert len(parameters) == 1
-        cfg_parameter = next(iter(parameters))
-        typeguard.check_type(self.cfg, cfg_parameter.annotation)
+        # Check typing of module_class and cfg, i.e. make sure that "self.module_class(self.cfg)" is a valid call.
+        parameters = inspect.signature(self.module_class).parameters.values()
+        assert len(parameters) >= 1
+        parameter_iter = iter(parameters)
+
+        # 1. Check that the first parameter is either not annotated or the annotation matches the type of self.cfg
+        cfg_parameter = next(parameter_iter)
+        if cfg_parameter.annotation is not inspect.Parameter.empty:
+            typeguard.check_type(self.cfg, cfg_parameter.annotation)
+            
+        # 2. Check that all other parameters have default values
+        for parameter in parameter_iter:
+            assert parameter.default is not inspect.Parameter.empty
