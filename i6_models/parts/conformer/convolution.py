@@ -3,6 +3,7 @@ from __future__ import annotations
 __all__ = ["ConformerConvolutionV1", "ConformerConvolutionV1Config"]
 
 from dataclasses import dataclass
+from copy import deepcopy
 
 import torch
 from torch import nn
@@ -60,7 +61,7 @@ class ConformerConvolutionV1(nn.Module):
         )
         self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
         self.layer_norm = nn.LayerNorm(model_cfg.channels)
-        self.norm = model_cfg.norm
+        self.norm = deepcopy(model_cfg.norm)
         self.dropout = nn.Dropout(model_cfg.dropout)
         self.activation = model_cfg.activation
 
