@@ -146,7 +146,7 @@ class VGG4LayerActFrontendV1(nn.Module):
                 bias=True,
             )
 
-    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
@@ -162,26 +162,28 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         tensor = self.activation(tensor)
         tensor = self.pool1(tensor)  # [B,C,T',F']
-        sequence_mask = sequence_mask.float()
-        sequence_mask = _mask_pool(
-            sequence_mask,
-            _get_int_tuple_int(self.pool1.kernel_size, 0),
-            _get_int_tuple_int(self.pool1.stride, 0),
-            _get_int_tuple_int(self.pool1.padding, 0),
-        )
+        if sequence_mask is not None:
+            sequence_mask = sequence_mask.float()
+            sequence_mask = _mask_pool(
+                sequence_mask,
+                _get_int_tuple_int(self.pool1.kernel_size, 0),
+                _get_int_tuple_int(self.pool1.stride, 0),
+                _get_int_tuple_int(self.pool1.padding, 0),
+            )
 
         tensor = self.conv3(tensor)
         tensor = self.conv4(tensor)
 
         tensor = self.activation(tensor)
         tensor = self.pool2(tensor)  # [B,C,T",F"]
-        sequence_mask = _mask_pool(
-            sequence_mask,
-            _get_int_tuple_int(self.pool2.kernel_size, 0),
-            _get_int_tuple_int(self.pool2.stride, 0),
-            _get_int_tuple_int(self.pool2.padding, 0),
-        )
-        sequence_mask = sequence_mask.bool()
+        if sequence_mask is not None:
+            sequence_mask = _mask_pool(
+                sequence_mask,
+                _get_int_tuple_int(self.pool2.kernel_size, 0),
+                _get_int_tuple_int(self.pool2.stride, 0),
+                _get_int_tuple_int(self.pool2.padding, 0),
+            )
+            sequence_mask = sequence_mask.bool()
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F"]
