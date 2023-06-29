@@ -103,9 +103,9 @@ class VGG4LayerActFrontendV1(nn.Module):
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
 
         self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
-        assert not ((model_cfg.linear_input_dim is not None) != (
-            model_cfg.linear_output_dim is not None
-        )), "please set input and output dim of the linear layer"
+        assert not (
+            (model_cfg.linear_input_dim is not None) != (model_cfg.linear_output_dim is not None)
+        ), "please set input and output dim of the linear layer"
 
         self.conv1 = nn.Conv2d(
             in_channels=1,
