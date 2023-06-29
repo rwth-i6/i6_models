@@ -84,7 +84,7 @@ class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
         cfg_parameter = next(parameter_iter)
         if cfg_parameter.annotation is not inspect.Parameter.empty:
             typeguard.check_type(self.cfg, cfg_parameter.annotation)
-            
+
         # 2. Check that all other parameters have default values
         for parameter in parameter_iter:
             assert parameter.default is not inspect.Parameter.empty
