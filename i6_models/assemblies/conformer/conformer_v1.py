@@ -7,7 +7,7 @@ from torch import nn
 from dataclasses import dataclass
 from typing import Tuple
 
-from i6_models.config import ModelConfiguration, SubassemblyWithConfig
+from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
     ConformerConvolutionV1,
     ConformerConvolutionV1Config,
@@ -80,7 +80,7 @@ class ConformerEncoderV1Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    frontend: SubassemblyWithConfig
+    frontend: ModuleFactoryV1
     block_cfg: ConformerBlockV1Config
 
 
@@ -97,7 +97,7 @@ class ConformerEncoderV1(nn.Module):
         """
         super().__init__()
 
-        self.frontend = cfg.frontend.construct()
+        self.frontend = cfg.frontend()
         self.module_list = torch.nn.ModuleList([ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
