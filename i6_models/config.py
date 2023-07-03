@@ -17,6 +17,9 @@ Similar approach as done in Fairseq: https://github.com/facebookresearch/fairseq
 from __future__ import annotations
 from dataclasses import dataclass, fields
 import typeguard
+from torch import nn
+from typing import Generic, TypeVar, Type
+import inspect
 
 
 @dataclass
@@ -51,3 +54,37 @@ class ModelConfiguration:
 
     def __post_init__(self) -> None:
         self._validate_types()
+
+
+ConfigType = TypeVar("ConfigType", bound=ModelConfiguration)
+ModuleType = TypeVar("ModuleType", bound=nn.Module)
+
+
+@dataclass
+class ModuleFactoryV1(Generic[ConfigType, ModuleType]):
+    """
+    Dataclass for a combination of a Subassembly/Part and the corresponding configuration.
+    Also provides a function to construct the corresponding object through this dataclass
+    """
+
+    module_class: Type[ModuleType]
+    cfg: ConfigType
+
+    def __call__(self) -> ModuleType:
+        """Constructs an instance of the given module class"""
+        return self.module_class(self.cfg)
+
+    def __post_init__(self) -> None:
+        # Check typing of module_class and cfg, i.e. make sure that "self.module_class(self.cfg)" is a valid call.
+        parameters = inspect.signature(self.module_class).parameters.values()
+        assert len(parameters) >= 1
+        parameter_iter = iter(parameters)
+
+        # 1. Check that the first parameter is either not annotated or the annotation matches the type of self.cfg
+        cfg_parameter = next(parameter_iter)
+        if cfg_parameter.annotation is not inspect.Parameter.empty:
+            typeguard.check_type(self.cfg, cfg_parameter.annotation)
+
+        # 2. Check that all other parameters have default values
+        for parameter in parameter_iter:
+            assert parameter.default is not inspect.Parameter.empty
