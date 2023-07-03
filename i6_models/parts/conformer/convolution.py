@@ -3,6 +3,7 @@ from __future__ import annotations
 __all__ = ["ConformerConvolutionV1", "ConformerConvolutionV1Config"]
 
 from dataclasses import dataclass
+from copy import deepcopy
 
 import torch
 from torch import nn
@@ -27,11 +28,21 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
+    def check_valid(self):
+        assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.check_valid()
+
 
 class ConformerConvolutionV1(nn.Module):
     """
     Conformer convolution module.
     see also: https://github.com/espnet/espnet/blob/713e784c0815ebba2053131307db5f00af5159ea/espnet/nets/pytorch_backend/conformer/convolution.py#L13
+
+    Uses explicit padding for ONNX exportability, see:
+    https://github.com/pytorch/pytorch/issues/68880
     """
 
     def __init__(self, model_cfg: ConformerConvolutionV1Config):
@@ -39,18 +50,18 @@ class ConformerConvolutionV1(nn.Module):
         :param model_cfg: model configuration for this module
         """
         super().__init__()
-
+        model_cfg.check_valid()
         self.pointwise_conv1 = nn.Linear(in_features=model_cfg.channels, out_features=2 * model_cfg.channels)
         self.depthwise_conv = nn.Conv1d(
             in_channels=model_cfg.channels,
             out_channels=model_cfg.channels,
             kernel_size=model_cfg.kernel_size,
-            padding="same",
+            padding=(model_cfg.kernel_size - 1) // 2,
             groups=model_cfg.channels,
         )
         self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
         self.layer_norm = nn.LayerNorm(model_cfg.channels)
-        self.norm = model_cfg.norm
+        self.norm = deepcopy(model_cfg.norm)
         self.dropout = nn.Dropout(model_cfg.dropout)
         self.activation = model_cfg.activation
 

@@ -32,7 +32,6 @@ def test_conformer_convolution_output_shape():
     assert get_output_shape(10, 1, 50) == (10, 1, 50)  # time dim 1
     assert get_output_shape(10, 10, 20, dropout=0.0) == (10, 10, 20)  # dropout 0
     assert get_output_shape(10, 10, 20, kernel_size=3) == (10, 10, 20)  # odd kernel size
-    assert get_output_shape(10, 10, 20, kernel_size=32) == (10, 10, 20)  # even kernel size
 
 
 def test_ConformerPositionwiseFeedForwardV1():
