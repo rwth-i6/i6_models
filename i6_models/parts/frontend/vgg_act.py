@@ -149,7 +149,9 @@ class VGG4LayerActFrontendV1(nn.Module):
                 bias=True,
             )
 
-    def forward(self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor]
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
