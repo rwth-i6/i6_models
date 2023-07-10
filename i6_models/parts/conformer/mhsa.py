@@ -39,18 +39,28 @@ class ConformerMHSAV1(torch.nn.Module):
         )
         self.dropout = cfg.dropout
 
-    def forward(self, input_tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    @staticmethod
+    def _invert_sequence_mask(sequence_mask: torch.Tensor):
+        """
+        Helper function to decide how to invert the sequence mask. For ONNX export use XOR with 1 since logical_not is not implemented.
+        Else logical_not is applied for efficiency reasons.
+
+        :param sequence_mask: bool mask of shape (B, T) to be inverted.
+        """
+        if torch.onnx.is_in_onnx_export():
+            return torch.logical_xor(sequence_mask, torch.ones(sequence_mask.shape, device=sequence_mask.device))
+        else:
+            return torch.logical_not(sequence_mask)
+
+    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
 
         :param input_tensor: Input to the self attention of shape (B, T, F)
-        :param sequence_mask: bool mask of shape (B, T), 1 signals within sequence, 0 outside, will be inverted to match the torch.nn.MultiheadAttention module
+        :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
         which will be applied/added to dot product, used to mask padded key positions out
         """
-        if sequence_mask is not None:
-            inv_sequence_mask = torch.logical_xor(sequence_mask, torch.ones(sequence_mask.shape))
-        else:
-            inv_sequence_mask = None
+        inv_sequence_mask = self._invert_sequence_mask(sequence_mask=sequence_mask)
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
 
         output_tensor, _ = self.mhsa(
