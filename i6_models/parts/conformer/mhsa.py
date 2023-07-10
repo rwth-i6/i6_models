@@ -2,10 +2,10 @@ from __future__ import annotations
 
 __all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config"]
 from dataclasses import dataclass
-from typing import Optional
 import torch
 
 from i6_models.config import ModelConfiguration
+from i6_models.util.compat import logical_not
 
 
 @dataclass
@@ -47,7 +47,7 @@ class ConformerMHSAV1(torch.nn.Module):
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
         which will be applied/added to dot product, used to mask padded key positions out
         """
-        inv_sequence_mask = self._invert_sequence_mask(sequence_mask=sequence_mask)
+        inv_sequence_mask = logical_not(tensor=sequence_mask)
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
 
         output_tensor, _ = self.mhsa(
