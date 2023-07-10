@@ -5,7 +5,7 @@ Compatibility support for different functions. This could be for example for onn
 import torch
 
 
-def logical_not(tensor: torch.Tensor, /):
+def logical_not(tensor: torch.Tensor, /) -> torch.Tensor:
     """
     Helper function to decide how to invert the sequence mask. For ONNX export use XOR with 1 since logical_not is not implemented.
     Else logical_not is applied for efficiency reasons.
