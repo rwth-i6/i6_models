@@ -20,6 +20,7 @@ from .common import IntTupleIntType, _get_padding, _mask_pool, _get_int_tuple_in
 class VGG4LayerActFrontendV1Config(ModelConfiguration):
     """
     Attributes:
+        in_features: number of input features to module
         conv1_channels: number of channels for first conv layer
         conv2_channels: number of channels for second conv layer
         conv3_channels: number of channels for third conv layer
@@ -34,9 +35,10 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         pool2_padding: padding for second pooling layer
         activation: activation function at the end
         linear_input_dim: input size of the final linear layer
-        linear_output_dim: output size of the final linear layer
+        out_features: output size of the final linear layer
     """
 
+    in_features: int
     conv1_channels: int
     conv2_channels: int
     conv3_channels: int
@@ -51,7 +53,7 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     pool2_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     linear_input_dim: Optional[int]
-    linear_output_dim: Optional[int]
+    out_features: Optional[int]
 
     def check_valid(self):
         if isinstance(self.conv_kernel_size, int):
@@ -102,13 +104,13 @@ class VGG4LayerActFrontendV1(nn.Module):
         pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
 
-        self.include_linear_layer = True if model_cfg.linear_output_dim is not None else False
+        self.include_linear_layer = True if model_cfg.out_features is not None else False
         assert not (
-            (model_cfg.linear_input_dim is not None) != (model_cfg.linear_output_dim is not None)
+            (model_cfg.linear_input_dim is not None) != (model_cfg.out_features is not None)
         ), "please set input and output dim of the linear layer"
 
         self.conv1 = nn.Conv2d(
-            in_channels=1,
+            in_channels=model_cfg.in_features,
             out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
@@ -145,7 +147,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         if self.include_linear_layer:
             self.linear = nn.Linear(
                 in_features=model_cfg.linear_input_dim,
-                out_features=model_cfg.linear_output_dim,
+                out_features=model_cfg.out_features,
                 bias=True,
             )
 
