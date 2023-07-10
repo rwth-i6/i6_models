@@ -1,5 +1,5 @@
 """
-Compatibility functions for different functions. This could be for example for onnx export.
+Compatibility support for different functions. This could be for example for onnx export.
 """
 
 import torch
