@@ -47,7 +47,7 @@ class ConformerMHSAV1(torch.nn.Module):
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
         which will be applied/added to dot product, used to mask padded key positions out
         """
-        inv_sequence_mask = logical_not(sequence_mask)
+        inv_sequence_mask = compat.logical_not(sequence_mask)
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
 
         output_tensor, _ = self.mhsa(
