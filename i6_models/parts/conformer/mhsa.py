@@ -39,19 +39,6 @@ class ConformerMHSAV1(torch.nn.Module):
         )
         self.dropout = cfg.dropout
 
-    @staticmethod
-    def _invert_sequence_mask(sequence_mask: torch.Tensor):
-        """
-        Helper function to decide how to invert the sequence mask. For ONNX export use XOR with 1 since logical_not is not implemented.
-        Else logical_not is applied for efficiency reasons.
-
-        :param sequence_mask: bool mask of shape (B, T) to be inverted.
-        """
-        if torch.onnx.is_in_onnx_export():
-            return torch.logical_xor(sequence_mask, torch.ones_like(sequence_mask))
-        else:
-            return torch.logical_not(sequence_mask)
-
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
