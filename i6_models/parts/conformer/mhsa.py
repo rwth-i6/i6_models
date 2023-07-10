@@ -48,7 +48,7 @@ class ConformerMHSAV1(torch.nn.Module):
         :param sequence_mask: bool mask of shape (B, T) to be inverted.
         """
         if torch.onnx.is_in_onnx_export():
-            return torch.logical_xor(sequence_mask, torch.ones(sequence_mask.shape, device=sequence_mask.device))
+            return torch.logical_xor(sequence_mask, torch.ones_like(sequence_mask))
         else:
             return torch.logical_not(sequence_mask)
 
