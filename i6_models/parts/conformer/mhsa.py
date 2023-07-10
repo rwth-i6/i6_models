@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import torch
 
 from i6_models.config import ModelConfiguration
-from i6_models.util.compat import logical_not
+from i6_models.util import compat
 
 
 @dataclass
