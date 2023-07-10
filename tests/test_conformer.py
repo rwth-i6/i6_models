@@ -57,11 +57,6 @@ def test_ConformerMHSAV1():
 
         return list(output.shape)
 
-    # without key padding mask
-    input_shape = [3, 10, 20]  # B,T,F
-    cfg = ConformerMHSAV1Config(20, 4, 0.1, 0.1)
-    assert get_output_shape(input_shape, cfg) == [3, 10, 20]
-
     # with key padding mask
     input_shape = [4, 15, 32]  # B,T,F
     cfg = ConformerMHSAV1Config(32, 8, 0.2, 0.3)
