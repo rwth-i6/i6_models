@@ -57,15 +57,10 @@ def test_ConformerMHSAV1():
 
         return list(output.shape)
 
-    # without key padding mask
-    input_shape = [3, 10, 20]  # B,T,F
-    cfg = ConformerMHSAV1Config(20, 4, 0.1, 0.1)
-    assert get_output_shape(input_shape, cfg) == [3, 10, 20]
-
     # with key padding mask
     input_shape = [4, 15, 32]  # B,T,F
     cfg = ConformerMHSAV1Config(32, 8, 0.2, 0.3)
-    assert get_output_shape(input_shape, cfg, key_padding_mask=torch.randint(0, 2, input_shape[:2]) > 0) == [4, 15, 32]
+    assert get_output_shape(input_shape, cfg, sequence_mask=(torch.randint(0, 2, input_shape[:2]) > 0)) == [4, 15, 32]
 
 
 def test_layer_norm_nc():
