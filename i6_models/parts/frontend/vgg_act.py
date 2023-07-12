@@ -157,6 +157,9 @@ class VGG4LayerActFrontendV1(nn.Module):
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
+        stride is only allowed for the pool1 and pool2 operation.
+        other ops do not have stride configurable -> no update of mask sequence required
+
         :param tensor: input tensor of shape [B,T,F]
         :param sequence_mask: the sequence mask for the tensor
         :return: torch.Tensor of shape [B,T",F'] and the shape of the sequence mask
