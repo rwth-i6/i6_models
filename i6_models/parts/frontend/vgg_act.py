@@ -110,7 +110,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         ), "please set input and output dim of the linear layer"
 
         self.conv1 = nn.Conv2d(
-            in_channels=model_cfg.in_features,
+            in_channels=1,
             out_channels=model_cfg.conv1_channels,
             kernel_size=model_cfg.conv_kernel_size,
             padding=conv_padding,
@@ -152,8 +152,8 @@ class VGG4LayerActFrontendV1(nn.Module):
             )
 
     def forward(
-        self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor]
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        self, tensor: torch.Tensor, sequence_mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
