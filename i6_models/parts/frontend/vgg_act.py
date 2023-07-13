@@ -99,7 +99,9 @@ class VGG4LayerActFrontendV1(nn.Module):
         model_cfg.check_valid()
 
         conv_padding = (
-            model_cfg.conv_padding if model_cfg.conv_padding is not None else get_same_padding(model_cfg.conv_kernel_size)
+            model_cfg.conv_padding
+            if model_cfg.conv_padding is not None
+            else get_same_padding(model_cfg.conv_kernel_size)
         )
         pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
@@ -151,9 +153,7 @@ class VGG4LayerActFrontendV1(nn.Module):
                 bias=True,
             )
 
-    def forward(
-        self, tensor: torch.Tensor, sequence_mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
