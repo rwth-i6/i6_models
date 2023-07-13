@@ -168,7 +168,20 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
         tensor = self.conv1(tensor)
+        sequence_mask = mask_pool(
+            sequence_mask,
+            get_int_tuple_int(self.conv1.kernel_size, 0),
+            get_int_tuple_int(self.conv1.stride, 0),
+            get_int_tuple_int(self.conv1.padding, 0),
+        )
+
         tensor = self.conv2(tensor)
+        sequence_mask = mask_pool(
+            sequence_mask,
+            get_int_tuple_int(self.conv2.kernel_size, 0),
+            get_int_tuple_int(self.conv2.stride, 0),
+            get_int_tuple_int(self.conv2.padding, 0),
+        )
 
         tensor = self.activation(tensor)
         tensor = self.pool1(tensor)  # [B,C,T',F']
@@ -180,7 +193,20 @@ class VGG4LayerActFrontendV1(nn.Module):
         )
 
         tensor = self.conv3(tensor)
+        sequence_mask = mask_pool(
+            sequence_mask,
+            get_int_tuple_int(self.conv3.kernel_size, 0),
+            get_int_tuple_int(self.conv3.stride, 0),
+            get_int_tuple_int(self.conv3.padding, 0),
+        )
+
         tensor = self.conv4(tensor)
+        sequence_mask = mask_pool(
+            sequence_mask,
+            get_int_tuple_int(self.conv4.kernel_size, 0),
+            get_int_tuple_int(self.conv4.stride, 0),
+            get_int_tuple_int(self.conv4.padding, 0),
+        )
 
         tensor = self.activation(tensor)
         tensor = self.pool2(tensor)  # [B,C,T",F"]

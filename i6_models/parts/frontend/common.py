@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 
-IntTupleIntType = Union[int, Tuple[int, int]]
+IntTupleIntType = Union[int, Tuple[int, ...]]
 
 
 def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
