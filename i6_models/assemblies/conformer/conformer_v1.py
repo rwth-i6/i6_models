@@ -49,21 +49,16 @@ class ConformerBlockV1(nn.Module):
         self.ff2 = ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
-        :param tensor: input tensor of shape [B, T, F]
+        :param x: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
-        residual = tensor  #  [B, T, F]
-        x = self.ff1(residual)  #  [B, T, F]
-        residual = 0.5 * x + residual  #  [B, T, F]
-        x = self.mhsa(residual, sequence_mask)  #  [B, T, F]
-        residual = x + residual  # [B, T, F]
-        x = self.conv(residual)  #  [B, T, F]
-        residual = x + residual  # [B, T, F]
-        x = self.ff2(residual)  #  [B, T, F]
-        x = 0.5 * x + residual  #  [B, T, F]
+        x = 0.5 * self.ff1(x) + x  #  [B, T, F]
+        x = self.mhsa(x, sequence_mask) + x  #  [B, T, F]
+        x = self.conv(x) + x  #  [B, T, F]
+        x = 0.5 * self.ff2(x) + x  #  [B, T, F]
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
 
