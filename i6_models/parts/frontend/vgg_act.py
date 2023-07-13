@@ -13,7 +13,7 @@ from torch import nn
 
 from i6_models.config import ModelConfiguration
 
-from .common import IntTupleIntType, _get_padding, _mask_pool, _get_int_tuple_int
+from .common import IntTupleIntType, get_same_padding, mask_pool, get_int_tuple_int
 
 
 @dataclass
@@ -99,7 +99,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         model_cfg.check_valid()
 
         conv_padding = (
-            model_cfg.conv_padding if model_cfg.conv_padding is not None else _get_padding(model_cfg.conv_kernel_size)
+            model_cfg.conv_padding if model_cfg.conv_padding is not None else get_same_padding(model_cfg.conv_kernel_size)
         )
         pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
@@ -172,11 +172,11 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         tensor = self.activation(tensor)
         tensor = self.pool1(tensor)  # [B,C,T',F']
-        sequence_mask = _mask_pool(
+        sequence_mask = mask_pool(
             sequence_mask,
-            _get_int_tuple_int(self.pool1.kernel_size, 0),
-            _get_int_tuple_int(self.pool1.stride, 0),
-            _get_int_tuple_int(self.pool1.padding, 0),
+            get_int_tuple_int(self.pool1.kernel_size, 0),
+            get_int_tuple_int(self.pool1.stride, 0),
+            get_int_tuple_int(self.pool1.padding, 0),
         )
 
         tensor = self.conv3(tensor)
@@ -184,11 +184,11 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         tensor = self.activation(tensor)
         tensor = self.pool2(tensor)  # [B,C,T",F"]
-        sequence_mask = _mask_pool(
+        sequence_mask = mask_pool(
             sequence_mask,
-            _get_int_tuple_int(self.pool2.kernel_size, 0),
-            _get_int_tuple_int(self.pool2.stride, 0),
-            _get_int_tuple_int(self.pool2.padding, 0),
+            get_int_tuple_int(self.pool2.kernel_size, 0),
+            get_int_tuple_int(self.pool2.stride, 0),
+            get_int_tuple_int(self.pool2.padding, 0),
         )
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]

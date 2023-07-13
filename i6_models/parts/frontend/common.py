@@ -7,7 +7,7 @@ from torch import nn
 IntTupleIntType = Union[int, Tuple[int, int]]
 
 
-def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
+def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
     """
     get padding in order to not reduce the time dimension
 
@@ -22,7 +22,7 @@ def _get_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[in
         raise TypeError(f"unexpected size type {type(input_size)}")
 
 
-def _mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
+def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
     """
     :param seq_mask: [B,T]
     :param kernel_size:
@@ -38,5 +38,5 @@ def _mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: i
     return seq_mask
 
 
-def _get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
+def get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
     return variable[index] if isinstance(variable, tuple) else variable
