@@ -23,6 +23,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         num_filters: number of mel windows
         center: centered STFT with automatic padding
     """
+
     sample_rate: int
     win_size: float
     hop_size: float
@@ -43,26 +44,29 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
 
 class LogMelFeatureExtractionV1(nn.Module):
     """
-        Librosa-compatible log-mel feature extraction using log10. Does not use torchaudio.
+    Librosa-compatible log-mel feature extraction using log10. Does not use torchaudio.
 
-        Using it wrapped with torch.no_grad() is recommended if no gradient is needed
+    Using it wrapped with torch.no_grad() is recommended if no gradient is needed
     """
 
-    def __init__(
-            self,
-            cfg: LogMelFeatureExtractionV1Config
-    ):
+    def __init__(self, cfg: LogMelFeatureExtractionV1Config):
         super().__init__()
         self.register_buffer("n_fft", torch.tensor(int(cfg.win_size * cfg.sample_rate)))
         self.register_buffer("hop_length", torch.tensor(int(cfg.hop_size * cfg.sample_rate)))
         self.register_buffer("min_amp", torch.tensor(cfg.min_amp))
         self.center = cfg.center
-        self.register_buffer("mel_basis", torch.tensor(filters.mel(
-            sr=cfg.sample_rate,
-            n_fft=int(cfg.sample_rate * cfg.win_size),
-            n_mels=cfg.num_filters,
-            fmin=cfg.f_min,
-            fmax=cfg.f_max)))
+        self.register_buffer(
+            "mel_basis",
+            torch.tensor(
+                filters.mel(
+                    sr=cfg.sample_rate,
+                    n_fft=int(cfg.sample_rate * cfg.win_size),
+                    n_mels=cfg.num_filters,
+                    fmin=cfg.f_min,
+                    fmax=cfg.f_max,
+                )
+            ),
+        )
         self.register_buffer("window", torch.hann_window(int(cfg.win_size * cfg.sample_rate)))
 
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -72,15 +76,20 @@ class LogMelFeatureExtractionV1(nn.Module):
         :return features as [B,T,F] and length in frames [B]
         """
 
-        S = torch.abs(torch.stft(
-            raw_audio,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            window=self.window,
-            center=self.center,
-            pad_mode="constant",
-            return_complex=True,
-        )) ** 2
+        S = (
+            torch.abs(
+                torch.stft(
+                    raw_audio,
+                    n_fft=self.n_fft,
+                    hop_length=self.hop_length,
+                    window=self.window,
+                    center=self.center,
+                    pad_mode="constant",
+                    return_complex=True,
+                )
+            )
+            ** 2
+        )
         if len(S.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
             S = torch.unsqueeze(S, 0)
