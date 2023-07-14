@@ -18,7 +18,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         win_size: window size in seconds
         hop_size: window shift in seconds
         f_min: minimum mel filter frequency in Hz
-        f_max: maximum mel fitler frequency in Hz
+        f_max: maximum mel filter frequency in Hz
         min_amp: minimum amplitude for safe log
         num_filters: number of mel windows
         center: centered STFT with automatic padding
