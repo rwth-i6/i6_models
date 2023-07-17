@@ -8,7 +8,7 @@ from torch import nn
 from torch.nn import functional
 
 from i6_models.parts.frontend.common import IntTupleIntType
-from i6_models.parts.frontend import (
+from i6_models.parts.frontend.vgg_act import (
     VGG4LayerActFrontendV1,
     VGG4LayerActFrontendV1Config,
 )
