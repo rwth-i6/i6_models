@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["ConvolutionalGatingMLPV1Config", "ConvolutionalGatingMLPV1"]
+
 from dataclasses import dataclass
 from typing import Callable
 
@@ -11,16 +13,20 @@ from i6_models.config import ModelConfiguration
 
 @dataclass
 class ConvolutionalGatingMLPV1Config(ModelConfiguration):
+    """
+    Attributes:
+        input_dim: input dimension
+        hidden_dim: hidden dimension (normally set to 6*input_dim as suggested by the paper)
+        kernel_size: kernel size of the depthwise convolution layer
+        dropout: dropout probability
+        activation: activation function
+    """
+
     input_dim: int
-    """input dimension"""
     hidden_dim: int
-    """hidden dimension (normally set to 6*input_dim as suggested by the paper)"""
     kernel_size: int
-    """kernel size of the depth-wise convolution layer"""
     dropout: float
-    """dropout probability"""
     activation: Callable[[torch.Tensor], torch.Tensor] = nn.functional.gelu
-    """activation function"""
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConvolutionalGatingMLPV1 only supports odd kernel sizes"
@@ -33,42 +39,42 @@ class ConvolutionalGatingMLPV1Config(ModelConfiguration):
 class ConvolutionalGatingMLPV1(nn.Module):
     """Convolutional Gating MLP (cgMLP)."""
 
-    def __init__(self, cfg: ConvolutionalGatingMLPV1Config):
+    def __init__(self, model_cfg: ConvolutionalGatingMLPV1Config):
         super().__init__()
 
-        self.layer_norm_input = nn.LayerNorm(cfg.input_dim)
-        self.linear_ff = nn.Linear(in_features=cfg.input_dim, out_features=cfg.hidden_dim, bias=True)
-        self.activation = cfg.activation
-        self.layer_norm_csgu = nn.LayerNorm(cfg.hidden_dim // 2)
+        self.layer_norm_input = nn.LayerNorm(model_cfg.input_dim)
+        self.linear_ff = nn.Linear(in_features=model_cfg.input_dim, out_features=model_cfg.hidden_dim, bias=True)
+        self.activation = model_cfg.activation
+        self.layer_norm_csgu = nn.LayerNorm(model_cfg.hidden_dim // 2)
         self.depthwise_conv = nn.Conv1d(
-            in_channels=cfg.hidden_dim // 2,
-            out_channels=cfg.hidden_dim // 2,
-            kernel_size=cfg.kernel_size,
-            padding=(cfg.kernel_size - 1) // 2,
-            groups=cfg.hidden_dim // 2,
+            in_channels=model_cfg.hidden_dim // 2,
+            out_channels=model_cfg.hidden_dim // 2,
+            kernel_size=model_cfg.kernel_size,
+            padding=(model_cfg.kernel_size - 1) // 2,
+            groups=model_cfg.hidden_dim // 2,
         )
-        self.linear_out = nn.Linear(in_features=cfg.hidden_dim // 2, out_features=cfg.input_dim, bias=True)
-        self.dropout = cfg.dropout
+        self.linear_out = nn.Linear(in_features=model_cfg.hidden_dim // 2, out_features=model_cfg.input_dim, bias=True)
+        self.dropout = model_cfg.dropout
 
-    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param tensor: shape [B,T,F], F=input_dim
+        :param x: shape [B,T,F], F=input_dim
         :return: shape [B,T,F], F=input_dim
         """
-        tensor = self.layer_norm_input(tensor)  # (B,T,F)
-        tensor = self.linear_ff(tensor)  # (B,T,6*F)
-        tensor = self.activation(tensor)
+        x = self.layer_norm_input(x)  # (B,T,F)
+        x = self.linear_ff(x)  # (B,T,6*F)
+        x = self.activation(x)
 
         # convolutional spatial gating unit (csgu)
-        tensor_r, tensor_g = tensor.chunk(2, dim=-1)  # (B,T,3*F), (B,T,3*F)
-        tensor_g = self.layer_norm_csgu(tensor_g)
+        x_1, x_2 = x.chunk(2, dim=-1)  # (B,T,3*F), (B,T,3*F)
+        x_2 = self.layer_norm_csgu(x_2)
         # conv layers expect shape [B,F,T] so we have to transpose here
-        tensor_g = tensor_g.transpose(1, 2)  # [B,3*F,T]
-        tensor_g = self.depthwise_conv(tensor_g)
-        tensor_g = tensor_g.transpose(1, 2)  # [B,T,3*F]
-        tensor = tensor_r * tensor_g
-        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)
+        x_2 = x_2.transpose(1, 2)  # [B,3*F,T]
+        x_2 = self.depthwise_conv(x_2)
+        x_2 = x_2.transpose(1, 2)  # [B,T,3*F]
+        x = x_1 * x_2
+        x = nn.functional.dropout(x, p=self.dropout, training=self.training)
 
-        tensor = self.linear_out(tensor)  # [B,T,F]
-        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)
-        return tensor
+        x = self.linear_out(x)  # [B,T,F]
+        x = nn.functional.dropout(x, p=self.dropout, training=self.training)
+        return x
