@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import torch
 from torch import nn
+from torch.nn import functional
 
 from i6_models.parts.frontend.common import IntTupleIntType
 from i6_models.parts.frontend import (
@@ -43,7 +44,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
         )
 
         cfg = VGG4LayerActFrontendV1Config(
-            in_features=1,
+            in_features=test_parameters.features,
             conv1_channels=test_parameters.conv1_channels,
             conv2_channels=test_parameters.conv2_channels,
             conv3_channels=test_parameters.conv3_channels,
@@ -69,7 +70,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
 
     for idx, test_params in enumerate(
         [
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 0
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -83,10 +84,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=50,  # int
                 output_shape=[10, 50, 50],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 1
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -100,10 +101,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=50,  # int
                 output_shape=[10, 25, 50],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 2
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -117,10 +118,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(2, 1),  # Optional[IntTupleIntType]
                 out_features=50,  # int
                 output_shape=[10, 25, 50],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 3
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -134,10 +135,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(2, 1),  # Optional[IntTupleIntType]
                 out_features=50,  # int
                 output_shape=[10, 12, 50],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 4
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -151,10 +152,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=100,  # int
                 output_shape=[10, 50, 100],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 5
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -168,10 +169,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=150,  # int
                 output_shape=[10, 50, 150],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 6
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -185,10 +186,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=200,  # int
                 output_shape=[10, 50, 200],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 7
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -202,10 +203,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=3200,  # int
                 output_shape=[10, 50, 3200],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 8
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -219,10 +220,10 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
                 out_features=50,  # int
                 output_shape=[10, 50, 50],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 9
                 batch=10,  # int
                 time=50,  # int
                 features=60,  # int
@@ -234,12 +235,12 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 2),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                out_features=None,  # int
+                out_features=60,  # int
                 output_shape=[10, 50, 60],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 10
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -251,12 +252,12 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(2, 3),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                out_features=None,  # int
+                out_features=24,  # int
                 output_shape=[10, 25, 24],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 11
                 batch=10,  # int
                 time=50,  # int
                 features=70,  # int
@@ -268,12 +269,12 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 2),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                out_features=None,  # int
+                out_features=68,  # int
                 output_shape=[10, 50, 68],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
             ),
-            VGG4LayerActTestParams(
+            VGG4LayerActTestParams(  # idx 12
                 batch=10,  # int
                 time=50,  # int
                 features=50,  # int
@@ -285,13 +286,14 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(4, 3),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 3),  # IntTupleIntType
                 pool2_stride=(1, 3),  # Optional[IntTupleIntType]
-                out_features=None,  # int
+                out_features=320,  # int
                 output_shape=[10, 12, 320],  # Tuple[int, int, int]
-                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
-                out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]),  # torch.Tensor
+                in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]).bool(),  # torch.Tensor
+                out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]).bool(),  # torch.Tensor
             ),
         ]
     ):
+        print(idx)
         shape, seq_mask = get_output_shape(test_params)
         assert list(shape) == test_params.output_shape, (type(shape), type(test_params.output_shape))
         assert torch.equal(seq_mask, test_params.out_sequence_mask), (

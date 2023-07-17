@@ -2,6 +2,7 @@ from typing import Tuple, Union
 
 import torch
 from torch import nn
+from torch.nn import functional
 
 
 IntTupleIntType = Union[int, Tuple[int, ...]]
@@ -32,6 +33,9 @@ def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: in
     :param padding:
     :return: [B,T'] using maxpool
     """
+    if stride == 1 and padding == 1:
+        return seq_mask
+
     seq_mask = seq_mask.float()
     seq_mask = torch.unsqueeze(seq_mask, 1)  # [B,1,T]
     seq_mask = nn.functional.max_pool1d(seq_mask, kernel_size, stride, padding)  # [B,1,T']

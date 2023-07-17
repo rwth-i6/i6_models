@@ -142,7 +142,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         )
         self.activation = model_cfg.activation
         self.linear = nn.Linear(
-            in_features=self._calculate_output_dim(),
+            in_features=self._calculate_dim(),
             out_features=model_cfg.out_features,
             bias=True,
         )
@@ -164,10 +164,10 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         tensor = self.conv1(tensor)
         sequence_mask = mask_pool(
-            sequence_mask,
-            get_int_tuple_int(self.conv1.kernel_size, 0),
-            get_int_tuple_int(self.conv1.stride, 0),
-            get_int_tuple_int(self.conv1.padding, 0),
+            seq_mask=sequence_mask,
+            kernel_size=get_int_tuple_int(self.conv1.kernel_size, 0),
+            stride=get_int_tuple_int(self.conv1.stride, 0),
+            padding=get_int_tuple_int(self.conv1.padding, 0),
         )
 
         tensor = self.conv2(tensor)
@@ -219,5 +219,16 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         return tensor, sequence_mask
 
-    def _calculate_dim(self):
-        out_dim_conv1 = calculate_output_dim(self.cfg.in_features, get_int_tuple_int(self.conv1.kernel_size, 1))
+    def _calculate_dim(self) -> int:
+        out_dim = calculate_output_dim(
+            in_dim=self.cfg.in_features,
+            filter_size=get_int_tuple_int(self.pool1.kernel_size, 1),
+            stride=get_int_tuple_int(self.pool1.stride, 1),
+        )
+        out_dim = calculate_output_dim(
+            in_dim=out_dim,
+            filter_size=get_int_tuple_int(self.pool2.kernel_size, 1),
+            stride=get_int_tuple_int(self.pool2.stride, 1),
+        )
+        out_dim *= self.conv4.out_channels
+        return out_dim
