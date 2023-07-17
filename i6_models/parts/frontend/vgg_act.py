@@ -60,10 +60,21 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
             assert self.pool1_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
         if isinstance(self.pool2_kernel_size, int):
             assert self.pool2_kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
+        assert not (
+                (self.linear_input_dim is not None) != (self.linear_output_dim is not None)
+        ), "please set input and output dim of the linear layer"
 
     def __post__init__(self):
         super().__post_init__()
         self.check_valid()
+
+
+# TODO remove linear_input_dim?
+# TODO add in_features for module
+# TODO do we need the export flag?
+# TODO do we need the protocol?
+# TODO file versions?
+# TODO missing mask updates?
 
 
 class VGG4LayerActFrontendV1(nn.Module):

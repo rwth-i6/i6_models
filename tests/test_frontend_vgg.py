@@ -12,6 +12,9 @@ from i6_models.parts.frontend import (
     VGG4LayerActFrontendV1Config,
 )
 
+# TODO rewrite tests
+# TODO seq mask as input
+
 
 @dataclass
 class VGG4LayerActTestParams:
