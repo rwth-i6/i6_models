@@ -84,7 +84,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=50,  # Optional[int]
+                out_features=50,  # int
                 output_shape=[10, 50, 50],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -101,7 +101,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(2, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=50,  # Optional[int]
+                out_features=50,  # int
                 output_shape=[10, 25, 50],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
@@ -118,7 +118,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(2, 1),  # IntTupleIntType
                 pool2_stride=(2, 1),  # Optional[IntTupleIntType]
-                out_features=50,  # Optional[int]
+                out_features=50,  # int
                 output_shape=[10, 25, 50],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
@@ -135,7 +135,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(2, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(2, 1),  # IntTupleIntType
                 pool2_stride=(2, 1),  # Optional[IntTupleIntType]
-                out_features=50,  # Optional[int]
+                out_features=50,  # int
                 output_shape=[10, 12, 50],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]),  # torch.Tensor
@@ -152,7 +152,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=100,  # Optional[int]
+                out_features=100,  # int
                 output_shape=[10, 50, 100],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -169,7 +169,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=150,  # Optional[int]
+                out_features=150,  # int
                 output_shape=[10, 50, 150],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -186,7 +186,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=200,  # Optional[int]
+                out_features=200,  # int
                 output_shape=[10, 50, 200],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -203,7 +203,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                out_features=3200,  # Optional[int]
+                out_features=3200,  # int
                 output_shape=[10, 50, 3200],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -220,8 +220,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 1),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 1),  # IntTupleIntType
                 pool2_stride=(1, 1),  # Optional[IntTupleIntType]
-                linear_input_dim=3200,  # Optional[int]
-                out_features=50,  # Optional[int]
+                out_features=50,  # int
                 output_shape=[10, 50, 50],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -238,8 +237,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 2),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                linear_input_dim=None,  # Optional[int]
-                out_features=None,  # Optional[int]
+                out_features=None,  # int
                 output_shape=[10, 50, 60],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -256,8 +254,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(2, 3),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                linear_input_dim=None,  # Optional[int]
-                out_features=None,  # Optional[int]
+                out_features=None,  # int
                 output_shape=[10, 25, 24],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [13 * [True] + 12 * [False]]),  # torch.Tensor
@@ -274,8 +271,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(1, 2),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 2),  # IntTupleIntType
                 pool2_stride=(1, 2),  # Optional[IntTupleIntType]
-                linear_input_dim=None,  # Optional[int]
-                out_features=None,  # Optional[int]
+                out_features=None,  # int
                 output_shape=[10, 50, 68],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
@@ -292,8 +288,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
                 pool1_stride=(4, 3),  # Optional[IntTupleIntType]
                 pool2_kernel_size=(1, 3),  # IntTupleIntType
                 pool2_stride=(1, 3),  # Optional[IntTupleIntType]
-                linear_input_dim=None,  # Optional[int]
-                out_features=None,  # Optional[int]
+                out_features=None,  # int
                 output_shape=[10, 12, 320],  # Tuple[int, int, int]
                 in_sequence_mask=torch.Tensor(10 * [25 * [True] + 25 * [False]]),  # torch.Tensor
                 out_sequence_mask=torch.Tensor(10 * [7 * [True] + 5 * [False]]),  # torch.Tensor
