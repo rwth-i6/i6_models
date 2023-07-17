@@ -220,11 +220,37 @@ class VGG4LayerActFrontendV1(nn.Module):
         return tensor, sequence_mask
 
     def _calculate_dim(self) -> int:
+        # conv1
         out_dim = calculate_output_dim(
             in_dim=self.cfg.in_features,
+            filter_size=get_int_tuple_int(self.conv1.kernel_size, 1),
+            stride=get_int_tuple_int(self.conv1.stride, 1),
+        )
+        # conv2
+        out_dim = calculate_output_dim(
+            in_dim=out_dim,
+            filter_size=get_int_tuple_int(self.conv2.kernel_size, 1),
+            stride=get_int_tuple_int(self.conv2.stride, 1),
+        )
+        # pool1
+        out_dim = calculate_output_dim(
+            in_dim=out_dim,
             filter_size=get_int_tuple_int(self.pool1.kernel_size, 1),
             stride=get_int_tuple_int(self.pool1.stride, 1),
         )
+        # conv3
+        out_dim = calculate_output_dim(
+            in_dim=out_dim,
+            filter_size=get_int_tuple_int(self.conv3.kernel_size, 1),
+            stride=get_int_tuple_int(self.conv3.stride, 1),
+        )
+        # conv4
+        out_dim = calculate_output_dim(
+            in_dim=out_dim,
+            filter_size=get_int_tuple_int(self.conv4.kernel_size, 1),
+            stride=get_int_tuple_int(self.conv4.stride, 1),
+        )
+        # pool2
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=get_int_tuple_int(self.pool2.kernel_size, 1),

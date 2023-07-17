@@ -49,6 +49,9 @@ def get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
 
 
 def calculate_output_dim(in_dim: int, filter_size: int, stride: int) -> int:
+    if stride == 1:
+        return in_dim
+
     def ceildiv(a: int, b: int):
         if isinstance(b, int) and b == 1:
             return a
