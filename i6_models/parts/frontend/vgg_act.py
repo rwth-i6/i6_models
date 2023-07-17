@@ -13,7 +13,7 @@ from torch import nn
 
 from i6_models.config import ModelConfiguration
 
-from .common import IntTupleIntType, get_same_padding, mask_pool, get_int_tuple_int
+from .common import IntTupleIntType, get_same_padding, mask_pool, get_int_tuple_int, calculate_output_dim
 
 
 @dataclass
@@ -34,7 +34,6 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         pool2_stride: stride of second pooling layer
         pool2_padding: padding for second pooling layer
         activation: activation function at the end
-        linear_input_dim: input size of the final linear layer
         out_features: output size of the final linear layer
     """
 
@@ -52,8 +51,7 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     pool2_stride: Optional[IntTupleIntType]
     pool2_padding: Optional[IntTupleIntType]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
-    linear_input_dim: Optional[int]
-    out_features: Optional[int]
+    out_features: int
 
     def check_valid(self):
         if isinstance(self.conv_kernel_size, int):
@@ -98,6 +96,8 @@ class VGG4LayerActFrontendV1(nn.Module):
 
         model_cfg.check_valid()
 
+        self.cfg = model_cfg
+
         conv_padding = (
             model_cfg.conv_padding
             if model_cfg.conv_padding is not None
@@ -105,11 +105,6 @@ class VGG4LayerActFrontendV1(nn.Module):
         )
         pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
         pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
-
-        self.include_linear_layer = True if model_cfg.out_features is not None else False
-        assert not (
-            (model_cfg.linear_input_dim is not None) != (model_cfg.out_features is not None)
-        ), "please set input and output dim of the linear layer"
 
         self.conv1 = nn.Conv2d(
             in_channels=1,
@@ -146,24 +141,24 @@ class VGG4LayerActFrontendV1(nn.Module):
             padding=pool2_padding,
         )
         self.activation = model_cfg.activation
-        if self.include_linear_layer:
-            self.linear = nn.Linear(
-                in_features=model_cfg.linear_input_dim,
-                out_features=model_cfg.out_features,
-                bias=True,
-            )
+        self.linear = nn.Linear(
+            in_features=self._calculate_output_dim(),
+            out_features=model_cfg.out_features,
+            bias=True,
+        )
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         T might be reduced to T' or T'' depending on stride of the layers
 
         stride is only allowed for the pool1 and pool2 operation.
-        other ops do not have stride configurable -> no update of mask sequence required
+        other ops do not have stride configurable -> no update of mask sequence required but added anyway
 
         :param tensor: input tensor of shape [B,T,F]
         :param sequence_mask: the sequence mask for the tensor
         :return: torch.Tensor of shape [B,T",F'] and the shape of the sequence mask
         """
+        assert tensor.shape[-1] == self.cfg.in_features
         # and add a dim
         tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
@@ -220,7 +215,9 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]
         tensor = torch.flatten(tensor, start_dim=2, end_dim=-1)  # [B,T",C*F"]
 
-        if self.include_linear_layer:
-            tensor = self.linear(tensor)
+        tensor = self.linear(tensor)
 
         return tensor, sequence_mask
+
+    def _calculate_dim(self):
+        out_dim_conv1 = calculate_output_dim(self.cfg.in_features, get_int_tuple_int(self.conv1.kernel_size, 1))

@@ -24,6 +24,8 @@ def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tupl
 
 def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
     """
+    apply strides to the masking
+
     :param seq_mask: [B,T]
     :param kernel_size:
     :param stride:
@@ -40,3 +42,12 @@ def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: in
 
 def get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
     return variable[index] if isinstance(variable, tuple) else variable
+
+
+def calculate_output_dim(in_dim: int, filter_size: int, stride: int) -> int:
+    def ceildiv(a: int, b: int):
+        if isinstance(b, int) and b == 1:
+            return a
+        return -(-a // b)
+
+    return ceildiv(in_dim - (filter_size - 1) * 1, stride)
