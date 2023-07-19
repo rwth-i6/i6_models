@@ -42,14 +42,14 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
-    conv_kernel_size: Tuple
-    conv_padding: Optional[Tuple]
-    pool1_kernel_size: Tuple
-    pool1_stride: Optional[Tuple]
-    pool1_padding: Optional[Tuple]
-    pool2_kernel_size: Tuple
-    pool2_stride: Optional[Tuple]
-    pool2_padding: Optional[Tuple]
+    conv_kernel_size: Tuple[int, int]
+    conv_padding: Optional[Tuple[int, int]]
+    pool1_kernel_size: Tuple[int, int]
+    pool1_stride: Optional[Tuple[int, int]]
+    pool1_padding: Optional[Tuple[int, int]]
+    pool2_kernel_size: Tuple[int, int]
+    pool2_stride: Optional[Tuple[int, int]]
+    pool2_padding: Optional[Tuple[int, int]]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     out_features: int
 
