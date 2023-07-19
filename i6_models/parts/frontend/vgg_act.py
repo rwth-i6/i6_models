@@ -173,43 +173,43 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = self.conv2(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            self.conv2.kernel_size[0],
-            self.conv2.stride[0],
-            self.conv2.padding[0],
+            kernel_size=self.conv2.kernel_size[0],
+            stride=self.conv2.stride[0],
+            padding=self.conv2.padding[0],
         )
 
         tensor = self.activation(tensor)
         tensor = self.pool1(tensor)  # [B,C,T',F']
         sequence_mask = mask_pool(
             sequence_mask,
-            self.pool1.kernel_size[0],
-            self.pool1.stride[0],
-            self.pool1.padding[0],
+            kernel_size=self.pool1.kernel_size[0],
+            stride=self.pool1.stride[0],
+            padding=self.pool1.padding[0],
         )
 
         tensor = self.conv3(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            self.conv3.kernel_size[0],
-            self.conv3.stride[0],
-            self.conv3.padding[0],
+            kernel_size=self.conv3.kernel_size[0],
+            stride=self.conv3.stride[0],
+            padding=self.conv3.padding[0],
         )
 
         tensor = self.conv4(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            self.conv4.kernel_size[0],
-            self.conv4.stride[0],
-            self.conv4.padding[0],
+            kernel_size=self.conv4.kernel_size[0],
+            stride=self.conv4.stride[0],
+            padding=self.conv4.padding[0],
         )
 
         tensor = self.activation(tensor)
         tensor = self.pool2(tensor)  # [B,C,T",F"]
         sequence_mask = mask_pool(
             sequence_mask,
-            self.pool2.kernel_size[0],
-            self.pool2.stride[0],
-            self.pool2.padding[0],
+            kernel_size=self.pool2.kernel_size[0],
+            stride=self.pool2.stride[0],
+            padding=self.pool2.padding[0],
         )
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]
