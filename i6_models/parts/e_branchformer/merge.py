@@ -44,6 +44,7 @@ class MergerV1(nn.Module):
             groups=model_cfg.input_dim * 2 // 2,
         )
         self.linear_ff = nn.Linear(in_features=2 * model_cfg.input_dim, out_features=model_cfg.input_dim, bias=True)
+        self.dropout = model_cfg.dropout
 
     def forward(self, x_1: torch.Tensor, x_2: torch.Tensor) -> torch.Tensor:
         x_concat = torch.cat([x_1, x_2], dim=-1)  # (B,T,2F)
