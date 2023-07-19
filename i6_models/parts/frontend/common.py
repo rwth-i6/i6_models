@@ -30,7 +30,7 @@ def mask_pool(seq_mask: torch.Tensor, *, kernel_size: int, stride: int, padding:
     :param padding:
     :return: [B,T'] using maxpool
     """
-    if stride == 1 and padding == 1:
+    if stride == 1 and 2 * padding == kernel_size - 1:
         return seq_mask
 
     seq_mask = seq_mask.float()
