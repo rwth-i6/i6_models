@@ -20,7 +20,7 @@ def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tupl
         raise TypeError(f"unexpected size type {type(input_size)}")
 
 
-def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
+def mask_pool(seq_mask: torch.Tensor, *, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
     """
     apply strides to the masking
 
@@ -41,7 +41,7 @@ def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: in
     return seq_mask
 
 
-def calculate_output_dim(in_dim: int, filter_size: int, stride: int, padding: int) -> int:
+def calculate_output_dim(in_dim: int, *, filter_size: int, stride: int, padding: int) -> int:
     def ceildiv(a: int, b: int):
         return -(-a // b)
 
