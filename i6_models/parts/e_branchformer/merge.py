@@ -23,9 +23,6 @@ class MergerV1Config(ModelConfiguration):
     kernel_size: int
     dropout: float
 
-    def __post_init__(self):
-        super().__post_init__()
-
 
 class MergerV1(nn.Module):
     def __init__(self, model_cfg: MergerV1Config):
