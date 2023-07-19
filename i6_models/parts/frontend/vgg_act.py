@@ -13,7 +13,7 @@ from torch import nn
 
 from i6_models.config import ModelConfiguration
 
-from .common import IntTupleIntType, get_same_padding, mask_pool, get_int_tuple_int, calculate_output_dim
+from .common import get_same_padding, mask_pool, calculate_output_dim
 
 
 @dataclass
@@ -42,14 +42,14 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
-    conv_kernel_size: IntTupleIntType
-    conv_padding: Optional[IntTupleIntType]
-    pool1_kernel_size: IntTupleIntType
-    pool1_stride: Optional[IntTupleIntType]
-    pool1_padding: Optional[IntTupleIntType]
-    pool2_kernel_size: IntTupleIntType
-    pool2_stride: Optional[IntTupleIntType]
-    pool2_padding: Optional[IntTupleIntType]
+    conv_kernel_size: Tuple
+    conv_padding: Optional[Tuple]
+    pool1_kernel_size: Tuple
+    pool1_stride: Optional[Tuple]
+    pool1_padding: Optional[Tuple]
+    pool2_kernel_size: Tuple
+    pool2_stride: Optional[Tuple]
+    pool2_padding: Optional[Tuple]
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     out_features: int
 
@@ -165,51 +165,51 @@ class VGG4LayerActFrontendV1(nn.Module):
         tensor = self.conv1(tensor)
         sequence_mask = mask_pool(
             seq_mask=sequence_mask,
-            kernel_size=get_int_tuple_int(self.conv1.kernel_size, 0),
-            stride=get_int_tuple_int(self.conv1.stride, 0),
-            padding=get_int_tuple_int(self.conv1.padding, 0),
+            kernel_size=self.conv1.kernel_size[0],
+            stride=self.conv1.stride[0],
+            padding=self.conv1.padding[0],
         )
 
         tensor = self.conv2(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            get_int_tuple_int(self.conv2.kernel_size, 0),
-            get_int_tuple_int(self.conv2.stride, 0),
-            get_int_tuple_int(self.conv2.padding, 0),
+            self.conv2.kernel_size[0],
+            self.conv2.stride[0],
+            self.conv2.padding[0],
         )
 
         tensor = self.activation(tensor)
         tensor = self.pool1(tensor)  # [B,C,T',F']
         sequence_mask = mask_pool(
             sequence_mask,
-            get_int_tuple_int(self.pool1.kernel_size, 0),
-            get_int_tuple_int(self.pool1.stride, 0),
-            get_int_tuple_int(self.pool1.padding, 0),
+            self.pool1.kernel_size[0],
+            self.pool1.stride[0],
+            self.pool1.padding[0],
         )
 
         tensor = self.conv3(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            get_int_tuple_int(self.conv3.kernel_size, 0),
-            get_int_tuple_int(self.conv3.stride, 0),
-            get_int_tuple_int(self.conv3.padding, 0),
+            self.conv3.kernel_size[0],
+            self.conv3.stride[0],
+            self.conv3.padding[0],
         )
 
         tensor = self.conv4(tensor)
         sequence_mask = mask_pool(
             sequence_mask,
-            get_int_tuple_int(self.conv4.kernel_size, 0),
-            get_int_tuple_int(self.conv4.stride, 0),
-            get_int_tuple_int(self.conv4.padding, 0),
+            self.conv4.kernel_size[0],
+            self.conv4.stride[0],
+            self.conv4.padding[0],
         )
 
         tensor = self.activation(tensor)
         tensor = self.pool2(tensor)  # [B,C,T",F"]
         sequence_mask = mask_pool(
             sequence_mask,
-            get_int_tuple_int(self.pool2.kernel_size, 0),
-            get_int_tuple_int(self.pool2.stride, 0),
-            get_int_tuple_int(self.pool2.padding, 0),
+            self.pool2.kernel_size[0],
+            self.pool2.stride[0],
+            self.pool2.padding[0],
         )
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]
@@ -223,38 +223,38 @@ class VGG4LayerActFrontendV1(nn.Module):
         # conv1
         out_dim = calculate_output_dim(
             in_dim=self.cfg.in_features,
-            filter_size=get_int_tuple_int(self.conv1.kernel_size, 1),
-            stride=get_int_tuple_int(self.conv1.stride, 1),
+            filter_size=self.conv1.kernel_size[1],
+            stride=self.conv1.stride[1],
         )
         # conv2
         out_dim = calculate_output_dim(
             in_dim=out_dim,
-            filter_size=get_int_tuple_int(self.conv2.kernel_size, 1),
-            stride=get_int_tuple_int(self.conv2.stride, 1),
+            filter_size=self.conv2.kernel_size[1],
+            stride=self.conv2.stride[1],
         )
         # pool1
         out_dim = calculate_output_dim(
             in_dim=out_dim,
-            filter_size=get_int_tuple_int(self.pool1.kernel_size, 1),
-            stride=get_int_tuple_int(self.pool1.stride, 1),
+            filter_size=self.pool1.kernel_size[1],
+            stride=self.pool1.stride[1],
         )
         # conv3
         out_dim = calculate_output_dim(
             in_dim=out_dim,
-            filter_size=get_int_tuple_int(self.conv3.kernel_size, 1),
-            stride=get_int_tuple_int(self.conv3.stride, 1),
+            filter_size=self.conv3.kernel_size[1],
+            stride=self.conv3.stride[1],
         )
         # conv4
         out_dim = calculate_output_dim(
             in_dim=out_dim,
-            filter_size=get_int_tuple_int(self.conv4.kernel_size, 1),
-            stride=get_int_tuple_int(self.conv4.stride, 1),
+            filter_size=self.conv4.kernel_size[1],
+            stride=self.conv4.stride[1],
         )
         # pool2
         out_dim = calculate_output_dim(
             in_dim=out_dim,
-            filter_size=get_int_tuple_int(self.pool2.kernel_size, 1),
-            stride=get_int_tuple_int(self.pool2.stride, 1),
+            filter_size=self.pool2.kernel_size[1],
+            stride=self.pool2.stride[1],
         )
         out_dim *= self.conv4.out_channels
         return out_dim

@@ -5,9 +5,6 @@ from torch import nn
 from torch.nn import functional
 
 
-IntTupleIntType = Union[int, Tuple[int, ...]]
-
-
 def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tuple[int, ...]]:
     """
     get padding in order to not reduce the time dimension
@@ -42,10 +39,6 @@ def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: in
     seq_mask = torch.squeeze(seq_mask, 1)  # [B,T']
     seq_mask = seq_mask.bool()
     return seq_mask
-
-
-def get_int_tuple_int(variable: IntTupleIntType, index: int) -> int:
-    return variable[index] if isinstance(variable, tuple) else variable
 
 
 def calculate_output_dim(in_dim: int, filter_size: int, stride: int) -> int:

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from torch import nn
 from torch.nn import functional
 
-from i6_models.parts.frontend.common import IntTupleIntType
 from i6_models.parts.frontend.vgg_act import (
     VGG4LayerActFrontendV1,
     VGG4LayerActFrontendV1Config,
@@ -23,10 +22,10 @@ class VGG4LayerActTestParams:
     conv2_channels: int
     conv3_channels: int
     conv4_channels: int
-    pool1_kernel_size: IntTupleIntType
-    pool1_stride: Optional[IntTupleIntType]
-    pool2_kernel_size: IntTupleIntType
-    pool2_stride: Optional[IntTupleIntType]
+    pool1_kernel_size: Tuple
+    pool1_stride: Optional[Tuple]
+    pool2_kernel_size: Tuple
+    pool2_stride: Optional[Tuple]
     out_features: Optional[int]
     output_shape: List[int]
     in_sequence_mask: torch.Tensor
