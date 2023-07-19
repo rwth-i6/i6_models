@@ -41,11 +41,8 @@ def mask_pool(seq_mask: torch.Tensor, kernel_size: int, stride: int, padding: in
     return seq_mask
 
 
-def calculate_output_dim(in_dim: int, filter_size: int, stride: int) -> int:
-    if stride == 1:
-        return in_dim
-
+def calculate_output_dim(in_dim: int, filter_size: int, stride: int, padding: int) -> int:
     def ceildiv(a: int, b: int):
         return -(-a // b)
 
-    return ceildiv(in_dim - (filter_size - 1) * 1, stride)
+    return ceildiv(in_dim + 2 * padding - (filter_size - 1) * 1, stride)

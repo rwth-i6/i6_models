@@ -294,6 +294,8 @@ def test_conformer_vgg_layer_act_frontend_v1():
     ):
         print(idx)
         shape, seq_mask = get_output_shape(test_params)
+        print(seq_mask[0])
+        print(test_params.out_sequence_mask[0])
         assert list(shape) == test_params.output_shape, (type(shape), type(test_params.output_shape))
         assert torch.equal(seq_mask, test_params.out_sequence_mask), (
             seq_mask.shape,

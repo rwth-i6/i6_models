@@ -225,36 +225,42 @@ class VGG4LayerActFrontendV1(nn.Module):
             in_dim=self.cfg.in_features,
             filter_size=self.conv1.kernel_size[1],
             stride=self.conv1.stride[1],
+            padding=self.conv1.padding[1],
         )
         # conv2
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=self.conv2.kernel_size[1],
             stride=self.conv2.stride[1],
+            padding=self.conv2.padding[1],
         )
         # pool1
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=self.pool1.kernel_size[1],
             stride=self.pool1.stride[1],
+            padding=self.pool1.padding[1],
         )
         # conv3
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=self.conv3.kernel_size[1],
             stride=self.conv3.stride[1],
+            padding=self.conv3.padding[1],
         )
         # conv4
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=self.conv4.kernel_size[1],
             stride=self.conv4.stride[1],
+            padding=self.conv4.padding[1],
         )
         # pool2
         out_dim = calculate_output_dim(
             in_dim=out_dim,
             filter_size=self.pool2.kernel_size[1],
             stride=self.pool2.stride[1],
+            padding=self.pool2.padding[1],
         )
         out_dim *= self.conv4.out_channels
         return out_dim
