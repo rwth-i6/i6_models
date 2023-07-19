@@ -53,8 +53,6 @@ def calculate_output_dim(in_dim: int, filter_size: int, stride: int) -> int:
         return in_dim
 
     def ceildiv(a: int, b: int):
-        if isinstance(b, int) and b == 1:
-            return a
         return -(-a // b)
 
     return ceildiv(in_dim - (filter_size - 1) * 1, stride)
