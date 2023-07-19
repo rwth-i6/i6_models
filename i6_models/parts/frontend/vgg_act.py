@@ -103,8 +103,8 @@ class VGG4LayerActFrontendV1(nn.Module):
             if model_cfg.conv_padding is not None
             else get_same_padding(model_cfg.conv_kernel_size)
         )
-        pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else 0
-        pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else 0
+        pool1_padding = model_cfg.pool1_padding if model_cfg.pool1_padding is not None else (0, 0)
+        pool2_padding = model_cfg.pool2_padding if model_cfg.pool2_padding is not None else (0, 0)
 
         self.conv1 = nn.Conv2d(
             in_channels=1,
