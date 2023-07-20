@@ -1,7 +1,7 @@
 __all__ = ["LogMelFeatureExtractionV1", "LogMelFeatureExtractionV1Config"]
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Optional, Tuple
 
 from librosa import filters
 import torch
@@ -32,6 +32,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
     min_amp: float
     num_filters: int
     center: bool
+    n_fft: Optional[int] = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -40,6 +41,10 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
         assert self.num_filters > 0, "number of filters needs to be positive"
         assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
+        assert self.n_fft is None or self.n_fft >= self.win_size * self.sample_rate, "n_fft needs to be larger than the window size"
+        if self.n_fft is None:
+            # if n_fft is not given, set n_fft to the window size (in samples)
+            self.n_fft = int(self.win_size * self.sample_rate)
 
 
 class LogMelFeatureExtractionV1(nn.Module):
@@ -51,7 +56,7 @@ class LogMelFeatureExtractionV1(nn.Module):
 
     def __init__(self, cfg: LogMelFeatureExtractionV1Config):
         super().__init__()
-        self.register_buffer("n_fft", torch.tensor(int(cfg.win_size * cfg.sample_rate)))
+        self.register_buffer("n_fft", torch.tensor(cfg.n_fft))
         self.register_buffer("hop_length", torch.tensor(int(cfg.hop_size * cfg.sample_rate)))
         self.register_buffer("min_amp", torch.tensor(cfg.min_amp))
         self.center = cfg.center
@@ -76,7 +81,7 @@ class LogMelFeatureExtractionV1(nn.Module):
         :return features as [B,T,F] and length in frames [B]
         """
 
-        S = (
+        power_spectrum = (
             torch.abs(
                 torch.stft(
                     raw_audio,
@@ -90,10 +95,10 @@ class LogMelFeatureExtractionV1(nn.Module):
             )
             ** 2
         )
-        if len(S.size()) == 2:
+        if len(power_spectrum.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
-            S = torch.unsqueeze(S, 0)
-        melspec = torch.einsum("...ft,mf->...mt", S, self.mel_basis)
+            power_spectrum = torch.unsqueeze(power_spectrum, 0)
+        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)
         log_melspec = torch.log10(torch.max(self.min_amp, melspec))
         feature_data = torch.transpose(log_melspec, 1, 2)
 
