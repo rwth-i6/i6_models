@@ -1,2 +1,3 @@
 typeguard
 torch
+librosa
