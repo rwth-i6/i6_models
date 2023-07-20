@@ -41,7 +41,9 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
         assert self.num_filters > 0, "number of filters needs to be positive"
         assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
-        assert self.n_fft is None or self.n_fft >= self.win_size * self.sample_rate, "n_fft needs to be larger than the window size"
+        assert (
+            self.n_fft is None or self.n_fft >= self.win_size * self.sample_rate
+        ), "n_fft needs to be larger than the window size"
         if self.n_fft is None:
             # if n_fft is not given, set n_fft to the window size (in samples)
             self.n_fft = int(self.win_size * self.sample_rate)

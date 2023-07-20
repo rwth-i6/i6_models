@@ -6,15 +6,16 @@ from librosa.feature import melspectrogram
 
 from i6_models.primitives.feature_extraction import LogMelFeatureExtractionV1, LogMelFeatureExtractionV1Config
 
+
 def test_logmel_librosa_compatibility():
 
     audio = numpy.asarray(numpy.random.random((50000)), dtype=numpy.float32)
     librosa_mel = melspectrogram(
         y=audio,
         sr=16000,
-        n_fft=int(0.05*16000),
-        hop_length=int(0.0125*16000),
-        win_length=int(0.05*16000),
+        n_fft=int(0.05 * 16000),
+        hop_length=int(0.0125 * 16000),
+        win_length=int(0.05 * 16000),
         fmin=60,
         fmax=7600,
         n_mels=80,
@@ -64,4 +65,3 @@ def test_logmel_length():
         assert torch.all(mel_center.size()[1] == length_center)
         mel_no_center, length_no_center = fe_no_center(audio, audio_length)
         assert torch.all(mel_no_center.size()[1] == length_no_center)
-
