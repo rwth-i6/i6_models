@@ -41,12 +41,11 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
         assert self.num_filters > 0, "number of filters needs to be positive"
         assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
-        assert (
-            self.n_fft is None or self.n_fft >= self.win_size * self.sample_rate
-        ), "n_fft cannot to be smaller than the window size"
         if self.n_fft is None:
             # if n_fft is not given, set n_fft to the window size (in samples)
             self.n_fft = int(self.win_size * self.sample_rate)
+        else:
+            assert self.n_fft >= self.win_size * self.sample_rate, "n_fft cannot to be smaller than the window size"
 
 
 class LogMelFeatureExtractionV1(nn.Module):
@@ -59,6 +58,7 @@ class LogMelFeatureExtractionV1(nn.Module):
     def __init__(self, cfg: LogMelFeatureExtractionV1Config):
         super().__init__()
         self.register_buffer("n_fft", torch.tensor(cfg.n_fft))
+        self.register_buffer("window", torch.hann_window(int(cfg.win_size * cfg.sample_rate)))
         self.register_buffer("hop_length", torch.tensor(int(cfg.hop_size * cfg.sample_rate)))
         self.register_buffer("min_amp", torch.tensor(cfg.min_amp))
         self.center = cfg.center
@@ -74,7 +74,6 @@ class LogMelFeatureExtractionV1(nn.Module):
                 )
             ),
         )
-        self.register_buffer("window", torch.hann_window(int(cfg.win_size * cfg.sample_rate)))
 
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -82,7 +81,6 @@ class LogMelFeatureExtractionV1(nn.Module):
         :param length in samples: [B]
         :return features as [B,T,F] and length in frames [B]
         """
-
         power_spectrum = (
             torch.abs(
                 torch.stft(
