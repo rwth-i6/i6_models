@@ -14,7 +14,7 @@ def test_additive_attention():
 
     enc_seq_len = torch.arange(start=10, end=20)  # [10, ..., 19]
 
-    # pass key as weight feedback for testing
+    # pass key as weight feedback just for testing
     context, weights = att(key=key, value=value, query=query, weight_feedback=key, enc_seq_len=enc_seq_len)
     assert context.shape == (10, 5)
     assert weights.shape == (10, 20, 1)
