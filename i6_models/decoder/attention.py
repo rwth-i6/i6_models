@@ -44,7 +44,7 @@ class AdditiveAttention(nn.Module):
         :param query: query of shape [B,D_k]
         :param weight_feedback: shape is [B,T,D_k]
         :param enc_seq_len: [B]
-        :return: context [B,1,D_v], weights [B,T,1]
+        :return: attention context [B,D_v], attention weights [B,T,1]
         """
 
         # all inputs are already projected
