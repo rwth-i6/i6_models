@@ -109,6 +109,7 @@ class AttentionLstmDecoderV1(nn.Module):
         self.weight_feedback = nn.Linear(1, cfg.attention_cfg.attention_dim, bias=False)
 
         self.readout_in = nn.Linear(cfg.lstm_hidden_size + cfg.target_embed_dim + cfg.encoder_dim, cfg.output_proj_dim)
+        assert cfg.output_proj_dim % 2 == 0, "output projection dimension must be even for MaxOut"
         self.output = nn.Linear(cfg.output_proj_dim // 2, cfg.vocab_size)
         self.output_dropout = nn.Dropout(cfg.output_dropout)
 
@@ -173,7 +174,6 @@ class AttentionLstmDecoderV1(nn.Module):
         readout_in = self.readout_in(torch.cat([s_stacked, target_embeddings, att_context_stacked], dim=-1))  # [B,N,D]
 
         # maxout layer
-        assert readout_in.size(-1) % 2 == 0
         readout_in = readout_in.view(readout_in.size(0), readout_in.size(1), -1, 2)  # [B,N,D/2,2]
         readout, _ = torch.max(readout_in, dim=-1)  # [B,N,D/2]
 
