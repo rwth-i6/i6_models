@@ -109,7 +109,7 @@ class AttentionLstmDecoderV1(nn.Module):
         self.weight_feedback = nn.Linear(1, cfg.attention_cfg.attention_dim, bias=False)
 
         self.readout_in = nn.Linear(cfg.lstm_hidden_size + cfg.target_embed_dim + cfg.encoder_dim, cfg.output_proj_dim)
-        assert cfg.output_proj_dim % 2 == 0, "output projection dimension must be even for MaxOut"
+        assert cfg.output_proj_dim % 2 == 0, "output projection dimension must be even for the MaxOut op of 2 pieces"
         self.output = nn.Linear(cfg.output_proj_dim // 2, cfg.vocab_size)
         self.output_dropout = nn.Dropout(cfg.output_dropout)
 
