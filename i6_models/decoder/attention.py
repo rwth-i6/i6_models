@@ -4,6 +4,8 @@ from typing import Optional, Tuple
 import torch
 from torch import nn
 
+from .zoneout_lstm import ZoneoutLSTMCell
+
 
 @dataclass
 class AdditiveAttentionConfig:
@@ -46,7 +48,6 @@ class AdditiveAttention(nn.Module):
         :param enc_seq_len: encoder sequence lengths [B]
         :return: attention context [B,D_v], attention weights [B,T,1]
         """
-
         # all inputs are already projected
         energies = self.linear(nn.functional.tanh(key + query.unsqueeze(1) + weight_feedback))  # [B,T,1]
         time_arange = torch.arange(energies.size(1))  # [T]
@@ -60,7 +61,7 @@ class AdditiveAttention(nn.Module):
 
 
 @dataclass
-class AttentionLstmDecoderV1Config:
+class AttentionLSTMDecoderV1Config:
     """
     Attributes:
         encoder_dim: encoder dimension
@@ -68,6 +69,8 @@ class AttentionLstmDecoderV1Config:
         target_embed_dim: embedding dimension
         target_embed_dropout: embedding dropout
         lstm_hidden_size: LSTM hidden size
+        zoneout_drop_h: zoneout drop probability for hidden state
+        zoneout_drop_c: zoneout drop probability for cell state
         attention_cfg: attention config
         output_proj_dim: output projection dimension
         output_dropout: output dropout
@@ -78,26 +81,36 @@ class AttentionLstmDecoderV1Config:
     target_embed_dim: int
     target_embed_dropout: float
     lstm_hidden_size: int
+    zoneout_drop_h: float
+    zoneout_drop_c: float
     attention_cfg: AdditiveAttentionConfig
     output_proj_dim: int
     output_dropout: float
 
 
-class AttentionLstmDecoderV1(nn.Module):
+class AttentionLSTMDecoderV1(nn.Module):
     """
     Single-headed Attention decoder with additive attention mechanism.
     """
 
-    def __init__(self, cfg: AttentionLstmDecoderV1Config):
+    def __init__(self, cfg: AttentionLSTMDecoderV1Config):
         super().__init__()
 
         self.target_embed = nn.Embedding(num_embeddings=cfg.vocab_size, embedding_dim=cfg.target_embed_dim)
         self.target_embed_dropout = nn.Dropout(cfg.target_embed_dropout)
 
-        self.s = nn.LSTMCell(
+        lstm_cell = nn.LSTMCell(
             input_size=cfg.target_embed_dim + cfg.encoder_dim,
             hidden_size=cfg.lstm_hidden_size,
         )
+        self.lstm_hidden_size = cfg.lstm_hidden_size
+        # if zoneout drop probs are 0, then it is equivalent to normal LSTMCell
+        self.s = ZoneoutLSTMCell(
+            cell=lstm_cell,
+            zoneout_h=cfg.zoneout_drop_h,
+            zoneout_c=cfg.zoneout_drop_c,
+        )
+
         self.s_transformed = nn.Linear(cfg.lstm_hidden_size, cfg.attention_cfg.attention_dim, bias=False)  # query
 
         # for attention
@@ -127,7 +140,8 @@ class AttentionLstmDecoderV1(nn.Module):
         :param state: decoder state
         """
         if state is None:
-            lstm_state = None
+            zeros = torch.zeros((encoder_outputs.size(0), self.lstm_hidden_size))
+            lstm_state = (zeros, zeros)
             att_context = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(2)))
             accum_att_weights = encoder_outputs.new_zeros((encoder_outputs.size(0), encoder_outputs.size(1), 1))
         else:
