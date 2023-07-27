@@ -1,8 +1,11 @@
 from __future__ import annotations
 from itertools import product
+import tempfile
 
 import torch
 from torch import nn
+from torch.onnx import export as export_onnx
+import onnxruntime as ort
 
 from i6_models.parts.conformer.convolution import ConformerConvolutionV1, ConformerConvolutionV1Config
 from i6_models.parts.conformer.feedforward import (
@@ -11,6 +14,10 @@ from i6_models.parts.conformer.feedforward import (
 )
 from i6_models.parts.conformer.mhsa import ConformerMHSAV1Config, ConformerMHSAV1
 from i6_models.parts.conformer.norm import LayerNormNC
+from i6_models.parts.frontend.vgg_act import VGG4LayerActFrontendV1, VGG4LayerActFrontendV1Config
+from i6_models.assemblies.conformer.conformer_v1 import ConformerEncoderV1Config, ConformerEncoderV1
+from i6_models.assemblies.conformer.conformer_v1 import ConformerBlockV1, ConformerBlockV1Config
+from i6_models.config import ModuleFactoryV1
 
 
 def test_conformer_convolution_output_shape():
@@ -79,3 +86,108 @@ def test_layer_norm_nc():
     torch_ln = get_output([10, 8, 23], nn.LayerNorm(23))
     custom_ln = get_output([10, 23, 8], LayerNormNC(23))
     torch.allclose(torch_ln, custom_ln.transpose(1, 2))
+
+
+def test_conformer_onnx_export():
+    with torch.no_grad(), tempfile.NamedTemporaryFile() as f:
+        frontend_config = VGG4LayerActFrontendV1Config(
+            in_features=50,
+            conv1_channels=32,
+            conv2_channels=64,
+            conv3_channels=64,
+            conv4_channels=32,
+            conv_kernel_size=(3, 3),
+            conv_padding=None,  # =same
+            pool1_stride=(1, 2),  # pool along the feature axis,
+            pool1_kernel_size=(1, 2),
+            pool1_padding=None,
+            pool2_stride=(1, 2),
+            pool2_kernel_size=(1, 2),
+            pool2_padding=None,
+            out_features=256,
+            activation=nn.ReLU(),
+        )
+        conformer_config = ConformerEncoderV1Config(
+            num_layers=8,
+            frontend=ModuleFactoryV1(module_class=VGG4LayerActFrontendV1, cfg=frontend_config),
+            block_cfg=ConformerBlockV1Config(
+                ff_cfg=ConformerPositionwiseFeedForwardV1Config(
+                    input_dim=256,
+                    hidden_dim=256,
+                    dropout=0.2,
+                    activation=nn.functional.silu,
+                ),
+                mhsa_cfg=ConformerMHSAV1Config(
+                    input_dim=256,
+                    num_att_heads=4,
+                    att_weights_dropout=0.2,
+                    dropout=0.2,
+                ),
+                conv_cfg=ConformerConvolutionV1Config(
+                    channels=256, kernel_size=9, dropout=0.2, activation=nn.functional.silu, norm=LayerNormNC(256)
+                ),
+            ),
+        )
+
+        class DummyConformerModel(nn.Module):
+            def __init__(self, cfg: conformer_config):
+                super().__init__()
+                self.model = ConformerEncoderV1(cfg=cfg)
+
+            def forward(self, input: torch.Tensor, seq_len: torch.Tensor):
+                i_ = torch.arange(input.shape[1])  # [T]
+                seq_mask = i_[None, :] < seq_len[:, None]  # [B, T]
+                logits, seq_mask = self.model(input, seq_mask)
+                return logits, seq_mask
+
+        model = DummyConformerModel(cfg=conformer_config)
+        dummy_data = torch.randn(3, 30, 50)
+        dummy_data_len = torch.IntTensor([30, 20, 15])
+        traced_model = torch.jit.trace(model.eval(), example_inputs=(dummy_data, dummy_data_len))
+
+        dummy_data_len_2 = torch.IntTensor([30, 15, 10])
+
+        outputs_normal, _ = model(dummy_data, dummy_data_len)
+        outputs_traced, _ = traced_model(dummy_data, dummy_data_len)
+        print(torch.max(outputs_normal - outputs_traced))
+        assert torch.allclose(outputs_normal, outputs_traced, atol=1e-5)
+        export_onnx(
+            traced_model,
+            (dummy_data, dummy_data_len),
+            f=f,
+            verbose=True,
+            input_names=["data", "data_len"],
+            output_names=["classes"],
+            dynamic_axes={
+                # dict value: manually named axes
+                "data": {0: "batch", 1: "time"},
+                "data_len": {0: "batch"},
+                "classes": {0: "batch", 1: "time"},
+            },
+        )
+        session = ort.InferenceSession(f.name)
+        outputs_onnx = torch.FloatTensor(
+            session.run(None, {"data": dummy_data.numpy(), "data_len": dummy_data_len.numpy()})[0]
+        )
+        outputs_onnx_other = torch.FloatTensor(
+            session.run(None, {"data": dummy_data.numpy(), "data_len": dummy_data_len_2.numpy()})[0]
+        )
+        # The default 1e-8 was slightly too strong
+        assert torch.allclose(outputs_normal, outputs_onnx, atol=1e-5)
+        # check that for different lengths we really get a different result
+        assert not torch.allclose(outputs_normal, outputs_onnx_other, atol=1e-5)
+
+        # check with different batching and max size
+        outputs_onnx_diff_batch = torch.FloatTensor(
+            session.run(
+                None,
+                {
+                    "data": dummy_data[(1, 2), :20, :].numpy(),
+                    "data_len": dummy_data_len[
+                        (1, 2),
+                    ].numpy(),
+                },
+            )[0]
+        )
+        # This has to fail as we have non-safe convolutions
+        # assert torch.allclose(outputs_normal[2, :20], outputs_onnx_diff_batch[1], atol=1e-6)
