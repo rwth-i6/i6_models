@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 from i6_models.decoder.attention import AdditiveAttention, AdditiveAttentionConfig
-from i6_models.decoder.attention import AttentionLstmDecoderV1, AttentionLstmDecoderV1Config
+from i6_models.decoder.attention import AttentionLSTMDecoderV1, AttentionLSTMDecoderV1Config
 
 
 def test_additive_attention():
@@ -29,7 +29,7 @@ def test_additive_attention():
 def test_encoder_decoder_attention_model():
     encoder = torch.rand((10, 20, 5))
     encoder_seq_len = torch.arange(start=10, end=20)  # [10, ..., 19]
-    decoder_cfg = AttentionLstmDecoderV1Config(
+    decoder_cfg = AttentionLSTMDecoderV1Config(
         encoder_dim=5,
         vocab_size=15,
         target_embed_dim=3,
@@ -38,10 +38,41 @@ def test_encoder_decoder_attention_model():
         attention_cfg=AdditiveAttentionConfig(attention_dim=10, att_weights_dropout=0.1),
         output_proj_dim=12,
         output_dropout=0.1,
+        zoneout_drop_c=0.0,
+        zoneout_drop_h=0.0,
     )
-    decoder = AttentionLstmDecoderV1(decoder_cfg)
+    decoder = AttentionLSTMDecoderV1(decoder_cfg)
     target_labels = torch.randint(low=0, high=15, size=(10, 7))  # [B,N]
 
     decoder_logits, _ = decoder(encoder_outputs=encoder, labels=target_labels, enc_seq_len=encoder_seq_len)
 
+    assert decoder_logits.shape == (10, 7, 15)
+
+
+def test_zoneout_lstm_cell():
+    encoder = torch.rand((10, 20, 5))
+    encoder_seq_len = torch.arange(start=10, end=20)  # [10, ..., 19]
+    target_labels = torch.randint(low=0, high=15, size=(10, 7))  # [B,N]
+
+    def forward_decoder(zoneout_drop_c: float, zoneout_drop_h: float):
+        decoder_cfg = AttentionLSTMDecoderV1Config(
+            encoder_dim=5,
+            vocab_size=15,
+            target_embed_dim=3,
+            target_embed_dropout=0.1,
+            lstm_hidden_size=12,
+            attention_cfg=AdditiveAttentionConfig(attention_dim=10, att_weights_dropout=0.1),
+            output_proj_dim=12,
+            output_dropout=0.1,
+            zoneout_drop_c=zoneout_drop_c,
+            zoneout_drop_h=zoneout_drop_h,
+        )
+        decoder = AttentionLSTMDecoderV1(decoder_cfg)
+        decoder_logits, _ = decoder(encoder_outputs=encoder, labels=target_labels, enc_seq_len=encoder_seq_len)
+        return decoder_logits
+
+    decoder_logits = forward_decoder(zoneout_drop_c=0.15, zoneout_drop_h=0.05)
+    assert decoder_logits.shape == (10, 7, 15)
+
+    decoder_logits = forward_decoder(zoneout_drop_c=0.0, zoneout_drop_h=0.0)
     assert decoder_logits.shape == (10, 7, 15)
