@@ -12,7 +12,7 @@ def logical_not(tensor: torch.Tensor, /) -> torch.Tensor:
 
     :param tensor: bool mask of shape (B, T) to be inverted.
     """
-    if torch.onnx.is_in_onnx_export():
+    if torch.jit.is_scripting() or torch.jit.is_tracing():
         return torch.logical_xor(tensor, torch.ones_like(tensor))
     else:
         return torch.logical_not(tensor)
