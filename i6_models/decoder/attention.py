@@ -43,7 +43,7 @@ class AdditiveAttention(nn.Module):
         :param value: encoder values of shape [B,T,D_v]
         :param query: query of shape [B,D_k]
         :param weight_feedback: shape is [B,T,D_k]
-        :param enc_seq_len: [B]
+        :param enc_seq_len: encoder sequence lengths [B]
         :return: attention context [B,D_v], attention weights [B,T,1]
         """
 
