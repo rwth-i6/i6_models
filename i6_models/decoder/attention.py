@@ -143,7 +143,7 @@ class AttentionLSTMDecoderV1(nn.Module):
             zeros = torch.zeros((encoder_outputs.size(0), self.lstm_hidden_size))
             lstm_state = (zeros, zeros)
             att_context = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(2)))
-            accum_att_weights = encoder_outputs.new_zeros((encoder_outputs.size(0), encoder_outputs.size(1), 1))
+            accum_att_weights = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(1), 1))
         else:
             lstm_state, att_context, accum_att_weights = state
 
