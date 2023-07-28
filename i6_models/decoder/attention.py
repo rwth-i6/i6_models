@@ -24,7 +24,7 @@ class AdditiveAttention(nn.Module):
     Additive attention mechanism. This is defined as:
         energies = v^T * tanh(h + s + beta)  where beta is weight feedback information
         weights = softmax(energies)
-        context = weights * h
+        context = sum_t weights_t * h_t
     """
 
     def __init__(self, cfg: AdditiveAttentionConfig):
@@ -50,7 +50,7 @@ class AdditiveAttention(nn.Module):
         """
         # all inputs are already projected
         energies = self.linear(nn.functional.tanh(key + query.unsqueeze(1) + weight_feedback))  # [B,T,1]
-        time_arange = torch.arange(energies.size(1))  # [T]
+        time_arange = torch.arange(energies.size(1), device="cuda")  # [T]
         seq_len_mask = torch.less(time_arange[None, :], enc_seq_len[:, None])  # [B,T]
         energies = torch.where(seq_len_mask.unsqueeze(2), energies, torch.tensor(-float("inf")))
         weights = nn.functional.softmax(energies, dim=1)  # [B,T,1]
@@ -140,15 +140,16 @@ class AttentionLSTMDecoderV1(nn.Module):
         :param state: decoder state
         """
         if state is None:
-            zeros = torch.zeros((encoder_outputs.size(0), self.lstm_hidden_size))
+            zeros = torch.zeros((encoder_outputs.size(0), self.lstm_hidden_size), device="cuda")
             lstm_state = (zeros, zeros)
-            att_context = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(2)))
-            accum_att_weights = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(1), 1))
+            att_context = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(2)), device="cuda")
+            accum_att_weights = torch.zeros((encoder_outputs.size(0), encoder_outputs.size(1), 1), device="cuda")
         else:
             lstm_state, att_context, accum_att_weights = state
 
         target_embeddings = self.target_embed(labels)  # [B,N,D]
         target_embeddings = self.target_embed_dropout(target_embeddings)
+
         # pad for BOS and remove last token as this represents history and last token is not used
         target_embeddings = nn.functional.pad(target_embeddings, (0, 0, 1, 0), value=0)[:, :-1, :]  # [B,N,D]
 
