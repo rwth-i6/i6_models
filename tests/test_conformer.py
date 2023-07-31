@@ -155,7 +155,7 @@ def test_conformer_onnx_export():
         assert torch.allclose(outputs_normal, outputs_traced, atol=1e-5)
 
         export_onnx(
-            traced_model,
+            model,
             (dummy_data, dummy_data_len),
             f=f,
             verbose=True,
