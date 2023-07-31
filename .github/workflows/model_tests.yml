@@ -20,8 +20,7 @@ jobs:
           cache: 'pip'
       - run: |
           pip install pytest
-          pip install -r requirements.txt
-          pip install -r requirements_dev.txt
+          pip install typeguard librosa torch==1.13.1 onnx=1.13.1 onnxruntime=1.13.1
       - name: Test Models
         run: |
           python -m pytest tests
