@@ -130,6 +130,8 @@ class AttentionLSTMDecoderV1(nn.Module):
         self.output = nn.Linear(cfg.output_proj_dim // 2, cfg.vocab_size)
         self.output_dropout = nn.Dropout(cfg.output_dropout)
 
+        if "cuda" in cfg.device:
+            assert torch.cuda.is_available(), "CUDA is not available"
         self.device = cfg.device
 
     def forward(
