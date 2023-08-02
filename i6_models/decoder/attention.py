@@ -96,7 +96,6 @@ class AttentionLSTMDecoderV1(nn.Module):
     def __init__(self, cfg: AttentionLSTMDecoderV1Config):
         super().__init__()
 
-        print(cfg.vocab_size)
         self.target_embed = nn.Embedding(num_embeddings=cfg.vocab_size, embedding_dim=cfg.target_embed_dim)
         self.target_embed_dropout = nn.Dropout(cfg.target_embed_dropout)
 
