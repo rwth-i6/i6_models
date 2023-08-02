@@ -5,7 +5,7 @@ __all__ = ["ConformerBlockV1Config", "ConformerEncoderV1Config", "ConformerBlock
 import torch
 from torch import nn
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
@@ -75,7 +75,7 @@ class ConformerEncoderV1Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    frontend: ModuleFactoryV1
+    frontend: Optional[ModuleFactoryV1]
     block_cfg: ConformerBlockV1Config
 
 
@@ -92,7 +92,10 @@ class ConformerEncoderV1(nn.Module):
         """
         super().__init__()
 
-        self.frontend = cfg.frontend()
+        if cfg.frontend:
+            self.frontend = cfg.frontend()
+        else:
+            self.frontend = None
         self.module_list = torch.nn.ModuleList([ConformerBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -106,7 +109,10 @@ class ConformerEncoderV1(nn.Module):
         F: input feature dim, F': internal and output feature dim
         T': data time dim, T: down-sampled time dim (internal time dim)
         """
-        x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
+        if self.frontend:
+            x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
+        else:
+            x = data_tensor
         for module in self.module_list:
             x = module(x, sequence_mask)  # [B, T, F']
 
