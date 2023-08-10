@@ -38,7 +38,7 @@ class MergerV1(nn.Module):
             out_channels=model_cfg.input_dim * 2,
             kernel_size=model_cfg.kernel_size,
             padding=(model_cfg.kernel_size - 1) // 2,
-            groups=model_cfg.input_dim * 2 // 2,
+            groups=model_cfg.input_dim * 2,
         )
         self.linear_ff = nn.Linear(in_features=2 * model_cfg.input_dim, out_features=model_cfg.input_dim, bias=True)
         self.dropout = model_cfg.dropout

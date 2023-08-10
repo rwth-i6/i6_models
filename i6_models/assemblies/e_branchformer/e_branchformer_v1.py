@@ -4,7 +4,7 @@ __all__ = [
     "EbranchformerBlockV1Config",
     "EbranchformerBlockV1",
     "EbranchformerEncoderV1Config",
-    "EbranchformerrEncoderV1",
+    "EbranchformerEncoderV1",
 ]
 
 import torch
@@ -50,7 +50,7 @@ class EbranchformerBlockV1(nn.Module):
 
     def __init__(self, cfg: EbranchformerBlockV1Config):
         """
-        :param cfg: e_branchformer block configuration with subunits for the different e_branchformer parts
+        :param cfg: e-branchformer block configuration with subunits for the different e-branchformer parts
         """
         super().__init__()
         self.ff_1 = PositionwiseFeedForwardV1(cfg=cfg.ff_cfg)
@@ -62,7 +62,7 @@ class EbranchformerBlockV1(nn.Module):
 
     def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
-        :param tensor: input tensor of shape [B,T,F]
+        :param tensor: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
@@ -90,16 +90,16 @@ class EbranchformerEncoderV1Config(ModelConfiguration):
     block_cfg: EbranchformerBlockV1Config
 
 
-class EbranchformerrEncoderV1(nn.Module):
+class EbranchformerEncoderV1(nn.Module):
     """
-    Implementation of the Branchformer with Enhanced merging (short E-branchformer), as in the original publication.
+    Implementation of the Branchformer with Enhanced merging (short e-branchformer), as in the original publication.
     The model consists of a frontend and a stack of N e-branchformer blocks.
     C.f. https://arxiv.org/pdf/2210.00077.pdf
     """
 
     def __init__(self, cfg: EbranchformerEncoderV1Config):
         """
-        :param cfg: conformer encoder configuration with subunits for frontend and conformer blocks
+        :param cfg: e-branchformer encoder configuration with subunits for frontend and e-branchformer blocks
         """
         super().__init__()
 
@@ -109,7 +109,7 @@ class EbranchformerrEncoderV1(nn.Module):
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
-        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T']
+        :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
         :return: (output, out_seq_mask)
             where output is torch.Tensor of shape [B, T, F'],
             out_seq_mask is a torch.Tensor of shape [B, T]
