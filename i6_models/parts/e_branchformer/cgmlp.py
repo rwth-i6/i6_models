@@ -58,23 +58,23 @@ class ConvolutionalGatingMLPV1(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        :param x: shape [B,T,F], F=input_dim
-        :return: shape [B,T,F], F=input_dim
+        :param x: shape [B, T, F], F=input_dim
+        :return: shape [B, T, F], F=input_dim
         """
-        x = self.layer_norm_input(x)  # (B,T,F)
-        x = self.linear_ff(x)  # (B,T,6*F)
+        x = self.layer_norm_input(x)  # [B, T, F]
+        x = self.linear_ff(x)  # [B, T, F']
         x = self.activation(x)
 
         # convolutional spatial gating unit (csgu)
-        x_1, x_2 = x.chunk(2, dim=-1)  # (B,T,3*F), (B,T,3*F)
+        x_1, x_2 = x.chunk(2, dim=-1)  # [B, T, F'//2], [B, T, F'//2]
         x_2 = self.layer_norm_csgu(x_2)
-        # conv layers expect shape [B,F,T] so we have to transpose here
-        x_2 = x_2.transpose(1, 2)  # [B,3*F,T]
-        x_2 = self.depthwise_conv(x_2)
-        x_2 = x_2.transpose(1, 2)  # [B,T,3*F]
-        x = x_1 * x_2
+        # conv layers expect shape [B, F, T] so we have to transpose here
+        x_2 = x_2.transpose(1, 2)  # [B, F'//2, T]
+        x_2 = self.depthwise_conv(x_2)  # [B, F'//2, T]
+        x_2 = x_2.transpose(1, 2)  # [B, T, F'//2]
+        x = x_1 * x_2  # [B, T, F'//2]
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
 
-        x = self.linear_out(x)  # [B,T,F]
+        x = self.linear_out(x)  # [B, T, F]
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
         return x

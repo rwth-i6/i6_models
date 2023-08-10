@@ -108,17 +108,17 @@ class EbranchformerEncoderV1(nn.Module):
 
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        :param data_tensor: input tensor of shape [B, T', F]
+        :param data_tensor: input tensor of shape [B, T', F']
         :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
         :return: (output, out_seq_mask)
-            where output is torch.Tensor of shape [B, T, F'],
+            where output is torch.Tensor of shape [B, T, F],
             out_seq_mask is a torch.Tensor of shape [B, T]
 
-        F: input feature dim, F': internal and output feature dim
+        F': input feature dim, F: internal and output feature dim
         T': data time dim, T: down-sampled time dim (internal time dim)
         """
-        x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
+        x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F]
         for module in self.module_list:
-            x = module(x, sequence_mask)  # [B, T, F']
+            x = module(x, sequence_mask)  # [B, T, F]
 
         return x, sequence_mask

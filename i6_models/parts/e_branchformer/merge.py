@@ -44,11 +44,11 @@ class MergerV1(nn.Module):
         self.dropout = model_cfg.dropout
 
     def forward(self, x_1: torch.Tensor, x_2: torch.Tensor) -> torch.Tensor:
-        x_concat = torch.cat([x_1, x_2], dim=-1)  # (B,T,2F)
-        # conv layers expect shape [B,F,T] so we have to transpose here
-        x = x_concat.transpose(1, 2)  # (B,2F,T)
+        x_concat = torch.cat([x_1, x_2], dim=-1)  # [B, T, 2F]
+        # conv layers expect shape [B, F, T] so we have to transpose here
+        x = x_concat.transpose(1, 2)  # [B, 2F, T]
         x = self.depthwise_conv(x)
-        x = x.transpose(1, 2)  # (B,T,2F)
+        x = x.transpose(1, 2)  # [B, T, 2F]
         x = x + x_concat
         x = self.linear_ff(x)
         x = nn.functional.dropout(x, p=self.dropout, training=self.training)
