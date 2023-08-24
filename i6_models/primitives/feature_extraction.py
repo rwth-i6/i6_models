@@ -102,7 +102,7 @@ class LogMelFeatureExtractionV1(nn.Module):
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
             power_spectrum = torch.unsqueeze(power_spectrum, 0)
         melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)
-        log_melspec = torch.log10(torch.max(self.min_amp, melspec))
+        log_melspec = torch.log10(torch.clamp(melspec, max=self.min_amp))
         feature_data = torch.transpose(log_melspec, 1, 2)
 
         if self.center:
