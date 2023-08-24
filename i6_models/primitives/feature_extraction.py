@@ -37,7 +37,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
     def __post_init__(self) -> None:
         super().__post_init__()
         assert self.f_max <= self.sample_rate // 2, "f_max can not be larger than half of the sample rate"
-        assert self.f_min > 0 and self.f_max > 0 and self.sample_rate > 0, "frequencies need to be positive"
+        assert self.f_min >= 0 and self.f_max > 0 and self.sample_rate > 0, "frequencies need to be positive"
         assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
         assert self.num_filters > 0, "number of filters needs to be positive"
         assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
@@ -58,6 +58,7 @@ class LogMelFeatureExtractionV1(nn.Module):
     def __init__(self, cfg: LogMelFeatureExtractionV1Config):
         super().__init__()
         self.register_buffer("n_fft", torch.tensor(cfg.n_fft))
+        self.register_buffer("win_length", torch.tensor(int(cfg.win_size * cfg.sample_rate)))
         self.register_buffer("window", torch.hann_window(int(cfg.win_size * cfg.sample_rate)))
         self.register_buffer("hop_length", torch.tensor(int(cfg.hop_size * cfg.sample_rate)))
         self.register_buffer("min_amp", torch.tensor(cfg.min_amp))
@@ -67,7 +68,7 @@ class LogMelFeatureExtractionV1(nn.Module):
             torch.tensor(
                 filters.mel(
                     sr=cfg.sample_rate,
-                    n_fft=int(cfg.sample_rate * cfg.win_size),
+                    n_fft=cfg.n_fft,
                     n_mels=cfg.num_filters,
                     fmin=cfg.f_min,
                     fmax=cfg.f_max,
@@ -87,6 +88,7 @@ class LogMelFeatureExtractionV1(nn.Module):
                     raw_audio,
                     n_fft=self.n_fft,
                     hop_length=self.hop_length,
+                    win_length=self.win_length,
                     window=self.window,
                     center=self.center,
                     pad_mode="constant",
