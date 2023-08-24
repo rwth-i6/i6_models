@@ -57,12 +57,12 @@ class LogMelFeatureExtractionV1(nn.Module):
 
     def __init__(self, cfg: LogMelFeatureExtractionV1Config):
         super().__init__()
-        self.register_buffer("n_fft", torch.tensor(cfg.n_fft))
-        self.register_buffer("win_length", torch.tensor(int(cfg.win_size * cfg.sample_rate)))
-        self.register_buffer("window", torch.hann_window(int(cfg.win_size * cfg.sample_rate)))
-        self.register_buffer("hop_length", torch.tensor(int(cfg.hop_size * cfg.sample_rate)))
-        self.register_buffer("min_amp", torch.tensor(cfg.min_amp))
         self.center = cfg.center
+        self.hop_length = int(cfg.hop_size * cfg.sample_rate)
+        self.min_amp = cfg.min_amp
+        self.n_fft = cfg.n_fft
+        self.win_length = int(cfg.win_size * cfg.sample_rate)
+
         self.register_buffer(
             "mel_basis",
             torch.tensor(
@@ -75,6 +75,7 @@ class LogMelFeatureExtractionV1(nn.Module):
                 )
             ),
         )
+        self.register_buffer("window", torch.hann_window(self.win_length))
 
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
         """
