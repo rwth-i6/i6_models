@@ -26,6 +26,7 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
         conv3_channels: number of channels for third conv layer
         conv4_channels: number of channels for fourth conv layer
         conv_kernel_size: kernel size of conv layers
+        conv4_stride: stride of the fourth conv layer
         conv_padding: padding for the convolution
         pool1_kernel_size: kernel size of first pooling layer
         pool1_stride: stride of first pooling layer
@@ -43,6 +44,7 @@ class VGG4LayerActFrontendV1Config(ModelConfiguration):
     conv3_channels: int
     conv4_channels: int
     conv_kernel_size: Tuple[int, int]
+    conv4_stride: Optional[Tuple[int, int]]
     conv_padding: Optional[Tuple[int, int]]
     pool1_kernel_size: Tuple[int, int]
     pool1_stride: Optional[Tuple[int, int]]
@@ -133,6 +135,7 @@ class VGG4LayerActFrontendV1(nn.Module):
             in_channels=model_cfg.conv3_channels,
             out_channels=model_cfg.conv4_channels,
             kernel_size=model_cfg.conv_kernel_size,
+            stride=model_cfg.conv4_stride if model_cfg.conv4_stride is not None else 1,
             padding=conv_padding,
         )
         self.pool2 = nn.MaxPool2d(
