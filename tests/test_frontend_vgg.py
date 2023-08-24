@@ -5,7 +5,6 @@ from typing import List, Optional, Tuple
 
 import torch
 from torch import nn
-from torch.nn import functional
 
 from i6_models.parts.frontend.vgg_act import (
     VGG4LayerActFrontendV1,
@@ -49,6 +48,7 @@ def test_conformer_vgg_layer_act_frontend_v1():
             conv3_channels=test_parameters.conv3_channels,
             conv4_channels=test_parameters.conv4_channels,
             conv_kernel_size=(3, 3),
+            conv4_stride=None,
             conv_padding=None,
             pool1_kernel_size=test_parameters.pool1_kernel_size,
             pool1_stride=test_parameters.pool1_stride,
