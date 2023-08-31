@@ -132,12 +132,20 @@ class AttentionLSTMDecoderV1(nn.Module):
         labels: torch.Tensor,
         enc_seq_len: torch.Tensor,
         state: Optional[Tuple[torch.Tensor, ...]] = None,
+        shift_embeddings=True,
     ):
         """
-        :param encoder_outputs: encoder outputs of shape [B,T,D]
-        :param labels: labels of shape [B,T]
-        :param enc_seq_len: encoder sequence lengths of shape [B,T]
+        :param encoder_outputs: encoder outputs of shape [B,T,D], same for training and search
+        :param labels:
+            training: labels of shape [B,N]
+            (greedy-)search: hypotheses last label as [B,1]
+        :param enc_seq_len: encoder sequence lengths of shape [B,T], same for training and search
         :param state: decoder state
+            training: Usually None, unless decoding should be initialized with a certain state (e.g. for context init)
+            search: current state of the active hypotheses
+        :param shift_embeddings: shift the embeddings by one position along U, padding with zero in front and drop last
+            training: this should be "True", in order to start with a zero target embedding
+            search: use True for the first step in order to start with a zero embedding, False otherwise
         """
         if state is None:
             zeros = encoder_outputs.new_zeros((encoder_outputs.size(0), self.lstm_hidden_size))
@@ -150,8 +158,9 @@ class AttentionLSTMDecoderV1(nn.Module):
         target_embeddings = self.target_embed(labels)  # [B,N,D]
         target_embeddings = self.target_embed_dropout(target_embeddings)
 
-        # pad for BOS and remove last token as this represents history and last token is not used
-        target_embeddings = nn.functional.pad(target_embeddings, (0, 0, 1, 0), value=0)[:, :-1, :]  # [B,N,D]
+        if shift_embeddings:
+            # pad for BOS and remove last token as this represents history and last token is not used
+            target_embeddings = nn.functional.pad(target_embeddings, (0, 0, 1, 0), value=0)[:, :-1, :]  # [B,N,D]
 
         enc_ctx = self.enc_ctx(encoder_outputs)  # [B,T,D]
         enc_inv_fertility = nn.functional.sigmoid(self.inv_fertility(encoder_outputs))  # [B,T,1]
