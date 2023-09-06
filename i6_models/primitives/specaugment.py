@@ -11,9 +11,9 @@ def _mask(tensor: torch.Tensor, batch_axis: int, axis: int, pos: torch.Tensor, m
     """
     batch_dim = tensor.shape[batch_axis]
     dim = tensor.shape[axis]
-    amount = torch.randint(low=1, high=max_len + 1, size=(batch_dim,), dtype=torch.int32).to(device=tensor.device)
-    pos2 = torch.min(pos + amount, torch.tensor([dim] * batch_dim).to(device=tensor.device))
-    idxs = torch.arange(0, dim).to(device=tensor.device).unsqueeze(0)  # [1,dim]
+    amount = torch.randint(low=1, high=max_len + 1, size=(batch_dim,), dtype=torch.int32, device=tensor.device)
+    pos2 = torch.min(pos + amount, torch.tensor([dim] * batch_dim, device=tensor.device))
+    idxs = torch.arange(0, dim, device=tensor.device).unsqueeze(0)  # [1,dim]
     pos_bc = pos.unsqueeze(1)  # [B,1]
     pos2_bc = pos2.unsqueeze(1)  # [B,1]
     cond = torch.logical_and(torch.greater_equal(idxs, pos_bc), torch.less(idxs, pos2_bc))  # [B,dim]
@@ -39,7 +39,7 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     """
 
     batch_dim = tensor.shape[batch_axis]
-    num_masks = torch.randint(min_num, max_num, size=(batch_dim,)).to(device=tensor.device)  # [B]
+    num_masks = torch.randint(min_num, max_num, size=(batch_dim,), device=tensor.device)  # [B]
 
     z = -torch.log(-torch.log(torch.rand((batch_dim, tensor.shape[axis])).to(device=tensor.device)))  # [B,dim]
     _, indices = torch.topk(z, num_masks.max().item(), dim=1)
@@ -51,6 +51,7 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
 
 def zero_specaugment(
     audio_features: torch.Tensor,
+    *,
     time_min_num_masks: int,
     time_max_num_masks: int,
     time_mask_max_size: int,
@@ -85,6 +86,7 @@ def zero_specaugment(
 
 def zero_specaugment_by_length(
     audio_features: torch.Tensor,
+    *,
     time_mask_per_n_frames: int,
     time_min_num_masks: int,
     time_mask_max_size: int,
