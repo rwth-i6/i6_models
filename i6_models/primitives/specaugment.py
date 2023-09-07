@@ -41,7 +41,7 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     batch_dim = tensor.shape[batch_axis]
     num_masks = torch.randint(min_num, max_num, size=(batch_dim,), device=tensor.device)  # [B]
 
-    z = -torch.log(-torch.log(torch.rand((batch_dim, tensor.shape[axis])).to(device=tensor.device)))  # [B,dim]
+    z = torch.rand((batch_dim, tensor.shape[axis]), device=tensor.device)  # [B,dim]
     _, indices = torch.topk(z, num_masks.max().item(), dim=1)
 
     for i in range(num_masks.max().item()):
@@ -49,7 +49,7 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     return tensor
 
 
-def zero_specaugment(
+def specaugment_v1(
     audio_features: torch.Tensor,
     *,
     time_min_num_masks: int,
@@ -74,21 +74,23 @@ def zero_specaugment(
     :param freq_mask_max_size: maximum size of masks along F
     :return: masked audio features
     """
-    assert len(tensor.shape) == 3
-    tensor = _random_mask(
+    assert len(audio_features.shape) == 3
+    assert time_min_num_masks <= time_max_num_masks
+    assert freq_min_num_masks <= freq_max_num_masks
+    masked_audio_features = _random_mask(
         audio_features, 0, 1, time_min_num_masks, time_max_num_masks, time_mask_max_size
     )  # time masking
-    tensor = _random_mask(
-        audio_features, 0, 2, freq_min_num_masks, freq_max_num_masks, freq_mask_max_size
+    masked_audio_features = _random_mask(
+        masked_audio_features, 0, 2, freq_min_num_masks, freq_max_num_masks, freq_mask_max_size
     )  # freq masking
-    return tensor
+    return masked_audio_features
 
 
-def zero_specaugment_by_length(
+def specaugment_v1_by_length(
     audio_features: torch.Tensor,
     *,
-    time_mask_per_n_frames: int,
     time_min_num_masks: int,
+    time_max_mask_per_n_frames: int,
     time_mask_max_size: int,
     freq_min_num_masks: int,
     freq_max_num_masks: int,
@@ -98,7 +100,8 @@ def zero_specaugment_by_length(
     Convenience wrapper around zero_specaugment with time-length adaptive number of masks
 
     :param audio_features: e.g. log-mel features as [B, T, F]
-    :param time_mask_per_n_frames: maximum number of masks depending on length T.
+    :param time_max_mask_per_n_frames: used for the maximum number time masks,
+        max_num_masks = T / max_mask_per_n_frames for each batch.
         They are still drawn depending on the full batch length, so shorter sequences
         might get more masks than that by chance, or none at all when all masks
         fall into the padding space.
@@ -109,10 +112,10 @@ def zero_specaugment_by_length(
     :param freq_mask_max_size: maximum size of masks along F
     :return: masked audio features
     """
-    return zero_specaugment(
+    return specaugment_v1(
         audio_features,
         time_min_num_masks=time_min_num_masks,
-        time_max_num_masks=audio_features.size(1) // time_mask_per_n_frames,
+        time_max_num_masks=audio_features.size(1) // time_max_mask_per_n_frames,
         time_mask_max_size=time_mask_max_size,
         freq_min_num_masks=freq_min_num_masks,
         freq_max_num_masks=freq_max_num_masks,
