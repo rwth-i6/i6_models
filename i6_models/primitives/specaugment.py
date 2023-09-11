@@ -39,13 +39,25 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     """
 
     batch_dim = tensor.shape[batch_axis]
-    num_masks = torch.randint(min_num, max_num, size=(batch_dim,), device=tensor.device)  # [B]
+    num_masks = torch.randint(min_num, max_num, size=(batch_dim,))  # [B]
+
+    max_num_masks = num_masks.max().item()
 
     z = torch.rand((batch_dim, tensor.shape[axis]), device=tensor.device)  # [B,dim]
     _, indices = torch.topk(z, num_masks.max().item(), dim=1)
 
-    for i in range(num_masks.max().item()):
-        tensor = _mask(tensor, batch_axis, axis, indices[:, i], max_len)
+    # Make num_masks broadcastable to shape of tensor for torch.where.
+    for i in range(tensor.dim() - 1):
+        if i < batch_axis:
+            num_masks = num_masks.unsqueeze(0)
+        else:
+            num_masks = num_masks.unsqueeze(-1)
+
+    num_masks = num_masks.to(device=tensor.device)
+
+    for i in range(max_num_masks):
+        tensor = torch.where(i < num_masks, _mask(tensor, batch_axis, axis, indices[:, i], max_len), tensor)
+
     return tensor
 
 
@@ -60,14 +72,16 @@ def specaugment_v1(
     freq_mask_max_size: int,
 ):
     """
-    Specaugment from legacy rossenbach/zeineldeen/zeyer attention setups (usually called specaugment_v2.py or so),
-    but without any step-based scheduling
-    and without dependence on length.
+    Specaugment from legacy rossenbach/zeineldeen/zeyer attention setups e.g.,
+    https://github.com/rwth-i6/i6_experiments/blob/main/users/zeineldeen/data_aug/specaugment/specaug_tf2.py
+    but without any step-based scheduling and without dependence on length.
     See `specaugment_v1_by_length` for a variant which is more close to the original.
-    
+
     Fills masks with zeros.
 
     Basically just a convenience wrapper around _random_mask.
+
+    See also: https://arxiv.org/abs/1904.08779
 
     :param audio_features: e.g. log-mel features as [B, T, F]
     :param time_min_num_masks: minimum number of masks along T
@@ -101,7 +115,7 @@ def specaugment_v1_by_length(
     freq_mask_max_size: int,
 ):
     """
-    Convenience wrapper around zero_specaugment with time-length adaptive number of masks
+    Convenience wrapper around zero_specaugment with time-length adaptive number of masks.
 
     :param audio_features: e.g. log-mel features as [B, T, F]
     :param time_max_mask_per_n_frames: used for the maximum number time masks,
