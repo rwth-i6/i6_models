@@ -61,7 +61,11 @@ def specaugment_v1(
 ):
     """
     Specaugment from legacy rossenbach/zeineldeen/zeyer attention setups (usually called specaugment_v2.py or so),
-    but without any step-based scheduling. Fills masks with zeros.
+    but without any step-based scheduling
+    and without dependence on length.
+    See `specaugment_v1_by_length` for a variant which is more close to the original.
+    
+    Fills masks with zeros.
 
     Basically just a convenience wrapper around _random_mask.
 
