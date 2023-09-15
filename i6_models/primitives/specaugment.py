@@ -20,7 +20,7 @@ def _mask(tensor: torch.Tensor, batch_axis: int, axis: int, pos: torch.Tensor, m
     if batch_axis > axis:
         cond = cond.transpose(0, 1)  # [dim,B]
     cond = torch.reshape(
-        cond, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(len(tensor.shape))]
+        cond, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(tensor.ndim)]
     )
     tensor = torch.where(cond, 0.0, tensor)
     return tensor
