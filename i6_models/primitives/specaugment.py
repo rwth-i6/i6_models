@@ -39,19 +39,15 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     """
 
     batch_dim = tensor.shape[batch_axis]
-    num_masks = torch.randint(min_num, max_num, size=(batch_dim,))  # [B]
+    num_masks = torch.randint(min_num, max_num, size=(batch_dim,), device="cpu")  # [B]
 
     max_num_masks = num_masks.max().item()
 
     z = torch.rand((batch_dim, tensor.shape[axis]), device=tensor.device)  # [B,dim]
-    _, indices = torch.topk(z, num_masks.max().item(), dim=1)
+    _, indices = torch.topk(z, max_num_masks, dim=1)
 
     # Make num_masks broadcastable to shape of tensor for torch.where.
-    for i in range(tensor.dim() - 1):
-        if i < batch_axis:
-            num_masks = num_masks.unsqueeze(0)
-        else:
-            num_masks = num_masks.unsqueeze(-1)
+    num_masks = torch.reshape(num_masks, [1] * batch_axis + [batch_dim] + [1] * (tensor.dim() - batch_axis - 1))
 
     num_masks = num_masks.to(device=tensor.device)
 
@@ -115,7 +111,7 @@ def specaugment_v1_by_length(
     freq_mask_max_size: int,
 ):
     """
-    Convenience wrapper around zero_specaugment with time-length adaptive number of masks.
+    Convenience wrapper around specaugment_v1 with time-length adaptive number of masks.
 
     :param audio_features: e.g. log-mel features as [B, T, F]
     :param time_max_mask_per_n_frames: used for the maximum number time masks,
