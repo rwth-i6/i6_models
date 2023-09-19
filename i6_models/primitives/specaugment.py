@@ -9,18 +9,18 @@ def _mask(tensor: torch.Tensor, batch_axis: int, axis: int, pos: torch.Tensor, m
     :param pos: at which positions along axis to start the mask (size [B])
     :param max_len: mask length drawn uniformly from [0, max_len]
     """
-    batch_dim = tensor.shape[batch_axis]
-    dim = tensor.shape[axis]
-    amount = torch.randint(low=1, high=max_len + 1, size=(batch_dim,), dtype=torch.int32, device=tensor.device)
-    pos2 = torch.min(pos + amount, torch.tensor([dim] * batch_dim, device=tensor.device))
-    idxs = torch.arange(0, dim, device=tensor.device).unsqueeze(0)  # [1,dim]
+    batch_dim_size = tensor.shape[batch_axis]
+    mask_dim_size = tensor.shape[axis]
+    mask_len = torch.randint(low=1, high=max_len + 1, size=(batch_dim_size,), dtype=torch.int32, device=tensor.device)
+    end_pos = torch.min(pos + mask_len, torch.tensor([mask_dim_size] * batch_dim_size, device=tensor.device))
+    idxs = torch.arange(0, mask_dim_size, device=tensor.device).unsqueeze(0)  # [1,dim]
     pos_bc = pos.unsqueeze(1)  # [B,1]
-    pos2_bc = pos2.unsqueeze(1)  # [B,1]
-    cond = torch.logical_and(torch.greater_equal(idxs, pos_bc), torch.less(idxs, pos2_bc))  # [B,dim]
+    end_pos_bc = end_pos.unsqueeze(1)  # [B,1]
+    mask = torch.logical_and(torch.greater_equal(idxs, pos_bc), torch.less(idxs, end_pos_bc))  # [B,dim]
     if batch_axis > axis:
-        cond = cond.transpose(0, 1)  # [dim,B]
-    cond = torch.reshape(cond, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(tensor.ndim)])
-    tensor = torch.where(cond, 0.0, tensor)
+        mask = mask.transpose(0, 1)  # [dim,B]
+    mask = torch.reshape(mask, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(tensor.ndim)])
+    tensor = torch.where(mask, 0.0, tensor)
     return tensor
 
 
@@ -36,18 +36,18 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     :param max_amount: mask length drawn uniformly from [0, max_amount]
     """
 
-    batch_dim = tensor.shape[batch_axis]
+    batch_dim_size = tensor.shape[batch_axis]
     if max_num < min_num:
         max_num = min_num
-    num_masks = torch.randint(min_num, max_num + 1, size=(batch_dim,), device="cpu")  # [B]
+    num_masks = torch.randint(min_num, max_num + 1, size=(batch_dim_size,), device="cpu")  # [B]
 
     max_num_masks = num_masks.max().item()
 
-    z = torch.rand((batch_dim, tensor.shape[axis]), device=tensor.device)  # [B,dim]
+    z = torch.rand((batch_dim_size, tensor.shape[axis]), device=tensor.device)  # [B,dim]
     _, indices = torch.topk(z, max_num_masks, dim=1)
 
     # Make num_masks broadcastable to shape of tensor for torch.where.
-    num_masks = torch.reshape(num_masks, [1] * batch_axis + [batch_dim] + [1] * (tensor.dim() - batch_axis - 1))
+    num_masks = torch.reshape(num_masks, [1] * batch_axis + [batch_dim_size] + [1] * (tensor.dim() - batch_axis - 1))
 
     num_masks = num_masks.to(device=tensor.device)
 
