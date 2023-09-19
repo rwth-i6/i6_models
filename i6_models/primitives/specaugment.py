@@ -19,9 +19,7 @@ def _mask(tensor: torch.Tensor, batch_axis: int, axis: int, pos: torch.Tensor, m
     cond = torch.logical_and(torch.greater_equal(idxs, pos_bc), torch.less(idxs, pos2_bc))  # [B,dim]
     if batch_axis > axis:
         cond = cond.transpose(0, 1)  # [dim,B]
-    cond = torch.reshape(
-        cond, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(tensor.ndim)]
-    )
+    cond = torch.reshape(cond, shape=[tensor.shape[i] if i in (batch_axis, axis) else 1 for i in range(tensor.ndim)])
     tensor = torch.where(cond, 0.0, tensor)
     return tensor
 
@@ -39,7 +37,9 @@ def _random_mask(tensor: torch.Tensor, batch_axis: int, axis: int, min_num: int,
     """
 
     batch_dim = tensor.shape[batch_axis]
-    num_masks = torch.randint(min_num, max_num, size=(batch_dim,), device="cpu")  # [B]
+    if max_num < min_num:
+        max_num = min_num
+    num_masks = torch.randint(min_num, max_num + 1, size=(batch_dim,), device="cpu")  # [B]
 
     max_num_masks = num_masks.max().item()
 
