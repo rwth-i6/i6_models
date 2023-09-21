@@ -23,6 +23,13 @@ class MergerV1Config(ModelConfiguration):
     kernel_size: int
     dropout: float
 
+    def check_valid(self):
+        assert self.kernel_size % 2 == 1, "MergerV1 only supports odd kernel sizes"
+
+    def __post__init__(self):
+        super().__post_init__()
+        self.check_valid()
+
 
 class MergerV1(nn.Module):
     def __init__(self, model_cfg: MergerV1Config):

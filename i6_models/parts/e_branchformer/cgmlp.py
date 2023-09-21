@@ -30,6 +30,7 @@ class ConvolutionalGatingMLPV1Config(ModelConfiguration):
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConvolutionalGatingMLPV1 only supports odd kernel sizes"
+        assert self.hidden_dim % 2 == 0, "ConvolutionalGatingMLPV1 only supports even hidden_dim"
 
     def __post__init__(self):
         super().__post_init__()
