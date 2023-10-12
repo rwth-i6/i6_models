@@ -1,5 +1,5 @@
 import copy
-import numpy
+import numpy as np
 import torch
 
 from librosa.feature import melspectrogram
@@ -9,7 +9,7 @@ from i6_models.primitives.feature_extraction import LogMelFeatureExtractionV1, L
 
 def test_logmel_librosa_compatibility():
 
-    audio = numpy.asarray(numpy.random.random((50000)), dtype=numpy.float32)
+    audio = np.asarray(np.random.random((50000)), dtype=np.float32)
     librosa_mel = melspectrogram(
         y=audio,
         sr=16000,
@@ -20,7 +20,7 @@ def test_logmel_librosa_compatibility():
         fmax=7600,
         n_mels=80,
     )
-    librosa_log_mel = numpy.log10(numpy.maximum(librosa_mel, 1e-10))
+    librosa_log_mel = np.log10(np.maximum(librosa_mel, 1e-10))
 
     fe_cfg = LogMelFeatureExtractionV1Config(
         sample_rate=16000,
@@ -56,8 +56,8 @@ def test_logmel_length():
     fe_no_center_cfg.center = False
     fe_no_center = LogMelFeatureExtractionV1(cfg=fe_no_center_cfg)
     for i in range(10):
-        audio_length = int(numpy.random.randint(10000, 50000))
-        audio = numpy.asarray(numpy.random.random(audio_length), dtype=numpy.float32)
+        audio_length = int(np.random.randint(10000, 50000))
+        audio = np.asarray(np.random.random(audio_length), dtype=np.float32)
         audio_length = torch.tensor(int(audio_length))
         audio_length = torch.unsqueeze(audio_length, 0)
         audio = torch.unsqueeze(torch.tensor(audio), 0)
