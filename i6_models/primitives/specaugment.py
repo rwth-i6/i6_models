@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 
@@ -129,7 +130,7 @@ def specaugment_v1_by_length(
     return specaugment_v1(
         audio_features,
         time_min_num_masks=time_min_num_masks,
-        time_max_num_masks=audio_features.size(1) // time_max_mask_per_n_frames,
+        time_max_num_masks=np.maximum(audio_features.size(1) // time_max_mask_per_n_frames, time_min_num_masks),
         time_mask_max_size=time_mask_max_size,
         freq_min_num_masks=freq_min_num_masks,
         freq_max_num_masks=freq_max_num_masks,
