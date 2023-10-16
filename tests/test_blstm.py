@@ -33,7 +33,7 @@ def test_blstm_onnx_export():
                 "classes": {0: "batch", 1: "time"},
             },
         )
-        session = ort.InferenceSession(f.name)
+        session = ort.InferenceSession(f.name, providers=["CPUExecutionProvider"])
         outputs_onnx = torch.FloatTensor(
             session.run(None, {"data": dummy_data.numpy(), "data_len": dummy_data_len.numpy()})[0]
         )
