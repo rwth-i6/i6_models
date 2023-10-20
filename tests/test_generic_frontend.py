@@ -163,5 +163,3 @@ def test_generic_frontend_v1():
             seq_mask.shape,
             test_params.out_sequence_mask.shape,
         )
-
-    return
