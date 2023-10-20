@@ -13,9 +13,6 @@ from typing import Callable, Optional, Tuple, Union, Sequence
 import torch
 from torch import nn
 
-import sys
-
-sys.path.insert(0, "/Users/jxu/Desktop/PR/i6_models")
 from i6_models.config import ModelConfiguration
 
 from i6_models.parts.frontend.common import get_same_padding, mask_pool, calculate_output_dim
@@ -212,9 +209,9 @@ class GenericFrontendV1(nn.Module):
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.MaxPool2d):
                 sequence_mask = mask_pool(
                     sequence_mask,
-                    kernel_size=layer.kernel_size[0],
-                    stride=layer.stride[0],
-                    padding=layer.padding[0],
+                    kernel_size=layer.kernel_size if isinstance(layer.kernel_size, int) else layer.kernel_size[0],
+                    stride=layer.stride if isinstance(layer.stride, int) else layer.stride[0],
+                    padding=layer.padding if isinstance(layer.padding, int) else layer.padding[0],
                 )
 
         tensor = torch.transpose(tensor, 1, 2)  # transpose to [B,T",C,F"]
