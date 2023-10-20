@@ -31,7 +31,8 @@ class GenericFrontendV1Config(ModelConfiguration):
         in_features: number of input features to module
         layer_ordering: the ordering of the front end layer sequences, the ordering element must be selected from FrontendLayerType
             e.g. the ordering of VGG4LayerActFrontendV1 would be [FrontendLayerType.Conv2d, FrontendLayerType.Activation,
-            FrontendLayerType.Pool2d, FrontendLayerType.Conv2d, FrontendLayerType.Conv2d, FrontendLayerType.Activation, FrontendLayerType.Pool2d]
+            FrontendLayerType.Pool2d, FrontendLayerType.Conv2d, FrontendLayerType.Conv2d, FrontendLayerType.Activation,
+            FrontendLayerType.Pool2d]
         conv_kernel_sizes: kernel sizes for each conv layer
         conv_strides: stride sizes for each conv layer
         conv_paddings: paddings sizes for each conv layer
@@ -102,7 +103,8 @@ class GenericFrontendV1(nn.Module):
     def __init__(self, model_cfg: GenericFrontendV1Config):
         """
         Generic Front-End
-        can be used to generate customized frontend by combine convolutional and pooling layers, as well as activation functions different
+        can be used to generate customized frontend by combining convolutional and pooling layers, as well as activation
+        functions differently
 
         To get the ESPnet case, for example Conv2dSubsampling6, use these options
             layer_ordering = [FrontendLayerType.Conv2d, FrontendLayerType.Conv2d]

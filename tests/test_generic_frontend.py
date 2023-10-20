@@ -6,10 +6,6 @@ from typing import Optional, Tuple, Sequence, Union, Callable, List
 import torch
 from torch import nn
 
-import sys
-
-sys.path.insert(0, "/Users/jxu/Desktop/PR/i6_models")
-
 from i6_models.parts.frontend.generic_frontend import FrontendLayerType, GenericFrontendV1, GenericFrontendV1Config
 
 
@@ -169,6 +165,3 @@ def test_generic_frontend_v1():
         )
 
     return
-
-
-test_generic_frontend_v1()
