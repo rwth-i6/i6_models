@@ -35,7 +35,7 @@ class MergerV1(nn.Module):
     def __init__(self, model_cfg: MergerV1Config):
         """
         The merge module to merge the outputs of local extractor and global extractor
-        Here we take the best variant from the E-branchformer paper, refer to
+        Here we take the best variant from the E-branchformer paper (Fig. 3c), refer to
         https://arxiv.org/abs/2210.00077 for more merge module variants
         """
         super().__init__()
