@@ -80,7 +80,7 @@ class GenericFrontendV1Config(ModelConfiguration):
 
         if self.pool_strides is not None:
             assert len(self.pool_strides) == num_pools, "Please specify stride for each pooling layer!"
-        if self.conv_paddings is not None:
+        if self.pool_paddings is not None:
             assert len(self.pool_paddings) == num_pools, "Please specify padding for each pooling layer!"
 
         assert len(self.layer_ordering) == num_convs + num_pools + num_activations, "Number of total layers mismatch!"
