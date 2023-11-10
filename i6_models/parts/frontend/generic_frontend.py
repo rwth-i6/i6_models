@@ -199,8 +199,7 @@ class GenericFrontendV1(nn.Module):
         # and add a dim
         tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
-        for i in range(len(self.cfg.layer_ordering)):
-            layer = self.frontend_layers[i]
+        for layer in self.frontend_layers:
             tensor = layer(tensor)
 
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.MaxPool2d):
