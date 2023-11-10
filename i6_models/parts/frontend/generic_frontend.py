@@ -152,9 +152,9 @@ class GenericFrontendV1(nn.Module):
                 last_channel_dim = conv_out_dim
                 last_feat_dim = calculate_output_dim(
                     in_dim=last_feat_dim,
-                    filter_size=conv_kernel_size if isinstance(conv_kernel_size, int) else conv_kernel_size[1],
-                    stride=conv_stride if isinstance(conv_stride, int) else conv_stride[1],
-                    padding=conv_padding if isinstance(conv_padding, int) else conv_padding[1],
+                    filter_size=conv_kernel_size[1],
+                    stride=conv_stride[1],
+                    padding=conv_padding[1],
                 )
                 conv_layer_index += 1
 
