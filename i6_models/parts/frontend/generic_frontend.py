@@ -176,9 +176,9 @@ class GenericFrontendV1(nn.Module):
                 )
                 last_feat_dim = calculate_output_dim(
                     in_dim=last_feat_dim,
-                    filter_size=pool_kernel_size if isinstance(pool_kernel_size, int) else pool_kernel_size[1],
-                    stride=pool_stride if isinstance(pool_stride, int) else pool_stride[1],
-                    padding=pool_padding if isinstance(pool_padding, int) else pool_padding[1],
+                    filter_size=pool_kernel_size[1],
+                    stride=pool_stride[1] or pool_kernel_size[1],
+                    padding=pool_padding[1],
                 )
                 pool_layer_index += 1
 
