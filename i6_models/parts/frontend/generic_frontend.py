@@ -46,13 +46,13 @@ class GenericFrontendV1Config(ModelConfiguration):
 
     in_features: int
     layer_ordering: Sequence[FrontendLayerType]
-    conv_kernel_sizes: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_strides: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_paddings: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_out_dims: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_kernel_sizes: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_strides: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_paddings: Optional[Sequence[Union[int, Tuple[int, int]]]]
+    conv_kernel_sizes: Optional[Sequence[Tuple[int, int]]]
+    conv_strides: Optional[Sequence[Tuple[int, int]]]
+    conv_paddings: Optional[Sequence[Tuple[int, int]]]
+    conv_out_dims: Optional[Sequence[int]]
+    pool_kernel_sizes: Optional[Sequence[Tuple[int, int]]]
+    pool_strides: Optional[Sequence[Tuple[int, int]]]
+    pool_paddings: Optional[Sequence[Tuple[int, int]]]
     activations: Optional[Sequence[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]]
     out_features: int
 
