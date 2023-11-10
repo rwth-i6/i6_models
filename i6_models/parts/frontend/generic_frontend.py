@@ -159,7 +159,7 @@ class GenericFrontendV1(nn.Module):
                 conv_layer_index += 1
 
             elif layer_type == FrontendLayerType.Pool2d:
-                pool_stride = 1 if model_cfg.pool_strides is None else model_cfg.pool_strides[pool_layer_index]
+                pool_stride = None if model_cfg.pool_strides is None else model_cfg.pool_strides[pool_layer_index]
                 pool_kernel_size = model_cfg.pool_kernel_sizes[pool_layer_index]
                 pool_padding = (
                     get_same_padding(pool_kernel_size)
