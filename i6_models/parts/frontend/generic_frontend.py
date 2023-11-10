@@ -85,14 +85,9 @@ class GenericFrontendV1Config(ModelConfiguration):
 
         assert len(self.layer_ordering) == num_convs + num_pools + num_activations, "Number of total layers mismatch!"
 
-        for kernel_sizes in [self.conv_kernel_sizes, self.pool_kernel_sizes]:
-            if kernel_sizes is not None:
-                for kernel_size in kernel_sizes:
-                    if isinstance(kernel_size, int):
-                        assert kernel_size % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
-                    elif isinstance(kernel_size, tuple):
-                        for i in range(len(kernel_size)):
-                            assert kernel_size[i] % 2 == 1, "ConformerVGGFrontendV1 only supports odd kernel sizes"
+        for kernel_sizes in filter(None, [self.conv_kernel_sizes, self.pool_kernel_sizes]):
+            for kernel_size in kernel_sizes:
+                assert all(k % 2 for k in kernel_size),  "ConformerVGGFrontendV1 only supports odd kernel sizes"
 
     def __post__init__(self):
         super().__post_init__()
