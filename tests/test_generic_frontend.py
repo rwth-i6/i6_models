@@ -15,13 +15,13 @@ class GenericFrontendV1TestParams:
     time: int
     in_features: int
     layer_ordering: Sequence[FrontendLayerType]
-    conv_kernel_sizes: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_strides: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_paddings: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    conv_out_dims: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_kernel_sizes: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_strides: Optional[Sequence[Union[int, Tuple[int, int]]]]
-    pool_paddings: Optional[Sequence[Union[int, Tuple[int, int]]]]
+    conv_kernel_sizes: Optional[Sequence[Tuple[int, int]]]
+    conv_strides: Optional[Sequence[Tuple[int, int]]]
+    conv_paddings: Optional[Sequence[Tuple[int, int]]]
+    conv_out_dims: Optional[Sequence[int]]
+    pool_kernel_sizes: Optional[Sequence[Tuple[int, int]]]
+    pool_strides: Optional[Sequence[Tuple[int, int]]]
+    pool_paddings: Optional[Sequence[Tuple[int, int]]]
     activations: Optional[Sequence[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]]
     out_features: int
     output_shape: List[int]
@@ -154,11 +154,8 @@ def test_generic_frontend_v1():
             ),
         ]
     ):
-        print(idx)
         shape, seq_mask = get_output_shape(test_params)
-        print(shape)
-        print(test_params.output_shape)
-        assert list(shape) == test_params.output_shape, (type(shape), type(test_params.output_shape))
+        assert list(shape) == test_params.output_shape, (shape, test_params.output_shape)
         assert torch.equal(seq_mask, test_params.out_sequence_mask), (
             seq_mask.shape,
             test_params.out_sequence_mask.shape,
