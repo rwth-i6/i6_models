@@ -87,7 +87,7 @@ class GenericFrontendV1Config(ModelConfiguration):
 
         for kernel_sizes in filter(None, [self.conv_kernel_sizes, self.pool_kernel_sizes]):
             for kernel_size in kernel_sizes:
-                assert all(k % 2 for k in kernel_size),  "ConformerVGGFrontendV1 only supports odd kernel sizes"
+                assert all(k % 2 for k in kernel_size), "ConformerVGGFrontendV1 only supports odd kernel sizes"
 
     def __post__init__(self):
         super().__post_init__()
