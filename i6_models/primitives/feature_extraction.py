@@ -92,7 +92,14 @@ class LogMelFeatureExtractionV1(nn.Module):
         :param length in samples: [B]
         :return features as [B,T,F] and length in frames [B]
         """
-        if not self.rasr_compatible:
+        if self.rasr_compatible:
+            windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)
+            smoothed = windowed * self.window.unsqueeze(0)
+
+            # Compute power spectrum using torch.fft.rfftn
+            power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
+            power_spectrum = power_spectrum.transpose(1, 2)  # [B, T, F]
+        else:
             power_spectrum = (
                 torch.abs(
                     torch.stft(
@@ -108,13 +115,6 @@ class LogMelFeatureExtractionV1(nn.Module):
                 )
                 ** 2
             )
-        else:
-            windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)
-            smoothed = windowed * self.window.unsqueeze(0)
-
-            # Compute power spectrum using torch.fft.rfftn
-            power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
-            power_spectrum = power_spectrum.transpose(1, 2)  # [B, T, F]
 
         if len(power_spectrum.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
