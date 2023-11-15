@@ -123,7 +123,7 @@ class LogMelFeatureExtractionV1(nn.Module):
         log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
         feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        if self.center and not rasr_compatible:
+        if self.center and not self.rasr_compatible:
             length = (length // self.hop_length) + 1
         else:
             length = ((length - self.win_length) // self.hop_length) + 1
