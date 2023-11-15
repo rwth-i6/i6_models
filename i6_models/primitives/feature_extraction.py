@@ -93,7 +93,7 @@ class LogMelFeatureExtractionV1(nn.Module):
         :return features as [B,T,F] and length in frames [B]
         """
         if not self.rasr_compatible:
-            power_spectrogram = (
+            power_spectrum = (
                 torch.abs(
                     torch.stft(
                         raw_audio,
@@ -112,14 +112,14 @@ class LogMelFeatureExtractionV1(nn.Module):
             windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)
             smoothed = windowed * self.window.unsqueeze(0)
 
-            # Compute power spectrogram using torch.fft.rfftn
-            power_spectrogram = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
-            power_spectrogram = power_spectrogram.transpose(1, 2)  # [B, T, F]
+            # Compute power spectrum using torch.fft.rfftn
+            power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
+            power_spectrum = power_spectrum.transpose(1, 2)  # [B, T, F]
 
-        if len(power_spectrogram.size()) == 2:
+        if len(power_spectrum.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
-            power_spectrogram = torch.unsqueeze(power_spectrogram, 0)
-        melspec = torch.einsum("...ft,mf->...mt", power_spectrogram, self.mel_basis)
+            power_spectrum = torch.unsqueeze(power_spectrum, 0)
+        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)
         log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
         feature_data = torch.transpose(log_melspec, 1, 2)
 
