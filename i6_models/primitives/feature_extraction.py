@@ -1,7 +1,7 @@
 __all__ = ["LogMelFeatureExtractionV1", "LogMelFeatureExtractionV1Config"]
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any, Dict
 
 from librosa import filters
 import torch
@@ -22,6 +22,9 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         min_amp: minimum amplitude for safe log
         num_filters: number of mel windows
         center: centered STFT with automatic padding
+        periodic: whether the window is assumed to be periodic
+        mel_options: extra options for mel filters
+        rasr_compatible: apply FFT to make features compatible to RASR's
     """
 
     sample_rate: int
@@ -33,6 +36,9 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
     num_filters: int
     center: bool
     n_fft: Optional[int] = None
+    periodic: Optional[bool] = True
+    mel_options: Optional[Dict[str, Any]] = None
+    rasr_compatible: Optional[bool] = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -62,6 +68,8 @@ class LogMelFeatureExtractionV1(nn.Module):
         self.min_amp = cfg.min_amp
         self.n_fft = cfg.n_fft
         self.win_length = int(cfg.win_size * cfg.sample_rate)
+        self.mel_options = cfg.mel_options or {}
+        self.rasr_compatible = cfg.rasr_compatible
 
         self.register_buffer(
             "mel_basis",
@@ -72,10 +80,11 @@ class LogMelFeatureExtractionV1(nn.Module):
                     n_mels=cfg.num_filters,
                     fmin=cfg.f_min,
                     fmax=cfg.f_max,
+                    **self.mel_options,
                 )
             ),
         )
-        self.register_buffer("window", torch.hann_window(self.win_length))
+        self.register_buffer("window", torch.hann_window(self.win_length, periodic=cfg.periodic))
 
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -83,25 +92,34 @@ class LogMelFeatureExtractionV1(nn.Module):
         :param length in samples: [B]
         :return features as [B,T,F] and length in frames [B]
         """
-        power_spectrum = (
-            torch.abs(
-                torch.stft(
-                    raw_audio,
-                    n_fft=self.n_fft,
-                    hop_length=self.hop_length,
-                    win_length=self.win_length,
-                    window=self.window,
-                    center=self.center,
-                    pad_mode="constant",
-                    return_complex=True,
+        if not self.rasr_compatible:
+            power_spectrogram = (
+                torch.abs(
+                    torch.stft(
+                        raw_audio,
+                        n_fft=self.n_fft,
+                        hop_length=self.hop_length,
+                        win_length=self.win_length,
+                        window=self.window,
+                        center=self.center,
+                        pad_mode="constant",
+                        return_complex=True,
+                    )
                 )
+                ** 2
             )
-            ** 2
-        )
-        if len(power_spectrum.size()) == 2:
+        else:
+            windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)
+            smoothed = windowed * self.window.unsqueeze(0)
+
+            # Compute power spectrogram using torch.fft.rfftn
+            power_spectrogram = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
+            power_spectrogram = power_spectrogram.transpose(1, 2)  # [B, T, F]
+
+        if len(power_spectrogram.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
-            power_spectrum = torch.unsqueeze(power_spectrum, 0)
-        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)
+            power_spectrogram = torch.unsqueeze(power_spectrogram, 0)
+        melspec = torch.einsum("...ft,mf->...mt", power_spectrogram, self.mel_basis)
         log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
         feature_data = torch.transpose(log_melspec, 1, 2)
 
