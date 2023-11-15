@@ -24,7 +24,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         center: centered STFT with automatic padding
         periodic: whether the window is assumed to be periodic
         mel_options: extra options for mel filters
-        rasr_compatible: apply FFT to make features compatible to RASR's, otherwise (defalut) apply STFT
+        rasr_compatible: apply FFT to make features compatible to RASR's, otherwise (default) apply STFT
     """
 
     sample_rate: int
