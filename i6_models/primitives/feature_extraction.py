@@ -24,7 +24,7 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
         center: centered STFT with automatic padding
         periodic: whether the window is assumed to be periodic
         mel_options: extra options for mel filters
-        rasr_compatible: apply FFT to make features compatible to RASR's
+        rasr_compatible: apply FFT to make features compatible to RASR's, otherwise (defalut) apply STFT
     """
 
     sample_rate: int
@@ -36,9 +36,9 @@ class LogMelFeatureExtractionV1Config(ModelConfiguration):
     num_filters: int
     center: bool
     n_fft: Optional[int] = None
-    periodic: Optional[bool] = True
+    periodic: bool = True
     mel_options: Optional[Dict[str, Any]] = None
-    rasr_compatible: Optional[bool] = False
+    rasr_compatible: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -93,12 +93,12 @@ class LogMelFeatureExtractionV1(nn.Module):
         :return features as [B,T,F] and length in frames [B]
         """
         if self.rasr_compatible:
-            windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)
-            smoothed = windowed * self.window.unsqueeze(0)
+            windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
+            smoothed = windowed * self.window.unsqueeze(0)  # [B, T', W]
 
             # Compute power spectrum using torch.fft.rfftn
-            power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, F, T]
-            power_spectrum = power_spectrum.transpose(1, 2)  # [B, T, F]
+            power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, T', F=n_fft//2+1]
+            power_spectrum = power_spectrum.transpose(1, 2)  # [B, F, T']
         else:
             power_spectrum = (
                 torch.abs(
@@ -118,14 +118,14 @@ class LogMelFeatureExtractionV1(nn.Module):
 
         if len(power_spectrum.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
-            power_spectrum = torch.unsqueeze(power_spectrum, 0)
-        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)
+            power_spectrum = torch.unsqueeze(power_spectrum, 0)  # [B, F, T']
+        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)  # [B, F'=num_filters, T']
         log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
-        feature_data = torch.transpose(log_melspec, 1, 2)
+        feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        if self.center:
+        if self.center and not rasr_compatible:
             length = (length // self.hop_length) + 1
         else:
-            length = ((length - self.n_fft) // self.hop_length) + 1
+            length = ((length - self.win_length) // self.hop_length) + 1
 
         return feature_data, length.int()
