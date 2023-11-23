@@ -12,11 +12,9 @@ Create ~/.pypirc with info:
     username: ...
     password: ...
 
-(Not needed anymore) Registering the project: python3 setup.py register
-New release: python3 setup.py sdist upload
+(dep: pip3 install --user twine setuptools)
+(cleanup: rm dist/* _setup_info_generated.py)
 
-I had some trouble at some point, and this helped:
-pip3 install --user twine
 python3 setup.py sdist
 twine upload dist/*.tar.gz
 
