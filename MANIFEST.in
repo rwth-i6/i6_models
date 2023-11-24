@@ -1,0 +1,25 @@
+# https://packaging.python.org/guides/using-manifest-in/
+
+include MANIFEST.in
+include _setup_info_generated.py
+
+include LICENSE
+include CODEOWNERS
+
+include .editorconfig
+include .kateconfig
+include .gitmodules
+include .gitignore
+
+include *.py
+include *.rst
+include *.md
+include *.txt
+include *.toml
+graft i6_models
+
+graft tests
+
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .history*
