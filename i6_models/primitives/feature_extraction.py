@@ -128,7 +128,7 @@ class LogMelFeatureExtractionV1(nn.Module):
             power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, T', F=n_fft//2+1]
             power_spectrum = power_spectrum.transpose(1, 2)  # [B, F, T']
         else:
-            raise ValueError("Invalid spectrum type.")
+            raise ValueError(f"Invalid spectrum type {self.spectrum_type!r}.")
 
         if len(power_spectrum.size()) == 2:
             # For some reason torch.stft removes the batch axis for batch sizes of 1, so we need to add it again
@@ -145,5 +145,5 @@ class LogMelFeatureExtractionV1(nn.Module):
         elif self.spectrum_type == SpectrumType.RFFTN:
             length = ((length - self.win_length) // self.hop_length) + 1
         else:
-            raise ValueError("Invalid spectrum type.")
+            raise ValueError(f"Invalid spectrum type {self.spectrum_type!r}.")
         return feature_data, length.int()
