@@ -158,7 +158,7 @@ class VGG4LayerActFrontendV1(nn.Module):
         :param sequence_mask: the sequence mask for the tensor
         :return: torch.Tensor of shape [B,T",F'] and the shape of the sequence mask
         """
-        assert tensor.shape[-1] == self.cfg.in_features, f"{tensor.shape[-1]} vs {self.cfg.in_features}"
+        assert tensor.shape[-1] == self.cfg.in_features, f"shape {tensor.shape} vs in features {self.cfg.in_features}"
         # and add a dim
         tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
