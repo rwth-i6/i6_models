@@ -195,7 +195,7 @@ class GenericFrontendV1(nn.Module):
             )
 
     def forward(self, tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        assert tensor.shape[-1] == self.cfg.in_features
+        assert tensor.shape[-1] == self.cfg.in_features, f"{tensor.shape[-1]} vs {self.cfg.in_features}"
         # and add a dim
         tensor = tensor[:, None, :, :]  # [B,C=1,T,F]
 
