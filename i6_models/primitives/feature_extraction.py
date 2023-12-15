@@ -1,5 +1,11 @@
-__all__ = ["LogMelFeatureExtractionV1", "LogMelFeatureExtractionV1Config"]
+__all__ = [
+    "LogMelFeatureExtractionV1",
+    "LogMelFeatureExtractionV1Config",
+    "RasrCompatibleLogMelFeatureExtractionV1",
+    "RasrCompatibleLogMelFeatureExtractionV1Config",
+]
 
+import math
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -109,5 +115,88 @@ class LogMelFeatureExtractionV1(nn.Module):
             length = (length // self.hop_length) + 1
         else:
             length = ((length - self.n_fft) // self.hop_length) + 1
+
+        return feature_data, length.int()
+
+
+@dataclass
+class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
+    """
+    Attributes:
+        sample_rate: audio sample rate in Hz
+        win_size: window size in seconds
+        hop_size: window shift in seconds
+        f_min: minimum filter frequency in Hz
+        f_max: maximum filter frequency in Hz
+        min_amp: minimum amplitude for safe log
+        num_filters: number of mel windows
+    """
+
+    sample_rate: int
+    win_size: float
+    hop_size: float
+    f_min: int
+    f_max: int
+    min_amp: float
+    num_filters: int
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        assert self.f_max <= self.sample_rate // 2, "f_max can not be larger than half of the sample rate"
+        assert self.f_min >= 0 and self.f_max > 0 and self.sample_rate > 0, "frequencies need to be positive"
+        assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
+        assert self.num_filters > 0, "number of filters needs to be positive"
+        assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
+
+
+class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
+    """
+    Rasr-compatible log-mel feature extraction using log10. Does not use torchaudio.
+
+    Using it wrapped with torch.no_grad() is recommended if no gradient is needed
+    """
+
+    def __init__(self, cfg: RasrCompatibleLogMelFeatureExtractionV1Config):
+        super().__init__()
+        self.hop_length = int(cfg.hop_size * cfg.sample_rate)
+        self.min_amp = cfg.min_amp
+        self.win_length = int(cfg.win_size * cfg.sample_rate)
+        # smallest power if two which is greater than or equal to win_length
+        self.n_fft = 2 ** math.ceil(math.log2(self.win_length))
+
+        self.register_buffer(
+            "mel_basis",
+            torch.tensor(
+                filters.mel(
+                    sr=cfg.sample_rate,
+                    n_fft=cfg.n_fft,
+                    n_mels=cfg.num_filters,
+                    fmin=cfg.f_min,
+                    fmax=cfg.f_max,
+                    htk=True,
+                    norm=None,
+                ),
+            ),
+        )
+        self.register_buffer("window", torch.hann_window(self.win_length, periodic=False))
+
+    def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        :param raw_audio: [B, T]
+        :param length in samples: [B]
+        :return features as [B,T,F] and length in frames [B]
+        """
+        windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
+        smoothed = windowed * self.window.unsqueeze(0)  # [B, T', W]
+
+        # Compute power spectrum using torch.fft.rfftn
+        power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, T', F=n_fft//2+1]
+        power_spectrum = power_spectrum.transpose(1, 2)  # [B, F, T']
+
+        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)  # [B, F'=num_filters, T']
+        log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
+        feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
+
+        length = ((length - self.win_length) // self.hop_length) + 1
 
         return feature_data, length.int()
