@@ -126,8 +126,6 @@ class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
         sample_rate: audio sample rate in Hz
         win_size: window size in seconds
         hop_size: window shift in seconds
-        f_min: minimum filter frequency in Hz
-        f_max: maximum filter frequency in Hz
         min_amp: minimum amplitude for safe log
         num_filters: number of mel windows
     """
@@ -135,15 +133,11 @@ class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
     sample_rate: int
     win_size: float
     hop_size: float
-    f_min: int
-    f_max: int
     min_amp: float
     num_filters: int
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert self.f_max <= self.sample_rate // 2, "f_max can not be larger than half of the sample rate"
-        assert self.f_min >= 0 and self.f_max > 0 and self.sample_rate > 0, "frequencies need to be positive"
         assert self.win_size > 0 and self.hop_size > 0, "window settings need to be positive"
         assert self.num_filters > 0, "number of filters needs to be positive"
         assert self.hop_size <= self.win_size, "using a larger hop size than window size does not make sense"
@@ -171,8 +165,8 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
                     sr=cfg.sample_rate,
                     n_fft=cfg.n_fft,
                     n_mels=cfg.num_filters,
-                    fmin=cfg.f_min,
-                    fmax=cfg.f_max,
+                    fmin=0,
+                    fmax=cfg.sample_rate // 2,
                     htk=True,
                     norm=None,
                 ),
