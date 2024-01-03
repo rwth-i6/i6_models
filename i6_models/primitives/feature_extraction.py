@@ -163,7 +163,7 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
             torch.tensor(
                 filters.mel(
                     sr=cfg.sample_rate,
-                    n_fft=cfg.n_fft,
+                    n_fft=self.n_fft,
                     n_mels=cfg.num_filters,
                     fmin=0,
                     fmax=cfg.sample_rate // 2,
