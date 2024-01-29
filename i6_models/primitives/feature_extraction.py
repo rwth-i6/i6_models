@@ -188,7 +188,7 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
         smoothed = windowed * self.window.unsqueeze(0)  # [B, T', W]
 
-        # Compute amplitude spectrum using torch.fft.rfftn
+        # compute amplitude spectrum using torch.fft.rfftn
         amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft))  # [B, T', F=n_fft//2+1]
         amplitude_spectrum = amplitude_spectrum.transpose(1, 2)  # [B, F, T']
 
