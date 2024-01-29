@@ -146,8 +146,6 @@ class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
 class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
     """
     Rasr-compatible log-mel feature extraction using log10. Does not use torchaudio.
-
-    Using it wrapped with torch.no_grad() is recommended if no gradient is needed
     """
 
     def __init__(self, cfg: RasrCompatibleLogMelFeatureExtractionV1Config):
@@ -180,17 +178,24 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         :param length in samples: [B]
         :return features as [B,T,F] and length in frames [B]
         """
-        windowed = raw_audio.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
+        # preemphasis
+        preemphasized = raw_audio.clone()
+        preemphasized[..., 1:] -= 1.0 * preemphasized[..., :-1]
+
+        # zero pad for the last frame
+        padded = torch.cat([preemphasized, torch.zeros(preemphasized.shape[0], (self.hop_length - 1))], dim=1)
+
+        windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
         smoothed = windowed * self.window.unsqueeze(0)  # [B, T', W]
 
-        # Compute power spectrum using torch.fft.rfftn
-        power_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft)) ** 2  # [B, T', F=n_fft//2+1]
-        power_spectrum = power_spectrum.transpose(1, 2)  # [B, F, T']
+        # Compute amplitude spectrum using torch.fft.rfftn
+        amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft))  # [B, T', F=n_fft//2+1]
+        amplitude_spectrum = amplitude_spectrum.transpose(1, 2)  # [B, F, T']
 
-        melspec = torch.einsum("...ft,mf->...mt", power_spectrum, self.mel_basis)  # [B, F'=num_filters, T']
-        log_melspec = torch.log10(torch.clamp(melspec, min=self.min_amp))
+        melspec = torch.einsum("...ft,mf->...mt", amplitude_spectrum, self.mel_basis)  # [B, F'=num_filters, T']
+        log_melspec = torch.log10(melspec + self.min_amp)
         feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        length = ((length - self.win_length) // self.hop_length) + 1
+        length = math.ceil((length - self.win_length) / self.hop_length) + 1
 
         return feature_data, length.int()
