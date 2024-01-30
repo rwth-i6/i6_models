@@ -128,6 +128,7 @@ class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
         hop_size: window shift in seconds
         min_amp: minimum amplitude for safe log
         num_filters: number of mel windows
+        alpha: preemphasis weight
     """
 
     sample_rate: int
@@ -135,6 +136,7 @@ class RasrCompatibleLogMelFeatureExtractionV1Config(ModelConfiguration):
     hop_size: float
     min_amp: float
     num_filters: int
+    alpha: float = 1.0
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -153,8 +155,10 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         self.hop_length = int(cfg.hop_size * cfg.sample_rate)
         self.min_amp = cfg.min_amp
         self.win_length = int(cfg.win_size * cfg.sample_rate)
-        # smallest power if two which is greater than or equal to win_length
-        self.n_fft = 2 ** math.ceil(math.log2(self.win_length))
+        self.n_fft = 2 ** math.ceil(
+            math.log2(self.win_length)
+        )  # smallest power if two which is greater than or equal to win_length
+        self.alpha = cfg.alpha
 
         self.register_buffer(
             "mel_basis",
@@ -178,9 +182,9 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         :param length in samples: [B]
         :return features as [B,T,F] and length in frames [B]
         """
-        # preemphasis
+        # preemphasize
         preemphasized = raw_audio.clone()
-        preemphasized[..., 1:] -= 1.0 * preemphasized[..., :-1]
+        preemphasized[..., 1:] -= self.alpha * preemphasized[..., :-1]
 
         # zero pad for the last frame
         padded = torch.cat([preemphasized, torch.zeros(preemphasized.shape[0], (self.hop_length - 1))], dim=1)
