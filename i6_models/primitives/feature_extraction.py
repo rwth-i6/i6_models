@@ -187,7 +187,10 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         preemphasized[..., 1:] -= self.alpha * preemphasized[..., :-1]
 
         # zero pad for the last frame
-        padded = torch.cat([preemphasized, torch.zeros(preemphasized.shape[0], (self.hop_length - 1))], dim=1)
+        padded = torch.cat(
+            [preemphasized, torch.zeros(preemphasized.shape[0], (self.hop_length - 1), device=preemphasized.device)],
+            dim=1,
+        )
 
         windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
         smoothed = windowed * self.window.unsqueeze(0)  # [B, T', W]
@@ -200,6 +203,6 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         log_melspec = torch.log10(melspec + self.min_amp)
         feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        length = math.ceil((length - self.win_length) / self.hop_length) + 1
+        length = torch.ceil((length - self.win_length) / self.hop_length) + 1
 
         return feature_data, length.int()
