@@ -311,6 +311,37 @@ def test_rasr_compatible_window():
     hop_size = 0.01
     hop_length = int(hop_size * sample_rate)
     win_length = int(win_size * sample_rate)
+
+    # https://github.com/rwth-i6/rasr/blob/master/src/Signal/WindowFunction.cc
+    # https://pytorch.org/docs/stable/generated/torch.hann_window.html
+
+    def _my_hann_win_np(size: int) -> torch.Tensor:
+        M_PI = 3.14159265358979323846264338327950288
+        M = size - 1
+        n = np.arange(0, size // 2)  # [size//2]
+        win = 0.5 - 0.5 * np.cos(2.0 * M_PI * n / M)  # [size//2]
+        win = torch.tensor(win, dtype=torch.float32)
+        win = torch.concatenate([win, win.flip(0)[size % 2 :]])  # [size]
+        return win
+
+    def _my_hann_win(size: int) -> torch.Tensor:
+        M_PI = 3.14159265358979323846264338327950288
+        M = size - 1
+        n = torch.arange(0, size // 2, dtype=torch.float64)  # [size//2]
+        win = 0.5 - 0.5 * torch.cos(2.0 * M_PI * n / M)  # [size//2]
+        win = win.to(torch.float32)
+        win = torch.concatenate([win, win.flip(0)[size % 2 :]])  # [size]
+        return win
+
+    # manual
+    for i, t in enumerate(range(0, audio.shape[0], hop_length)):
+        x = audio[t : t + win_length]
+        x = x * torch.hann_window(x.shape[0], periodic=False, dtype=torch.float64).to(torch.float32)
+        # x = x * _my_hann_win(x.shape[0])
+        print("x", i, ":", _torch_repr(x))
+        print("  RASR:", _torch_repr(rasr_feat[i]))
+        torch.testing.assert_close(x, rasr_feat[i][: x.shape[0]], rtol=1e-30, atol=1e-30)
+
     padded = torch.cat(  # zero pad for the last frame
         [audio, torch.zeros((hop_length - 1), device=audio.device)],
         dim=0,
