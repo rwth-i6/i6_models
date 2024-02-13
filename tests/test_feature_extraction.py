@@ -119,6 +119,7 @@ def test_rasr_compatible():
             <link from="filterbank" to="nonlinear"/>        
             """
         ),
+        flow_output_name="nonlinear",
     )
 
     rasr_cache = FileArchive(rasr_feature_cache_path, must_exists=True)
@@ -155,7 +156,53 @@ def test_rasr_compatible():
     print("i6_models:", _torch_repr(i6m_feat))
     print("RASR:", _torch_repr(rasr_feat))
 
-    torch.testing.assert_allclose(i6m_feat, rasr_feat, rtol=1e-5, atol=1e-5)
+    torch.testing.assert_close(i6m_feat, rasr_feat, rtol=1e-5, atol=1e-5)
+
+
+def test_rasr_compatible_raw_audio_samples():
+    try:
+        from i6_core.lib.rasr_cache import FileArchive
+    except ImportError:
+        raise unittest.SkipTest("i6_core not available")
+    try:
+        import soundfile
+    except ImportError:
+        raise unittest.SkipTest("soundfile not available")
+    rasr_feature_extractor_bin_path = (
+        "/work/tools22/asr/rasr/rasr_onnx_haswell_0623/arch/linux-x86_64-standard/"
+        "feature-extraction.linux-x86_64-standard"
+    )
+    if not os.path.exists(rasr_feature_extractor_bin_path):
+        raise unittest.SkipTest("RASR feature-extraction binary not found")
+
+    wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
+    atexit.register(os.remove, wav_file_path)
+    generate_random_speech_like_audio_wav(wav_file_path)
+    rasr_feature_cache_path = generate_rasr_feature_cache_from_wav_and_flow(
+        rasr_feature_extractor_bin_path,
+        wav_file_path,
+        textwrap.dedent(
+            f"""\
+            <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
+            <link from="samples" to="demultiplex"/>
+            <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
+            <link from="demultiplex" to="convert"/>        
+            """
+        ),
+        flow_output_name="convert",
+    )
+
+    rasr_cache = FileArchive(rasr_feature_cache_path, must_exists=True)
+    time_, rasr_feat = rasr_cache.read("corpus/recording/1", "feat")
+    assert len(time_) == len(rasr_feat)
+    rasr_feat = torch.tensor(np.concatenate(rasr_feat, axis=0), dtype=torch.float32)
+    print("RASR:", _torch_repr(rasr_feat))
+
+    audio, sample_rate = soundfile.read(open(wav_file_path, "rb"), dtype="int16")
+    audio = torch.tensor(audio.astype(np.float32))  # [-2**15, 2**15-1]
+    print("raw audio", _torch_repr(audio))
+
+    torch.testing.assert_close(audio, rasr_feat, rtol=1e-30, atol=1e-30)
 
 
 def generate_rasr_feature_cache_from_wav_and_flow(
