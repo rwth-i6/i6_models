@@ -185,6 +185,7 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         # preemphasize
         preemphasized = raw_audio.clone()
         preemphasized[..., 1:] -= self.alpha * preemphasized[..., :-1]
+        preemphasized[..., 0] = 0.0
 
         # zero pad for the last frame
         padded = torch.cat(

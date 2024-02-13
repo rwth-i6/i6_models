@@ -249,6 +249,7 @@ def test_rasr_compatible_preemphasis():
     audio, sample_rate = soundfile.read(open(wav_file_path, "rb"), dtype="int16")
     audio = torch.tensor(audio.astype(np.float32))  # [-2**15, 2**15-1]
     audio[..., 1:] -= 1.0 * audio[..., :-1]
+    audio[..., 0] = 0.0
     print("i6_models", _torch_repr(audio))
 
     torch.testing.assert_close(audio, rasr_feat, rtol=1e-30, atol=1e-30)
