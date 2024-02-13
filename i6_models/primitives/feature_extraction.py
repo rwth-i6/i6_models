@@ -174,7 +174,9 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
                 ),
             ),
         )
-        self.register_buffer("window", torch.hann_window(self.win_length, periodic=False))
+        self.register_buffer(
+            "window", torch.hann_window(self.win_length, periodic=False, dtype=torch.float64).to(torch.float32)
+        )
 
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
         """
