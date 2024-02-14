@@ -295,7 +295,8 @@ def test_rasr_compatible_window():
     rasr_cache = FileArchive(rasr_feature_cache_path, must_exists=True)
     time_, rasr_feat = rasr_cache.read("corpus/recording/1", "feat")
     assert len(time_) == len(rasr_feat)
-    rasr_feat[-1] = np.pad(rasr_feat[-1], (0, rasr_feat[0].shape[0] - rasr_feat[-1].shape[0]))
+    rasr_last_pad = rasr_feat[0].shape[0] - rasr_feat[-1].shape[0]
+    rasr_feat[-1] = np.pad(rasr_feat[-1], (0, rasr_last_pad))
     rasr_feat = torch.tensor(np.stack(rasr_feat, axis=0), dtype=torch.float32)
     print("RASR:", _torch_repr(rasr_feat))
 
@@ -312,6 +313,25 @@ def test_rasr_compatible_window():
     hop_length = int(hop_size * sample_rate)
     win_length = int(win_size * sample_rate)
 
+    def _get_length(audio_len: int) -> int:
+        if audio_len == 0:
+            return 0
+        return max(audio_len - win_length + hop_length - 1, 0) // hop_length + 1
+
+    def _get_length_naive(audio_len: int) -> int:
+        n = 0
+        for t in range(0, audio_len, hop_length):
+            n += 1
+            if audio_len <= t + win_length:
+                break
+        return n
+
+    for t in range(10 * win_length):
+        assert _get_length(t) == _get_length_naive(t), f"t={t}, {_get_length(t)} != {_get_length_naive(t)}"
+
+    res_len = _get_length(audio.shape[0])
+    assert res_len == len(rasr_feat)
+
     # https://github.com/rwth-i6/rasr/blob/master/src/Signal/WindowFunction.cc
     # https://pytorch.org/docs/stable/generated/torch.hann_window.html
 
@@ -321,17 +341,24 @@ def test_rasr_compatible_window():
         x = x * torch.hann_window(x.shape[0], periodic=False, dtype=torch.float64).to(torch.float32)
         torch.testing.assert_close(x, rasr_feat[i][: x.shape[0]], rtol=1e-30, atol=1e-30)
         # once end was reached, stop
-        if x.shape[0] < win_length:
+        if audio.shape[0] <= t + win_length:
+            assert win_length - x.shape[0] == rasr_last_pad, f"win {win_length}, cur {x.shape[0]}, pad {rasr_last_pad}"
             break
 
-    padded = torch.cat(  # zero pad for the last frame
-        [audio, torch.zeros((hop_length - 1), device=audio.device)],
-        dim=0,
-    )
+    last_win_size = audio.shape[0] - (res_len - 1) * hop_length
+    last_pad = win_length - last_win_size
+    assert last_pad == rasr_last_pad, f"last pad {last_pad}, RASR last pad {rasr_last_pad}"
+    padded = torch.nn.functional.pad(audio, (0, last_pad))  # zero pad for the last frame
 
     windowed = padded.unfold(0, size=win_length, step=hop_length)  # [T', W=win_length]
+    assert len(windowed) == res_len
     window = torch.hann_window(win_length, periodic=False, dtype=torch.float64).to(torch.float32)
-    smoothed = windowed * window[None, :]  # [T', W]
+    smoothed = windowed[:-1] * window[None, :]  # [T'-1, W]
+
+    # The last window might be shorter. Will use a shorter Hanning window then. Need to fix that.
+    last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(torch.float32)
+    last_win = torch.nn.functional.pad(last_win, (0, last_pad))
+    smoothed = torch.cat([smoothed, (windowed[-1] * last_win)[None, :]], dim=0)
 
     print("i6_models", _torch_repr(smoothed))
 

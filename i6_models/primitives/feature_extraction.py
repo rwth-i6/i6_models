@@ -181,22 +181,33 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
     def forward(self, raw_audio, length) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param raw_audio: [B, T]
-        :param length in samples: [B]
+        :param length: in samples [B]
         :return features as [B,T,F] and length in frames [B]
         """
+        assert raw_audio.shape[1] > 0  # also same for length
+        res_size = max(raw_audio.shape[1] - self.win_length + self.hop_length - 1, 0) // self.hop_length + 1
+        res_length = (
+            torch.maximum(length - self.win_length + self.hop_length - 1, torch.zeros_like(length)) // self.hop_length
+            + 1
+        )
+
         # preemphasize
         preemphasized = raw_audio.clone()
         preemphasized[..., 1:] -= self.alpha * preemphasized[..., :-1]
         preemphasized[..., 0] = 0.0
 
         # zero pad for the last frame
-        padded = torch.cat(
-            [preemphasized, torch.zeros(preemphasized.shape[0], (self.hop_length - 1), device=preemphasized.device)],
-            dim=1,
-        )
+        last_win_size = preemphasized.shape[1] - (res_size - 1) * self.hop_length
+        last_pad = self.win_length - last_win_size
+        padded = torch.nn.functional.pad(preemphasized, (0, last_pad))
 
         windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
-        smoothed = windowed * self.window[None, None, :]  # [B, T', W]
+        smoothed = windowed[:, :-1] * self.window[None, None, :]  # [B, T'-1, W]
+
+        # The last window might be shorter. Will use a shorter Hanning window then. Need to fix that.
+        last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(torch.float32)
+        last_win = torch.nn.functional.pad(last_win, (0, last_pad))  # [W]
+        smoothed = torch.cat([smoothed, (windowed[:, -1] * last_win[None, :])[:, None]], dim=1)  # [B, T', W]
 
         # compute amplitude spectrum using torch.fft.rfftn
         amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft))  # [B, T', F=n_fft//2+1]
@@ -206,6 +217,4 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         log_melspec = torch.log10(melspec + self.min_amp)
         feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        length = torch.ceil((length - self.win_length) / self.hop_length) + 1
-
-        return feature_data, length.int()
+        return feature_data, res_length
