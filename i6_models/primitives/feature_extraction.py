@@ -205,7 +205,9 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         smoothed = windowed[:, :-1] * self.window[None, None, :]  # [B, T'-1, W]
 
         # The last window might be shorter. Will use a shorter Hanning window then. Need to fix that.
-        last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(torch.float32)
+        last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(
+            self.window.device, torch.float32
+        )
         last_win = torch.nn.functional.pad(last_win, (0, last_pad))  # [W]
         smoothed = torch.cat([smoothed, (windowed[:, -1] * last_win[None, :])[:, None]], dim=1)  # [B, T', W]
 
