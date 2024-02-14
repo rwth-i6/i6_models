@@ -450,14 +450,12 @@ def test_rasr_compatible_fft():
 
     n_fft = 2 ** math.ceil(math.log2(win_length))
     print(f"win_length={win_length}, n_fft={n_fft}")
-    smoothed = smoothed.to(torch.float64)
 
     # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F]
     # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F*2]
     # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F=n_fft//2+1]
     # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F=(n_fft//2+1)*2]
     fft = my_fft(smoothed, n_fft=n_fft)
-    fft = fft.to(torch.float32)
 
     print("i6_models", _torch_repr(fft))
 
@@ -525,8 +523,10 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
             for i in range(m, size, step):
                 # Danielson & Lanczos formula
                 j = i + cur_length
-                tempr = w_r * v[..., j - 1] - w_i * v[..., j]
-                tempi = w_r * v[..., j] + w_i * v[..., j - 1]
+                tempr = w_r * v[..., j - 1].to(torch.float64) - w_i * v[..., j].to(torch.float64)
+                tempi = w_r * v[..., j].to(torch.float64) + w_i * v[..., j - 1].to(torch.float64)
+                tempr = tempr.to(torch.float32)
+                tempi = tempi.to(torch.float32)
                 v[..., j - 1] = v[..., i - 1] - tempr
                 v[..., j] = v[..., i] - tempi
                 v[..., i - 1] += tempr
@@ -554,10 +554,10 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
         i4 = i3 + 1
 
         # separate the two transforms
-        h1_r = 0.5 * (v[..., i1] + v[..., i3])
-        h1_i = 0.5 * (v[..., i2] - v[..., i4])
-        h2_r = -c * (v[..., i2] + v[..., i4])
-        h2_i = c * (v[..., i1] - v[..., i3])
+        h1_r = 0.5 * (v[..., i1] + v[..., i3]).to(torch.float64)
+        h1_i = 0.5 * (v[..., i2] - v[..., i4]).to(torch.float64)
+        h2_r = (-c * (v[..., i2] + v[..., i4])).to(torch.float64)
+        h2_i = (c * (v[..., i1] - v[..., i3])).to(torch.float64)
 
         # Calculating the true transform of the original real data
         v[..., i1] = h1_r + w_r * h2_r - w_i * h2_i
