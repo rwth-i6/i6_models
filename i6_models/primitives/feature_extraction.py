@@ -213,10 +213,8 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
 
         # compute amplitude spectrum using torch.fft.rfftn
         amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft))  # [B, T', F=n_fft//2+1]
-        amplitude_spectrum = amplitude_spectrum.transpose(1, 2)  # [B, F, T']
 
-        melspec = torch.einsum("...ft,mf->...mt", amplitude_spectrum, self.mel_basis)  # [B, F'=num_filters, T']
+        melspec = torch.einsum("...tf,mf->...tm", amplitude_spectrum, self.mel_basis)  # [B, T', F'=num_filters]
         log_melspec = torch.log10(melspec + self.min_amp)
-        feature_data = torch.transpose(log_melspec, 1, 2)  # [B, T', F']
 
-        return feature_data, res_length
+        return log_melspec, res_length
