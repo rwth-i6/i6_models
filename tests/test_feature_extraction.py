@@ -402,11 +402,9 @@ def test_rasr_compatible_fft():
             <link from="window" to="fft"/>
             <node filter="generic-vector-f32-multiplication" name="scaling" value="16000"/>
             <link from="fft" to="scaling"/>
-            <node filter="signal-vector-alternating-complex-f32-amplitude" name="amplitude-spectrum"/>
-            <link from="scaling" to="amplitude-spectrum"/>
             """
         ),
-        flow_output_name="amplitude-spectrum",
+        flow_output_name="scaling",
     )
 
     rasr_cache = FileArchive(rasr_feature_cache_path, must_exists=True)
@@ -446,13 +444,18 @@ def test_rasr_compatible_fft():
     smoothed = torch.cat([smoothed, (windowed[-1] * last_win)[None, :]], dim=0)
 
     n_fft = 2 ** math.ceil(math.log2(win_length))
+    print(f"win_length={win_length}, n_fft={n_fft}")
+    smoothed = smoothed.to(torch.float64)
+
     # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F]
     # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F*2]
-    amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=n_fft))  # [B, T', F=n_fft//2+1]
+    fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F=n_fft//2+1]
+    fft = torch.view_as_real(fft).flatten(-2)  # # [B, T', F=(n_fft//2+1)*2]
+    fft = fft.to(torch.float32)
 
-    print("i6_models", _torch_repr(amplitude_spectrum))
+    print("i6_models", _torch_repr(fft))
 
-    torch.testing.assert_close(amplitude_spectrum, rasr_feat, rtol=1e-30, atol=1e-30)
+    torch.testing.assert_close(fft, rasr_feat, rtol=1e-30, atol=1e-30)
 
 
 def generate_rasr_feature_cache_from_wav_and_flow(
