@@ -454,13 +454,127 @@ def test_rasr_compatible_fft():
 
     # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F]
     # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F*2]
-    fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F=n_fft//2+1]
-    fft = torch.view_as_real(fft).flatten(-2)  # # [B, T', F=(n_fft//2+1)*2]
+    # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F=n_fft//2+1]
+    # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F=(n_fft//2+1)*2]
+    fft = my_fft(smoothed, n_fft=n_fft)
     fft = fft.to(torch.float32)
 
     print("i6_models", _torch_repr(fft))
 
     torch.testing.assert_close(fft, rasr_feat, rtol=1e-30, atol=1e-30)
+
+
+def create_bit_reversal_reordering(size):
+    """
+    Creates a bit reversal reordering tensor for a given size.
+    """
+    # Initial setup
+    length = size // 2
+    reordering = torch.arange(size)
+
+    # Bit reversal reordering logic
+    j = 1
+    for i in range(1, size, 2):
+        if j > i:
+            reordering[i - 1] = j - 1
+            reordering[i] = j
+        m = length
+        while 2 <= m < j:
+            j -= m
+            m //= 2
+        j += m
+
+    return reordering
+
+
+def bit_reversal_reordering(tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Reorders a given tensor according to bit reversal pattern.
+    """
+    size = tensor.size(-1)
+    reordering = create_bit_reversal_reordering(size)
+    return tensor[..., reordering]
+
+
+def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
+    # https://github.com/rwth-i6/rasr/blob/master/src/Math/FastFourierTransform.cc#L95
+    size = n_fft
+    d_pi = torch.tensor(6.28318530717959, dtype=torch.float64)
+    theta_base = d_pi
+
+    tensor = torch.nn.functional.pad(tensor, (0, size - tensor.shape[-1]))
+    v = bit_reversal_reordering(tensor)
+
+    cur_length = 2
+    # estimate DFFT using Danielson and Lanczos formula
+    while cur_length < size:
+        # initialization of trigonometric recurrence
+        step = cur_length * 2
+        theta = theta_base / cur_length
+        sin_h_theta = torch.sin(0.5 * theta)
+        wp_r = -2.0 * sin_h_theta * sin_h_theta
+        wp_i = torch.sin(theta)
+        w_r = 1.0
+        w_i = 0.0
+        for m in range(1, cur_length, 2):
+            for i in range(m, size, step):
+                # Danielson & Lanczos formula
+                j = i + cur_length
+                tempr = w_r * v[..., j - 1] - w_i * v[..., j]
+                tempi = w_r * v[..., j] + w_i * v[..., j - 1]
+                v[..., j - 1] = v[..., i - 1] - tempr
+                v[..., j] = v[..., i] - tempi
+                v[..., i - 1] += tempr
+                v[..., i] += tempi
+            w_temp_r, w_temp_i = w_r, w_i
+            w_r = w_temp_r * wp_r - w_temp_i * wp_i + w_r
+            w_i = w_temp_i * wp_r + w_temp_r * wp_i + w_i
+        cur_length = step
+
+    pi = torch.tensor(3.141592653589793238, dtype=torch.float64)
+    size_d4 = size >> 2
+    theta = pi / (size >> 1)
+    c = -0.5
+
+    sin_h_theta = torch.sin(0.5 * theta)
+    wp_r = -2.0 * sin_h_theta * sin_h_theta
+    wp_i = torch.sin(theta)
+    w_r = wp_r + 1
+    w_i = wp_i
+
+    for i in range(1, size_d4):
+        i1 = i + i
+        i2 = i1 + 1
+        i3 = size - i1
+        i4 = i3 + 1
+
+        # separate the two transforms
+        h1_r = 0.5 * (v[..., i1] + v[..., i3])
+        h1_i = 0.5 * (v[..., i2] - v[..., i4])
+        h2_r = -c * (v[..., i2] + v[..., i4])
+        h2_i = c * (v[..., i1] - v[..., i3])
+
+        # Calculating the true transform of the original real data
+        v[..., i1] = h1_r + w_r * h2_r - w_i * h2_i
+        v[..., i2] = h1_i + w_r * h2_i + w_i * h2_r
+        v[..., i3] = h1_r - w_r * h2_r + w_i * h2_i
+        v[..., i4] = -h1_i + w_r * h2_i + w_i * h2_r
+
+        # Updating the trigonometric recurrences
+        old_wr = w_r
+        w_r = w_r * wp_r - w_i * wp_i + w_r
+        w_i = w_i * wp_r + old_wr * wp_i + w_i
+
+    h = v[..., 0].clone()
+    v[..., 0] = h + v[..., 1]
+    v[..., 1] = h - v[..., 1]
+
+    # unpack logic
+    v = torch.nn.functional.pad(v, (0, 2))
+    v[..., -2] = v[..., 1]
+    v[..., 1] = 0
+
+    return v
 
 
 def generate_rasr_feature_cache_from_wav_and_flow(
