@@ -517,8 +517,8 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
         sin_h_theta = torch.sin(0.5 * theta)
         wp_r = -2.0 * sin_h_theta * sin_h_theta
         wp_i = torch.sin(theta)
-        w_r = 1.0
-        w_i = 0.0
+        w_r = torch.tensor(1.0, dtype=torch.float64)
+        w_i = torch.tensor(0.0, dtype=torch.float64)
         for m in range(1, cur_length, 2):
             for i in range(m, size, step):
                 # Danielson & Lanczos formula
@@ -539,7 +539,6 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
     pi = torch.tensor(3.141592653589793238, dtype=torch.float64)
     size_d4 = size >> 2
     theta = pi / (size >> 1)
-    c = -0.5
 
     sin_h_theta = torch.sin(0.5 * theta)
     wp_r = -2.0 * sin_h_theta * sin_h_theta
@@ -556,8 +555,8 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
         # separate the two transforms
         h1_r = 0.5 * (v[..., i1] + v[..., i3]).to(torch.float64)
         h1_i = 0.5 * (v[..., i2] - v[..., i4]).to(torch.float64)
-        h2_r = (-c * (v[..., i2] + v[..., i4])).to(torch.float64)
-        h2_i = (c * (v[..., i1] - v[..., i3])).to(torch.float64)
+        h2_r = 0.5 * (v[..., i2] + v[..., i4]).to(torch.float64)
+        h2_i = -0.5 * (v[..., i1] - v[..., i3]).to(torch.float64)
 
         # Calculating the true transform of the original real data
         v[..., i1] = h1_r + w_r * h2_r - w_i * h2_i
