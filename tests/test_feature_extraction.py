@@ -91,6 +91,7 @@ def test_rasr_compatible():
     if not os.path.exists(rasr_feature_extractor_bin_path):
         raise unittest.SkipTest("RASR feature-extraction binary not found")
 
+    torch.manual_seed(42)
     wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
     atexit.register(os.remove, wav_file_path)
     generate_random_speech_like_audio_wav(wav_file_path)
@@ -176,6 +177,7 @@ def test_rasr_compatible_raw_audio_samples():
     if not os.path.exists(rasr_feature_extractor_bin_path):
         raise unittest.SkipTest("RASR feature-extraction binary not found")
 
+    torch.manual_seed(42)
     wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
     atexit.register(os.remove, wav_file_path)
     generate_random_speech_like_audio_wav(wav_file_path)
@@ -222,6 +224,7 @@ def test_rasr_compatible_preemphasis():
     if not os.path.exists(rasr_feature_extractor_bin_path):
         raise unittest.SkipTest("RASR feature-extraction binary not found")
 
+    torch.manual_seed(42)
     wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
     atexit.register(os.remove, wav_file_path)
     generate_random_speech_like_audio_wav(wav_file_path)
@@ -272,6 +275,7 @@ def test_rasr_compatible_window():
     if not os.path.exists(rasr_feature_extractor_bin_path):
         raise unittest.SkipTest("RASR feature-extraction binary not found")
 
+    torch.manual_seed(42)
     wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
     atexit.register(os.remove, wav_file_path)
     generate_random_speech_like_audio_wav(wav_file_path)
@@ -382,6 +386,7 @@ def test_rasr_compatible_fft():
     if not os.path.exists(rasr_feature_extractor_bin_path):
         raise unittest.SkipTest("RASR feature-extraction binary not found")
 
+    torch.manual_seed(42)
     wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
     atexit.register(os.remove, wav_file_path)
     generate_random_speech_like_audio_wav(wav_file_path)
