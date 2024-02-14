@@ -493,7 +493,12 @@ def bit_reversal_reordering(tensor: torch.Tensor) -> torch.Tensor:
     """
     size = tensor.size(-1)
     reordering = create_bit_reversal_reordering(size)
-    return tensor[..., reordering]
+    v = tensor.clone()
+    for i in range(size):
+        h = v[..., i].clone()
+        v[..., i] = v[..., reordering[i]]
+        v[..., reordering[i]] = h
+    return v
 
 
 def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
@@ -527,8 +532,8 @@ def my_fft(tensor: torch.Tensor, *, n_fft: int) -> torch.Tensor:
                 v[..., i - 1] += tempr
                 v[..., i] += tempi
             w_temp_r, w_temp_i = w_r, w_i
-            w_r = w_temp_r * wp_r - w_temp_i * wp_i + w_r
-            w_i = w_temp_i * wp_r + w_temp_r * wp_i + w_i
+            w_r = w_r * wp_r - w_temp_i * wp_i + w_r
+            w_i = w_i * wp_r + w_temp_r * wp_i + w_i
         cur_length = step
 
     pi = torch.tensor(3.141592653589793238, dtype=torch.float64)
