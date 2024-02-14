@@ -1,6 +1,7 @@
 import os
 import sys
 import copy
+import math
 import numpy as np
 import torch
 import unittest
@@ -363,6 +364,95 @@ def test_rasr_compatible_window():
     print("i6_models", _torch_repr(smoothed))
 
     torch.testing.assert_close(smoothed, rasr_feat, rtol=1e-30, atol=1e-30)
+
+
+def test_rasr_compatible_fft():
+    try:
+        from i6_core.lib.rasr_cache import FileArchive
+    except ImportError:
+        raise unittest.SkipTest("i6_core not available")
+    try:
+        import soundfile
+    except ImportError:
+        raise unittest.SkipTest("soundfile not available")
+    rasr_feature_extractor_bin_path = (
+        "/work/tools22/asr/rasr/rasr_onnx_haswell_0623/arch/linux-x86_64-standard/"
+        "feature-extraction.linux-x86_64-standard"
+    )
+    if not os.path.exists(rasr_feature_extractor_bin_path):
+        raise unittest.SkipTest("RASR feature-extraction binary not found")
+
+    wav_file_path = tempfile.mktemp(suffix=".wav", prefix="tmp-i6models-random-audio")
+    atexit.register(os.remove, wav_file_path)
+    generate_random_speech_like_audio_wav(wav_file_path)
+    rasr_feature_cache_path = generate_rasr_feature_cache_from_wav_and_flow(
+        rasr_feature_extractor_bin_path,
+        wav_file_path,
+        textwrap.dedent(
+            f"""\
+            <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
+            <link from="samples" to="demultiplex"/>
+            <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
+            <link from="demultiplex" to="convert"/>        
+            <node alpha="1.0" filter="signal-preemphasis" name="preemphasis"/>
+            <link from="convert" to="preemphasis"/>
+            <node filter="signal-window" length="0.025" name="window" shift="0.01" type="hanning"/>
+            <link from="preemphasis" to="window"/>
+            <node filter="signal-real-fast-fourier-transform" maximum-input-size="0.025" name="fft"/>
+            <link from="window" to="fft"/>
+            <node filter="generic-vector-f32-multiplication" name="scaling" value="16000"/>
+            <link from="fft" to="scaling"/>
+            <node filter="signal-vector-alternating-complex-f32-amplitude" name="amplitude-spectrum"/>
+            <link from="scaling" to="amplitude-spectrum"/>
+            """
+        ),
+        flow_output_name="amplitude-spectrum",
+    )
+
+    rasr_cache = FileArchive(rasr_feature_cache_path, must_exists=True)
+    time_, rasr_feat = rasr_cache.read("corpus/recording/1", "feat")
+    assert len(time_) == len(rasr_feat)
+    rasr_feat = torch.tensor(np.stack(rasr_feat, axis=0), dtype=torch.float32)
+    print("RASR:", _torch_repr(rasr_feat))
+
+    audio, sample_rate = soundfile.read(open(wav_file_path, "rb"), dtype="int16")
+    audio = torch.tensor(audio.astype(np.float32))  # [-2**15, 2**15-1]
+
+    # preemphasize
+    audio[..., 1:] -= 1.0 * audio[..., :-1]
+    audio[..., 0] = 0.0
+
+    # windowing
+    win_size = 0.025
+    hop_size = 0.01
+    hop_length = int(hop_size * sample_rate)
+    win_length = int(win_size * sample_rate)
+
+    res_len = max(audio.shape[0] - win_length + hop_length - 1, 0) // hop_length + 1
+    assert res_len == len(rasr_feat)
+
+    last_win_size = audio.shape[0] - (res_len - 1) * hop_length
+    last_pad = win_length - last_win_size
+    padded = torch.nn.functional.pad(audio, (0, last_pad))  # zero pad for the last frame
+
+    windowed = padded.unfold(0, size=win_length, step=hop_length)  # [T', W=win_length]
+    assert len(windowed) == res_len
+    window = torch.hann_window(win_length, periodic=False, dtype=torch.float64).to(torch.float32)
+    smoothed = windowed[:-1] * window[None, :]  # [T'-1, W]
+
+    # The last window might be shorter. Will use a shorter Hanning window then. Need to fix that.
+    last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(torch.float32)
+    last_win = torch.nn.functional.pad(last_win, (0, last_pad))
+    smoothed = torch.cat([smoothed, (windowed[-1] * last_win)[None, :]], dim=0)
+
+    n_fft = 2 ** math.ceil(math.log2(win_length))
+    # fft = torch.fft.rfftn(smoothed, s=n_fft)  # [B, T', F]
+    # fft = torch.view_as_real(fft).flatten(-2)  # [B, T', F*2]
+    amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=n_fft))  # [B, T', F=n_fft//2+1]
+
+    print("i6_models", _torch_repr(amplitude_spectrum))
+
+    torch.testing.assert_close(amplitude_spectrum, rasr_feat, rtol=1e-30, atol=1e-30)
 
 
 def generate_rasr_feature_cache_from_wav_and_flow(
