@@ -110,15 +110,13 @@ def test_rasr_compatible():
             <link from="preemphasis" to="window"/>
             <node filter="signal-real-fast-fourier-transform" maximum-input-size="0.025" name="fft"/>
             <link from="window" to="fft"/>
-            <node filter="generic-vector-f32-multiplication" name="scaling" value="16000"/>
-            <link from="fft" to="scaling"/>
             <node filter="signal-vector-alternating-complex-f32-amplitude" name="amplitude-spectrum"/>
-            <link from="scaling" to="amplitude-spectrum"/>
+            <link from="fft" to="amplitude-spectrum"/>
             <node filter="signal-filterbank" filter-width="70.12402584464985" name="filterbank"
              warp-differential-unit="false" warping-function="mel"/>
             <link from="amplitude-spectrum" to="filterbank"/>
             <node filter="generic-vector-f32-log-plus" name="nonlinear" value="1.175494e-38"/>
-            <link from="filterbank" to="nonlinear"/>        
+            <link from="filterbank" to="nonlinear"/>
             """
         ),
         flow_output_name="nonlinear",
@@ -189,7 +187,7 @@ def test_rasr_compatible_raw_audio_samples():
             <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
             <link from="samples" to="demultiplex"/>
             <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
-            <link from="demultiplex" to="convert"/>        
+            <link from="demultiplex" to="convert"/>
             """
         ),
         flow_output_name="convert",
@@ -236,7 +234,7 @@ def test_rasr_compatible_preemphasis():
             <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
             <link from="samples" to="demultiplex"/>
             <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
-            <link from="demultiplex" to="convert"/>        
+            <link from="demultiplex" to="convert"/>
             <node alpha="1.0" filter="signal-preemphasis" name="preemphasis"/>
             <link from="convert" to="preemphasis"/>
             """
@@ -287,7 +285,7 @@ def test_rasr_compatible_window():
             <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
             <link from="samples" to="demultiplex"/>
             <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
-            <link from="demultiplex" to="convert"/>        
+            <link from="demultiplex" to="convert"/>
             <node alpha="1.0" filter="signal-preemphasis" name="preemphasis"/>
             <link from="convert" to="preemphasis"/>
             <node filter="signal-window" length="0.025" name="window" shift="0.01" type="hanning"/>
@@ -398,7 +396,7 @@ def test_rasr_compatible_fft():
             <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
             <link from="samples" to="demultiplex"/>
             <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
-            <link from="demultiplex" to="convert"/>        
+            <link from="demultiplex" to="convert"/>
             <node alpha="1.0" filter="signal-preemphasis" name="preemphasis"/>
             <link from="convert" to="preemphasis"/>
             <node filter="signal-window" length="0.025" name="window" shift="0.01" type="hanning"/>
@@ -490,7 +488,7 @@ def test_rasr_compatible_amplitude_spectrum():
             <node filter="generic-vector-s16-demultiplex" name="demultiplex" track="$(track)"/>
             <link from="samples" to="demultiplex"/>
             <node filter="generic-convert-vector-s16-to-vector-f32" name="convert"/>
-            <link from="demultiplex" to="convert"/>        
+            <link from="demultiplex" to="convert"/>
             <node alpha="1.0" filter="signal-preemphasis" name="preemphasis"/>
             <link from="convert" to="preemphasis"/>
             <node filter="signal-window" length="0.025" name="window" shift="0.01" type="hanning"/>
@@ -742,7 +740,7 @@ def generate_rasr_feature_cache_from_wav_and_flow(
                 f"""\
                 [*.corpus]
                 file = {corpus_xml_path}
-                
+
                 [*.feature-extraction]
                 file = {rasr_flow_xml_path}
                 """

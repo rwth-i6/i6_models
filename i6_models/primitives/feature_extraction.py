@@ -152,6 +152,8 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
 
     def __init__(self, cfg: RasrCompatibleLogMelFeatureExtractionV1Config):
         super().__init__()
+
+        self.sample_rate = int(cfg.sample_rate)
         self.hop_length = int(cfg.hop_size * cfg.sample_rate)
         self.min_amp = cfg.min_amp
         self.win_length = int(cfg.win_size * cfg.sample_rate)
@@ -211,8 +213,9 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         last_win = torch.nn.functional.pad(last_win, (0, last_pad))  # [W]
         smoothed = torch.cat([smoothed, (windowed[:, -1] * last_win[None, :])[:, None]], dim=1)  # [B, T', W]
 
-        # compute amplitude spectrum using torch.fft.rfftn
-        amplitude_spectrum = torch.abs(torch.fft.rfftn(smoothed, s=self.n_fft))  # [B, T', F=n_fft//2+1]
+        # compute amplitude spectrum using torch.fft.rfftn with Rasr specific scaling
+        fft = torch.fft.rfftn(smoothed, s=self.n_fft) / self.sample_rate # [B, T', F=n_fft//2+1]
+        amplitude_spectrum = torch.abs(fft)  # [B, T', F=n_fft//2+1]
 
         melspec = torch.einsum("...tf,mf->...tm", amplitude_spectrum, self.mel_basis)  # [B, T', F'=num_filters]
         log_melspec = torch.log10(melspec + self.min_amp)
