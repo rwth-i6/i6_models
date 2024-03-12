@@ -214,7 +214,7 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         smoothed = torch.cat([smoothed, (windowed[:, -1] * last_win[None, :])[:, None]], dim=1)  # [B, T', W]
 
         # compute amplitude spectrum using torch.fft.rfftn with Rasr specific scaling
-        fft = torch.fft.rfftn(smoothed, s=self.n_fft) / self.sample_rate # [B, T', F=n_fft//2+1]
+        fft = torch.fft.rfftn(smoothed, s=self.n_fft) / self.sample_rate  # [B, T', F=n_fft//2+1]
         amplitude_spectrum = torch.abs(fft)  # [B, T', F=n_fft//2+1]
 
         melspec = torch.einsum("...tf,mf->...tm", amplitude_spectrum, self.mel_basis)  # [B, T', F'=num_filters]
