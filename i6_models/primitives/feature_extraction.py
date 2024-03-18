@@ -198,20 +198,25 @@ class RasrCompatibleLogMelFeatureExtractionV1(nn.Module):
         preemphasized[..., 1:] -= self.alpha * preemphasized[..., :-1]
         preemphasized[..., 0] = 0.0
 
-        # zero pad for the last frame
-        last_win_size = preemphasized.shape[1] - (res_size - 1) * self.hop_length
-        last_pad = self.win_length - last_win_size
-        padded = torch.nn.functional.pad(preemphasized, (0, last_pad))
+        # zero pad for the last frame of each sequence in the batch
+        last_win_size = length - (res_length - 1) * self.hop_length  # [B]
+        last_pad = self.win_length - last_win_size  # [B]
 
-        windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=win_length]
-        smoothed = windowed[:, :-1] * self.window[None, None, :]  # [B, T'-1, W]
+        # zero pad for the whole batch
+        last_pad_batch = self.win_length - (preemphasized.shape[1] - (res_size - 1) * self.hop_length)
+        padded = torch.nn.functional.pad(preemphasized, (0, last_pad_batch))
+
+        windowed = padded.unfold(1, size=self.win_length, step=self.hop_length)  # [B, T', W=self.win_length]
+
+        smoothed = windowed * self.window[None, None, :]  # [B, T', W]
 
         # The last window might be shorter. Will use a shorter Hanning window then. Need to fix that.
-        last_win = torch.hann_window(last_win_size, periodic=False, dtype=torch.float64).to(
-            self.window.device, torch.float32
-        )
-        last_win = torch.nn.functional.pad(last_win, (0, last_pad))  # [W]
-        smoothed = torch.cat([smoothed, (windowed[:, -1] * last_win[None, :])[:, None]], dim=1)  # [B, T', W]
+        for i, (last_w_size, last_p, res_l) in enumerate(zip(last_win_size, last_pad, res_length)):
+            last_win = torch.hann_window(last_w_size, periodic=False, dtype=torch.float64).to(
+                self.window.device, torch.float32
+            )
+            last_win = torch.nn.functional.pad(last_win, (0, last_p))  # [W]
+            smoothed[i, res_l - 1] = windowed[i, res_l - 1] * last_win[None, :]
 
         # compute amplitude spectrum using torch.fft.rfftn with Rasr specific scaling
         fft = torch.fft.rfftn(smoothed, s=self.n_fft) / self.sample_rate  # [B, T', F=n_fft//2+1]
