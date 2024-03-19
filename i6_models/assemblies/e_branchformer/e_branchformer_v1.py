@@ -66,15 +66,16 @@ class EbranchformerBlockV1(nn.Module):
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
-        x = 0.5 * self.ff1(x) + x  #  [B, T, F]
+        x = 0.5 * self.ff_1(x) + x  #  [B, T, F]
         x_1 = self.mhsa(x, sequence_mask)  #  [B, T, F]
         x_2 = self.cgmlp(x)  #  [B, T, F]
         x = self.merger(x_1, x_2) + x  #  [B, T, F]
-        x = 0.5 * self.ff2(x) + x  #  [B, T, F]
+        x = 0.5 * self.ff_2(x) + x  #  [B, T, F]
         x = self.final_layer_norm(x)  # [B, T, F]
         return x
 
 
+@dataclass
 class EbranchformerEncoderV1Config(ModelConfiguration):
     """
     Attributes:
