@@ -52,7 +52,7 @@ class ConformerBlockV1(nn.Module):
     def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
         :param x: input tensor of shape [B, T, F]
-        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
+        :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
         x = 0.5 * self.ff1(x) + x  #  [B, T, F]
@@ -98,7 +98,7 @@ class ConformerEncoderV1(nn.Module):
     def forward(self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
-        :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T']
+        :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
         :return: (output, out_seq_mask)
             where output is torch.Tensor of shape [B, T, F'],
             out_seq_mask is a torch.Tensor of shape [B, T]
