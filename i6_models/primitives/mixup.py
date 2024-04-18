@@ -125,8 +125,8 @@ class Mixup:
         row_vector = torch.arange(0, max_num_mixup, 1)  # [M]
         n_mask = torch.unsqueeze(num_mixup, dim=-1) > row_vector  # [B, M]
 
-        mixup_values = self.feature_buffer.getRandom(
-            b_dim, t_dim, max_num_mixup, n_mask
+        mixup_values = self.feature_buffer.getRandom(b_dim, t_dim, max_num_mixup, n_mask).to(
+            input.device
         )  # [T, M', F] (M' denotes sum of num_mixup over the batch)
 
         lambda_ = torch.FloatTensor(b_dim, max(num_mixup)).uniform_(self.lambda_min, self.lambda_max)  # [B, M]
@@ -134,14 +134,16 @@ class Mixup:
 
         mixup_scales *= lambda_ / torch.unsqueeze(torch.sum(mixup_scales * n_mask, axis=1), dim=-1)  # [B, M]
         mixup_scales_flat = torch.masked_select(mixup_scales, n_mask)  # [M']
-        mixup_values = torch.einsum("ijk,j->ijk", mixup_values, mixup_scales_flat)  # [T, M', F]
+        mixup_values = torch.einsum("ijk,j->ijk", mixup_values, mixup_scales_flat.to(mixup_values.device))  # [T, M', F]
 
         idx_b = torch.arange(0, b_dim, 1)  # [B]
         idx_b = torch.masked_select(idx_b.unsqueeze(-1).expand(n_mask.size()), n_mask)  # [M']
         ones = torch.ones(mixup_values.size())  # [T, M', F]
-        idx_b = torch.einsum("ijk,j->ijk", ones, idx_b).to(torch.long)  # [T, M', F]
+        idx_b = torch.einsum("ijk,j->ijk", ones, idx_b).to(mixup_values.device, dtype=torch.long)  # [T, M', F]
 
-        mixup_value = torch.scatter_add(torch.zeros(t_dim, b_dim, f_dim), 1, idx_b, mixup_values)  # [T, B, F]
+        mixup_value = torch.scatter_add(
+            torch.zeros(t_dim, b_dim, f_dim).to(mixup_values.device), 1, idx_b, mixup_values
+        )  # [T, B, F]
         mixup_value = mixup_value.transpose(0, 1)  # [B, T, F]
 
         # mask out padded frames
