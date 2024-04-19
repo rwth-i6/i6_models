@@ -1,14 +1,18 @@
+__all__ = ["WeightDrop", "WeightDropLinear"]
+
 import torch
 from torch.nn import Parameter
 
 from typing import List
 
 
-def _weight_drop(module: torch.nn.module, weights: List[str], dropout: float = 0.0):
+def _weight_drop(module: torch.nn.Module, weights: List[str], dropout: float = 0.0):
     for name_w in weights:
         w = getattr(module, name_w)
         del module._parameters[name_w]
         module.register_parameter(name_w + "_raw", Parameter(w))
+
+    original_module_forward = module.forward
 
     def forward(*args, **kwargs):
         for name_w in weights:
@@ -16,7 +20,7 @@ def _weight_drop(module: torch.nn.module, weights: List[str], dropout: float = 0
             w = torch.nn.functional.dropout(raw_w, p=dropout, training=module.training)
             setattr(module, name_w, w)
 
-        return module.forward(*args, **kwargs)
+        return original_module_forward(*args, **kwargs)
 
     setattr(module, "forward", forward)
 
@@ -24,11 +28,10 @@ def _weight_drop(module: torch.nn.module, weights: List[str], dropout: float = 0
 class WeightDrop(torch.nn.Module):
     """
     Apply dropout on weights of a given nn.module
-    weight dropout paper c.f. https://ieeexplore.ieee.org/document/9468799
     implementation c.f. https://pytorchnlp.readthedocs.io/en/latest/_modules/torchnlp/nn/weight_drop.html
     """
 
-    def __init__(self, module: torch.nn.module, weights: List[str], dropout: float = 0.0):
+    def __init__(self, module: torch.nn.Module, weights: List[str], dropout: float = 0.0):
         """
         Attributes:
             module:
