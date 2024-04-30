@@ -32,7 +32,7 @@ class ConformerBlockV2Config(ModelConfiguration):
     ff_cfg: ConformerPositionwiseFeedForwardV1Config
     mhsa_cfg: ConformerMHSAV1Config
     conv_cfg: ConformerConvolutionV1Config
-    swap_mhsa_conv: bool = True
+    swap_mhsa_conv: bool = False
 
 
 class ConformerBlockV2(nn.Module):
@@ -75,13 +75,13 @@ class ConformerEncoderV2Config(ModelConfiguration):
     """
     Attributes:
         num_layers: Number of conformer layers in the conformer encoder
-        loss_scales: Dictionary defining the loss layers and corresponding loss scales e.g. {6: 0.3, 12:1}
+        loss_layers: Dictionary defining the loss layers e.g. [4, 8, 12]
         frontend: A pair of ConformerFrontend and corresponding config
         block_cfg: Configuration for ConformerBlockV2
     """
 
     num_layers: int
-    loss_scales: Dict[int, float]
+    loss_layers: List[int]
 
     # nested configurations
     frontend: ModuleFactoryV1
@@ -105,7 +105,7 @@ class ConformerEncoderV2(nn.Module):
 
         self.frontend = cfg.frontend()
         self.module_list = torch.nn.ModuleList([ConformerBlockV2(cfg.block_cfg) for _ in range(cfg.num_layers)])
-        self.output_layers = list(cfg.loss_scales.keys())
+        self.output_layers = cfg.loss_layers
         assert cfg.num_layers in self.output_layers, "The final layer must be included in loss layers"
 
     def forward(
