@@ -109,7 +109,7 @@ class ConformerEncoderV2(nn.Module):
         assert cfg.num_layers in self.output_layers, "The final layer must be included in loss layers"
 
     def forward(
-        self, data_tensor: torch.Tensor, sequence_mask: torch.Tensor
+        self, data_tensor: torch.Tensor, /, sequence_mask: torch.Tensor
     ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
