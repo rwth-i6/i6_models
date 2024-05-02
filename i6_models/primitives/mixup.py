@@ -32,7 +32,7 @@ class FeatureBuffer:
     after the buffer is full, the buffer will not be updated
     """
 
-    def __init__(self, buffer_size: int, feature_dim: int):
+    def __init__(self, *, buffer_size: int, feature_dim: int):
         self.filled = False
         self.pos = 0
         self.buffer_size = buffer_size
