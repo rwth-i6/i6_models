@@ -56,7 +56,7 @@ class FeatureBuffer:
             self.cache[:end_pos] = tensor[delta_pos:]
             self.pos = end_pos
 
-    def getRandom(self, b_dim: int, t_dim: int, max_num_mixup: int, n_mask: torch.tensor) -> torch.Tensor:
+    def get_random(self, b_dim: int, t_dim: int, max_num_mixup: int, n_mask: torch.tensor) -> torch.Tensor:
         if not self.filled and self.pos == 0:
             return None
         else:
