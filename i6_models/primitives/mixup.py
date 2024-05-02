@@ -26,7 +26,7 @@ class MixupConfig(ModelConfiguration):
     lambda_max: float = 0.3
 
 
-class FeatureBuffer:
+class FeatureBuffer(torch.nn.Module):
     """
     The FeatureBuffer saves the feature from previous timeframes
     after the buffer is full, the buffer will not be updated
