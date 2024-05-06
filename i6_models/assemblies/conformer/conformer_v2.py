@@ -26,7 +26,7 @@ class ConformerBlockV2Config(ModelConfiguration):
         ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
         mhsa_cfg: Configuration for ConformerMHSAV1
         conv_cfg: Configuration for ConformerConvolutionV1
-        block_modules: List of modules to use for ConformerBlockV2,
+        modules: List of modules to use for ConformerBlockV2,
                        "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
         scales: List of scales to apply to the module outputs before the residual connection
     """
@@ -40,7 +40,7 @@ class ConformerBlockV2Config(ModelConfiguration):
 
     def __post__init__(self):
         super().__post_init__()
-        assert len(self.modules) == len(self.scales), "block_modules and scales must have same length"
+        assert len(self.modules) == len(self.scales), "modules and scales must have same length"
         for module_name in self.modules:
             assert module_name in ["ff", "mhsa", "conv"], "module not supported"
 
