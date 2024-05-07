@@ -67,7 +67,7 @@ class ConformerBlockV2(nn.Module):
             else:
                 raise NotImplementedError
 
-        self.modules = nn.ModuleList(modules)
+        self.module_list = nn.ModuleList(modules)
         self.scales = cfg.scales
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
@@ -77,7 +77,7 @@ class ConformerBlockV2(nn.Module):
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :return: torch.Tensor of shape [B, T, F]
         """
-        for scale, module in zip(self.scales, self.modules):
+        for scale, module in zip(self.scales, self.module_list):
             if isinstance(module, ConformerMHSAV1):
                 x = scale * module(x, sequence_mask) + x
             else:
