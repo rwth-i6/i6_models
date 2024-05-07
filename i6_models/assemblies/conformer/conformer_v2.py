@@ -4,7 +4,7 @@ __all__ = ["ConformerBlockV2Config", "ConformerEncoderV2Config"]
 
 import torch
 from torch import nn
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
@@ -35,8 +35,8 @@ class ConformerBlockV2Config(ModelConfiguration):
     ff_cfg: ConformerPositionwiseFeedForwardV1Config
     mhsa_cfg: ConformerMHSAV1Config
     conv_cfg: ConformerConvolutionV1Config
-    modules: List[str] = ["ff", "mhsa", "conv", "ff"]
-    scales: List[float] = [0.5, 1.0, 1.0, 0.5]
+    modules: List[str] = field(default_factory=lambda: ["ff", "mhsa", "conv", "ff"])
+    scales: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.0, 0.5])
 
     def __post__init__(self):
         super().__post_init__()
@@ -107,7 +107,8 @@ class ConformerEncoderV2(ConformerEncoderV1):
     Implementation of the convolution-augmented Transformer (short Conformer), as in the original publication.
     The model consists of a frontend and a stack of N conformer blocks.
     C.f. https://arxiv.org/pdf/2005.08100.pdf
-    Each conformer block is composed of fixed number of feed forward modules, multi-head self attention modules and conv modules.
+    Modifications compared to V1:
+    Modules inside each conformer block could be customized.
     """
 
     def __init__(self, cfg: ConformerEncoderV2Config):
