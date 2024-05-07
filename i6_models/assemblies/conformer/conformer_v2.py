@@ -81,7 +81,7 @@ class ConformerBlockV2(nn.Module):
             if isinstance(module, ConformerMHSAV1):
                 x = scale * module(x, sequence_mask) + x
             else:
-                x = scale * module(x)
+                x = scale * module(x) + x
 
         x = self.final_layer_norm(x)  #  [B, T, F]
         return x
@@ -128,10 +128,10 @@ class ConformerEncoderV2(nn.Module):
         """
         :param data_tensor: input tensor of shape [B, T', F]
         :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
-        :param return_layers: list of layer indices specifying which layers to return
+        :param return_layers: list of layer indices specifying which layers to return, starting from 1
         :return: (outputs, out_seq_mask)
             where outputs is a list of torch.Tensor of shape [B, T, F']
-            for each of the layers in output_layers,
+            for each of the layers in return_layers,
             out_seq_mask is a torch.Tensor of shape [B, T]
 
         F: input feature dim, F': internal and output feature dim
@@ -140,10 +140,13 @@ class ConformerEncoderV2(nn.Module):
 
         if return_layers is None:
             return_layers = [len(self.module_list)]
+
         x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
 
         outputs = []
-        assert max(return_layers) <= len(self.module_list)
+        assert (
+            max(return_layers) <= len(self.module_list) and min(return_layers) >= 1
+        ), f"invalid layer index, should be between 1 and {len(self.module_list)}"
         for i in range(max(return_layers)):
             x = self.module_list[i](x, sequence_mask)  # [B, T, F']
             if i + 1 in return_layers:
