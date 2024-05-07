@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from i6_models.i6_models.parts.mha import MultiheadAttentionV1, MultiheadAttentionV1Config
+from i6_models.parts.mha import MultiheadAttentionV1, MultiheadAttentionV1Config
 
 
 def test_MultiheadAttentionV1():
