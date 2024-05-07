@@ -63,7 +63,7 @@ class ConformerBlockV2(nn.Module):
             elif module_name == "mhsa":
                 modules.append(ConformerMHSAV1(cfg=cfg.mhsa_cfg))
             elif module_name == "conv":
-                modules.append(ConformerConvolutionV1(cfg=cfg.conv_cfg))
+                modules.append(ConformerConvolutionV1(model_cfg=cfg.conv_cfg))
             else:
                 raise NotImplementedError
 
