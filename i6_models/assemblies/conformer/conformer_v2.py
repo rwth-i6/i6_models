@@ -120,7 +120,6 @@ class ConformerEncoderV2(nn.Module):
 
         self.frontend = cfg.frontend()
         self.module_list = torch.nn.ModuleList([ConformerBlockV2(cfg.block_cfg) for _ in range(cfg.num_layers)])
-        self.output_layers = cfg.loss_layers
 
     def forward(
         self, data_tensor: torch.Tensor, /, sequence_mask: torch.Tensor, return_layers: Optional[List[int]] = None
