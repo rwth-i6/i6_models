@@ -8,6 +8,7 @@ from i6_models.config import ModelConfiguration
 from i6_models.util import compat
 from dataclasses import dataclass
 
+
 @dataclass
 class MultiheadAttentionV1Config(ModelConfiguration):
     input_dim: int
@@ -19,11 +20,9 @@ class MultiheadAttentionV1Config(ModelConfiguration):
         super().__post_init__()
         assert self.input_dim % self.num_att_heads == 0, "input_dim must be divisible by num_att_heads"
 
+
 class MultiheadAttentionV1(nn.Module):
-    def __init__(
-            self,
-            cfg: MultiheadAttentionV1Config
-    ):
+    def __init__(self, cfg: MultiheadAttentionV1Config):
         super().__init__()
         self.cfg = cfg
         self.num_att_heads = cfg.num_att_heads
@@ -33,12 +32,18 @@ class MultiheadAttentionV1(nn.Module):
 
         self.out_proj = torch.nn.Linear(in_features=cfg.input_dim, out_features=cfg.input_dim, bias=True)
         self.in_proj = torch.nn.Linear(in_features=cfg.input_dim, out_features=3 * cfg.input_dim, bias=True)
-    
+
         self.norm = math.sqrt(self.input_dim)
         self.softmax = nn.Softmax(-1)
         self.dropout = nn.Dropout(cfg.att_weights_dropout)
 
-    def forward(self,  query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor, need_weights: bool):
+    def forward(
+            self,  
+            query: torch.Tensor,
+            key: torch.Tensor,
+            value: torch.Tensor,
+            key_padding_mask: torch.Tensor,
+            need_weights: bool):
 
         inv_sequence_mask = compat.logical_not(key_padding_mask)
         assert query is value is key, "only supports self attention for now"
