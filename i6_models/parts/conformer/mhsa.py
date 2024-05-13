@@ -77,9 +77,7 @@ class ConformerMHSAV2(torch.nn.Module):
         super().__init__()
 
         self.layernorm = torch.nn.LayerNorm(cfg.input_dim)
-        self.mhsa = MultiheadAttentionV1(
-            cfg
-        )
+        self.mhsa = MultiheadAttentionV1(cfg)
         self.dropout = cfg.dropout
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:

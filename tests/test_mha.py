@@ -18,3 +18,4 @@ def test_MultiheadAttentionV1():
     key_padding_mask = torch.randint(0, 2, (input_shape[0], input_shape[1])) > 0
 
     assert get_output_shape(input_shape, cfg, key_padding_mask) == (torch.Size([4, 15, 32]), torch.Size([4, 8, 15, 15]))
+    
