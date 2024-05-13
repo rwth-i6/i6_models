@@ -27,7 +27,7 @@ class ConformerBlockV2Config(ModelConfiguration):
         mhsa_cfg: Configuration for ConformerMHSAV1
         conv_cfg: Configuration for ConformerConvolutionV1
         modules: List of modules to use for ConformerBlockV2,
-                       "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
+            "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
         scales: List of scales to apply to the module outputs before the residual connection
     """
 
