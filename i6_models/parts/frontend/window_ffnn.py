@@ -72,10 +72,11 @@ class WindowFeedForwardFrontendV1(nn.Module):
         :param sequence_mask: the sequence mask for the tensor
         :return: torch.Tensor of shape [B,T',F'] and the shape of the sequence mask
         """
-        x = x.transpose(1, 2)  # torch 1d convolution is over last dim but we want time conv
-        x = self.conv(x).transpose(1, 2)
+        # torch 1d convolution is over last dim but we want time conv
+        x = x.transpose(1, 2)  # [B, F, T]
+        x = self.conv(x).transpose(1, 2)  # [B, T', F']
 
-        # these settings apparently apply stride correctly to the masking whatever the kernel size
+        # change masking according to stride value
         sequence_mask = mask_pool(
             sequence_mask,
             kernel_size=1,
