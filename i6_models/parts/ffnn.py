@@ -1,7 +1,4 @@
-__all__ = [
-    "FeedForwardConfig",
-    "FeedForwardModel"
-]
+__all__ = ["FeedForwardConfig", "FeedForwardModel"]
 
 from dataclasses import dataclass
 from functools import partial
@@ -12,6 +9,7 @@ import torch.nn.functional as F
 
 from i6_models.config import ModelConfiguration
 
+
 @dataclass
 class FeedForwardLayerV1Config(ModelConfiguration):
     """
@@ -21,6 +19,7 @@ class FeedForwardLayerV1Config(ModelConfiguration):
         dropout: dropout probability
         activation: activation function applied after linear computation
     """
+
     input_dim: int
     hidden_dim: int
     dropout: float
@@ -45,7 +44,9 @@ class FeedForwardLayerV1(torch.nn.Module):
         self.activation = cfg.activation
         self.dropout = torch.nn.Dropout(cfg.dropout)
 
-    def forward(self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         :param tensor: shape [B,T,F], F=input_dim
         :param sequence_mask: shape [B,T]

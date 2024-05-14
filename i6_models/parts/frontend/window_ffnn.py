@@ -26,6 +26,7 @@ class WindowFeedForwardFrontendV1Config(ModelConfiguration):
         stride: skip (stride - 1) feature frames; stride > 1 implies subsampling
         activation: activation function applied after linear computation
     """
+
     in_features: int
     out_features: int
     dropout: float
@@ -62,7 +63,7 @@ class WindowFeedForwardFrontendV1(nn.Module):
         )
         self.activation = cfg.activation
         self.dropout = torch.nn.Dropout(cfg.dropout)
-    
+
     def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         T might be reduced to T' on stride
@@ -71,7 +72,7 @@ class WindowFeedForwardFrontendV1(nn.Module):
         :param sequence_mask: the sequence mask for the tensor
         :return: torch.Tensor of shape [B,T',F'] and the shape of the sequence mask
         """
-        x = x.transpose(1, 2) # torch 1d convolution is over last dim but we want time conv 
+        x = x.transpose(1, 2)  # torch 1d convolution is over last dim but we want time conv
         x = self.conv(x).transpose(1, 2)
 
         # these settings apparently apply stride correctly to the masking whatever the kernel size
@@ -79,7 +80,7 @@ class WindowFeedForwardFrontendV1(nn.Module):
             sequence_mask,
             kernel_size=1,
             stride=self.conv.stride[0],
-            padding=0, # done manually
+            padding=0,  # done manually
         )
         x = self.activation(x)
         x = self.dropout(x)
