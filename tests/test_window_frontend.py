@@ -4,10 +4,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-import sys
-
-sys.path.insert(0, "/home/dmann/setups/2024-05-06--test-ffnn-fullsum/recipe/i6_models")
-
 from i6_models.parts.frontend.window_ffnn import WindowFeedForwardFrontendV1Config, WindowFeedForwardFrontendV1
 
 

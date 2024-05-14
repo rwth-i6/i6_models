@@ -4,10 +4,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-import sys
-
-sys.path.insert(0, "/home/dmann/setups/2024-05-06--test-ffnn-fullsum/recipe/i6_models")
-
 from i6_models.assemblies.ffnn import (
     FeedForwardEncoderV1,
     FeedForwardEncoderV1Config,
@@ -39,7 +35,12 @@ def test_output_shape():
             ),
         )
 
-        layer_cfg = FeedForwardLayerV1Config(input_dim=2048, hidden_dim=2048, dropout=0.1)
+        layer_cfg = FeedForwardLayerV1Config(
+            input_dim=2048,
+            hidden_dim=2048,
+            dropout=0.1,
+            activation=F.relu,
+        )
 
         encoder_cfg = FeedForwardEncoderV1Config(num_layers=6, layer_cfg=layer_cfg, frontend=frontend)
 

@@ -5,6 +5,7 @@ from functools import partial
 from typing import Callable, Optional, Tuple, Union
 
 import torch
+from torch import nn
 import torch.nn.functional as F
 
 from i6_models.config import ModelConfiguration
@@ -27,10 +28,10 @@ class FeedForwardLayerV1Config(ModelConfiguration):
 
     def __post_init__(self):
         super().__post_init__()
-        assert 0.0 <= dropout <= 1.0, "Dropout value must be a probability"
+        assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
 
 
-class FeedForwardLayerV1(torch.nn.Module):
+class FeedForwardLayerV1(nn.Module):
     """
     Simple feed-forward layer module consisting of:
         - linear
@@ -40,9 +41,9 @@ class FeedForwardLayerV1(torch.nn.Module):
 
     def __init__(self, cfg: FeedForwardLayerV1Config):
         super().__init__()
-        self.linear_ff = torch.nn.Linear(in_features=cfg.input_dim, out_features=cfg.hidden_dim, bias=True)
+        self.linear_ff = nn.Linear(in_features=cfg.input_dim, out_features=cfg.hidden_dim, bias=True)
         self.activation = cfg.activation
-        self.dropout = torch.nn.Dropout(cfg.dropout)
+        self.dropout = nn.Dropout(cfg.dropout)
 
     def forward(
         self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None

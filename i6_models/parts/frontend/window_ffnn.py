@@ -37,8 +37,8 @@ class WindowFeedForwardFrontendV1Config(ModelConfiguration):
     def __post_init__(self):
         super().__post_init__()
         assert self.window_size % 2 == 1, "Only odd kernel sizes are supported so far"
-        assert stride >= 1, "Choose an integer >= 1 for stride"
-        assert 0.0 <= dropout <= 1.0, "Dropout value must be a probability"
+        assert self.stride >= 1, "Choose an integer >= 1 for stride"
+        assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
 
 
 class WindowFeedForwardFrontendV1(nn.Module):
