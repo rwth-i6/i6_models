@@ -23,8 +23,12 @@ class FeedForwardLayerV1Config(ModelConfiguration):
     """
     input_dim: int
     hidden_dim: int
-    dropout: float = 0.0
-    activation: Optional[Callable[[torch.Tensor], torch.Tensor]] = F.relu
+    dropout: float
+    activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert 0.0 <= dropout <= 1.0, "Dropout value must be a probability"
 
 
 class FeedForwardLayerV1(torch.nn.Module):

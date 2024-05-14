@@ -29,9 +29,16 @@ class WindowFeedForwardFrontendV1Config(ModelConfiguration):
     in_features: int
     out_features: int
     dropout: float
-    window_size: int = 15
-    stride: int = 1
-    activation: Optional[Callable[[torch.Tensor], torch.Tensor]] = F.relu
+    window_size: int
+    stride: int
+    activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.window_size % 2 == 1, "Only odd kernel sizes are supported so far"
+        assert stride >= 1, "Choose an integer >= 1 for stride"
+        assert 0.0 <= dropout <= 1.0, "Dropout value must be a probability"
+
 
 class WindowFeedForwardFrontendV1(nn.Module):
     """
@@ -53,7 +60,7 @@ class WindowFeedForwardFrontendV1(nn.Module):
             padding=get_same_padding(cfg.window_size),
             bias=True,
         )
-        self.activation = cfg.activation or (lambda x: x)
+        self.activation = cfg.activation
         self.dropout = torch.nn.Dropout(cfg.dropout)
     
     def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
