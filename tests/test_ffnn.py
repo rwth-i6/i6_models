@@ -36,7 +36,7 @@ def test_output_shape():
         )
 
         layer_cfg = FeedForwardLayerV1Config(
-            input_dim=2048,
+            in_features=2048,
             hidden_dim=2048,
             dropout=0.1,
             activation=F.relu,
