@@ -2,7 +2,7 @@ __all__ = ["FeedForwardConfig", "FeedForwardModel"]
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
