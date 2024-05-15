@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Tuple, List, Optional
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
-from i6_models.assemblies.conformer import (
+from .conformer_v1 import (
     ConformerConvolutionV1,
     ConformerConvolutionV1Config,
     ConformerMHSAV1,
