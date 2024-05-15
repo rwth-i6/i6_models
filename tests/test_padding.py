@@ -1,4 +1,4 @@
-import sys
+from itertools import product
 
 import torch
 from torch import nn
