@@ -47,7 +47,8 @@ class ConformerBlockV2Config(ModelConfiguration):
 
 class ConformerBlockV2(nn.Module):
     """
-    Conformer block module
+    Modifications compared to ConformerBlockV1:
+    - more generic, enable constructing the block with self-defined module_list.
     """
 
     def __init__(self, cfg: ConformerBlockV2Config):
@@ -105,11 +106,9 @@ class ConformerEncoderV2Config(ModelConfiguration):
 
 class ConformerEncoderV2(nn.Module):
     """
-    Implementation of the convolution-augmented Transformer (short Conformer), as in the original publication.
-    The model consists of a frontend and a stack of N conformer blocks.
-    C.f. https://arxiv.org/pdf/2005.08100.pdf
-    Modifications compared to V1:
-    Modules inside each conformer block could be customized.
+    Modifications compared to ConformerEncoderV1:
+    - modules inside each conformer block could be customized.
+    - return a list of layer outputs with desired layer indices
     """
 
     def __init__(self, cfg: ConformerEncoderV2Config):
@@ -127,7 +126,7 @@ class ConformerEncoderV2(nn.Module):
         """
         :param data_tensor: input tensor of shape [B, T', F]
         :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
-        :param return_layers: list of layer indices specifying which layers to return, starting from 1
+        :param return_layers: list of layer indices specifying which layers to return, starting from 0
         :return: (outputs, out_seq_mask)
             where outputs is a list of torch.Tensor of shape [B, T, F']
             for each of the layers in return_layers,
@@ -144,11 +143,11 @@ class ConformerEncoderV2(nn.Module):
 
         outputs = []
         assert (
-            max(return_layers) <= len(self.module_list) and min(return_layers) >= 1
-        ), f"invalid layer index, should be between 1 and {len(self.module_list)}"
+            max(return_layers) < len(self.module_list) and min(return_layers) >= 0
+        ), f"invalid layer index, should be between 0 and {len(self.module_list)-1}"
         for i in range(max(return_layers)):
             x = self.module_list[i](x, sequence_mask)  # [B, T, F']
-            if i + 1 in return_layers:
+            if i in return_layers:
                 outputs.append(x)
 
         return outputs, sequence_mask
