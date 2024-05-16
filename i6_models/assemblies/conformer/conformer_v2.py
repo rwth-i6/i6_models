@@ -137,7 +137,7 @@ class ConformerEncoderV2(nn.Module):
         """
 
         if return_layers is None:
-            return_layers = [len(self.module_list)]
+            return_layers = [len(self.module_list)-1]
 
         x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
 
