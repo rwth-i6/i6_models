@@ -145,7 +145,8 @@ class ConformerEncoderV2(nn.Module):
         assert (
             max(return_layers) < len(self.module_list) and min(return_layers) >= 0
         ), f"invalid layer index, should be between 0 and {len(self.module_list)-1}"
-        for i in range(max(return_layers)):
+
+        for i in range(max(return_layers) + 1):
             x = self.module_list[i](x, sequence_mask)  # [B, T, F']
             if i in return_layers:
                 outputs.append(x)
