@@ -11,13 +11,6 @@ def test_masking():
     stride = 2
     padding = get_same_padding(kernel_size)
 
-    out_sequence_mask = mask_pool(
-        sequence_mask,
-        kernel_size=kernel_size,
-        stride=stride,
-        padding=padding
-    )
-
     # what does conv to one sequence in [B, F, T] format
     B, F = (1, 1)
     x = torch.ones((B, F, T))
@@ -38,6 +31,9 @@ def test_masking():
     in_mask = torch.tensor(
         [[True] * t + [False] * (batch_T - t) for t in range(1, batch_T + 1)]
     )
+
+    in_mask_len = len(torch.where(in_mask[idx, :])[0])
+    assert in_mask_len == T
 
     out_mask = mask_pool(
         in_mask,
