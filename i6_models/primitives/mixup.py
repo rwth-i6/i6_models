@@ -85,7 +85,7 @@ class Mixup(torch.nn.Module):
     C.f. https://github.com/rwth-i6/i6_experiments/blob/main/users/zeyer/returnn/models/rf_mixup.py
     """
 
-    def __init__(self, feature_dim: int, cfg: MixupConfig):
+    def __init__(self, *, feature_dim: int, cfg: MixupConfig):
         self.apply_prob = cfg.apply_prob
         self.lambda_min = cfg.lambda_min
         self.lambda_max = cfg.lambda_max
