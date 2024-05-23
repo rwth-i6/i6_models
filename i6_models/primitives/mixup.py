@@ -75,7 +75,7 @@ class FeatureBuffer(torch.nn.Module):
             )  # [B, M] (M denotes maximum of num_mixup over the batch)
             start_indicies_flat = torch.masked_select(
                 start_indicies, n_mask
-            )  # [B, M'] (M' denotes sum of num_mixup over the batch)
+            )  # [M'] (M' denotes sum of num_mixup over the batch)
 
             idx = torch.arange(t_dim)  # [T]
             idx = idx[:, None] + start_indicies_flat[None, :]  # [T, M']
