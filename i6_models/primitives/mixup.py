@@ -95,7 +95,7 @@ class Mixup(torch.nn.Module):
 
         self.feature_buffer = FeatureBuffer(self.buffer_size, feature_dim)
 
-    def __call__(self, input: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, input: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
         assert (
             input.size()[-1] == self.feature_dim
         ), "the given feature dimension does not match input feature dimension"
