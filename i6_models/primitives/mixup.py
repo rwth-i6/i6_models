@@ -139,7 +139,7 @@ class Mixup(torch.nn.Module):
         max_num_mixup = num_mixup.max()  # scalar, =M (M denotes maximum of num_mixup)
 
         row_vector = torch.arange(0, max_num_mixup, 1)  # [M]
-        n_mask = torch.unsqueeze(num_mixup, dim=-1) > row_vector  # [B, M]
+        n_mask = row_vector[None, :] < num_mixup[:, None]  # [B, M]
 
         mixup_values = self.feature_buffer.get_random(b_dim, t_dim, max_num_mixup, n_mask).to(
             input.device
