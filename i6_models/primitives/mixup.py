@@ -76,7 +76,7 @@ class FeatureBuffer(torch.nn.Module):
             return mixup_values
 
 
-class Mixup:
+class Mixup(torch.nn.Module):
     """
     Implement the Mixup data augmentation method
     C.f. https://arxiv.org/abs/1710.09412
