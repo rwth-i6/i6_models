@@ -1,6 +1,7 @@
 __all__ = ["MixupConfig", "Mixup"]
 
 from dataclasses import dataclass
+from typing import Optional
 
 import torch
 
