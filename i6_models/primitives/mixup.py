@@ -136,7 +136,7 @@ class Mixup(torch.nn.Module):
             return input
 
         num_mixup = torch.randint(low=1, high=self.max_num_mix + 1, size=(b_dim,))  # [B]
-        max_num_mixup = max(num_mixup)  # [M] (M denotes maximum of num_mixup)
+        max_num_mixup = num_mixup.max()  # scalar, =M (M denotes maximum of num_mixup)
 
         row_vector = torch.arange(0, max_num_mixup, 1)  # [M]
         n_mask = torch.unsqueeze(num_mixup, dim=-1) > row_vector  # [B, M]
