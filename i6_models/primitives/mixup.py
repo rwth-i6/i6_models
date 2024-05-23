@@ -12,18 +12,20 @@ from i6_models.config import ModelConfiguration
 class MixupConfig(ModelConfiguration):
     """
     Attributes:
-        buffer_size: number of frames.
+        feature_dim: feature dimension
         apply_prob: probability to apply mixup at all
         lambda_min: minimum lambda value
         lambda_max: maximum lambda value
         max_num_mix: maximum number of mixups (random int in [1, max_num_mix])
+        buffer_size: number of frames.
     """
 
+    feature_dim: int
+    apply_prob: float
+    max_num_mix: int
+    lambda_min: float
+    lambda_max: float
     buffer_size: int = 1_000_000
-    apply_prob: float = 1.0
-    max_num_mix: int = 4
-    lambda_min: float = 0.003
-    lambda_max: float = 0.3
 
 
 class FeatureBuffer(torch.nn.Module):
@@ -90,15 +92,15 @@ class Mixup(torch.nn.Module):
     C.f. https://github.com/rwth-i6/i6_experiments/blob/main/users/zeyer/returnn/models/rf_mixup.py
     """
 
-    def __init__(self, *, feature_dim: int, cfg: MixupConfig):
+    def __init__(self, *, cfg: MixupConfig):
         self.apply_prob = cfg.apply_prob
         self.lambda_min = cfg.lambda_min
         self.lambda_max = cfg.lambda_max
         self.max_num_mix = cfg.max_num_mix
         self.buffer_size = cfg.buffer_size
-        self.feature_dim = feature_dim
+        self.feature_dim = cfg.feature_dim
 
-        self.feature_buffer = FeatureBuffer(self.buffer_size, feature_dim)
+        self.feature_buffer = FeatureBuffer(buffer_size=self.buffer_size, feature_dim=self.feature_dim)
 
     def forward(self, input: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
         assert (
