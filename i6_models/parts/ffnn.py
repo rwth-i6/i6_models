@@ -15,14 +15,14 @@ from i6_models.config import ModelConfiguration
 class FeedForwardLayerV1Config(ModelConfiguration):
     """
     Attributes:
-        in_features: input feature dimension
-        hidden_dim: output feature dimension
+        input_dim: input feature dimension
+        output_dim: output feature dimension
         dropout: dropout probability
         activation: activation function applied after linear computation
     """
 
-    in_features: int
-    hidden_dim: int
+    input_dim: int
+    output_dim: int
     dropout: float
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
@@ -41,7 +41,7 @@ class FeedForwardLayerV1(nn.Module):
 
     def __init__(self, cfg: FeedForwardLayerV1Config):
         super().__init__()
-        self.linear_ff = nn.Linear(in_features=cfg.in_features, out_features=cfg.hidden_dim, bias=True)
+        self.linear_ff = nn.Linear(in_features=cfg.input_dim, out_features=cfg.output_dim, bias=True)
         self.activation = cfg.activation
         self.dropout = nn.Dropout(cfg.dropout)
 

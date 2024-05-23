@@ -1,6 +1,6 @@
 __all__ = [
-    "WindowFeedForwardFrontendV1Config",
-    "WindowFeedForwardFrontendV1",
+    "WindowConvolutionFrontendV1Config",
+    "WindowConvolutionFrontendV1",
 ]
 
 from dataclasses import dataclass
@@ -16,49 +16,49 @@ from .common import mask_pool, get_same_padding
 
 
 @dataclass
-class WindowFeedForwardFrontendV1Config(ModelConfiguration):
+class WindowConvolutionFrontendV1Config(ModelConfiguration):
     """
     Attributes:
-        in_features: number of input features to module
-        out_features: output dimension
+        input_dim: number of input features to module
+        output_dim: output dimension
         dropout: dropout after linear layer
-        window_size: number of feature frames to convolve (kernel size)
+        kernel_size: number of feature frames to convolve (kernel size)
         stride: skip (stride - 1) feature frames; stride > 1 implies subsampling
         activation: activation function applied after linear computation
     """
 
-    in_features: int
-    out_features: int
+    input_dim: int
+    output_dim: int
     dropout: float
-    window_size: int
+    kernel_size: int
     stride: int
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def __post_init__(self):
         super().__post_init__()
-        assert self.window_size % 2 == 1, "Only odd kernel sizes are supported so far"
+        assert self.kernel_size % 2 == 1, "Only odd kernel sizes are supported so far"
         assert self.stride >= 1, "Choose an integer >= 1 for stride"
         assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
 
 
-class WindowFeedForwardFrontendV1(nn.Module):
+class WindowConvolutionFrontendV1(nn.Module):
     """
     Simple feed-forward front-end that computes over a window
     of input features. Choosing a stride > 1 allows for subsampling
     of the features.
     """
 
-    def __init__(self, cfg: WindowFeedForwardFrontendV1Config):
+    def __init__(self, cfg: WindowConvolutionFrontendV1Config):
         """
         :param cfg: model configuration for this module
         """
         super().__init__()
         self.conv = torch.nn.Conv1d(
-            in_channels=cfg.in_features,
-            out_channels=cfg.out_features,
-            kernel_size=cfg.window_size,
+            in_channels=cfg.input_dim,
+            out_channels=cfg.output_dim,
+            kernel_size=cfg.kernel_size,
             stride=cfg.stride,
-            padding=get_same_padding(cfg.window_size),
+            padding=get_same_padding(cfg.kernel_size),
             bias=True,
         )
         self.activation = cfg.activation

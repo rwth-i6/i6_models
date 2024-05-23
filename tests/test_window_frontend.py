@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from i6_models.parts.frontend.window_ffnn import WindowFeedForwardFrontendV1Config, WindowFeedForwardFrontendV1
+from i6_models.parts.frontend.window_convolution import WindowConvolutionFrontendV1Config, WindowConvolutionFrontendV1
 
 
 def test_output_shape():
@@ -15,11 +15,11 @@ def test_output_shape():
 
     # skip even window sizes for now
     for window_size, stride in product(range(1, 22, 2), range(1, 5)):
-        frontend = WindowFeedForwardFrontendV1(
-            WindowFeedForwardFrontendV1Config(
-                in_features=80,
-                out_features=out_features,
-                window_size=window_size,
+        frontend = WindowConvolutionFrontendV1(
+            WindowConvolutionFrontendV1Config(
+                input_dim=80,
+                output_dim=out_features,
+                kernel_size=window_size,
                 dropout=dropout,
                 stride=stride,
                 activation=F.relu,
