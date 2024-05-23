@@ -1,6 +1,5 @@
 __all__ = ["MixupConfig", "Mixup"]
 
-import random
 from dataclasses import dataclass
 
 import torch
@@ -14,8 +13,8 @@ class MixupConfig(ModelConfiguration):
     Attributes:
         feature_dim: feature dimension
         apply_prob: probability to apply mixup at all
-        lambda_min: minimum lambda value
-        lambda_max: maximum lambda value
+        lambda_min: minimum of lambda_ value (suppose input = input + lambda_ * mixup_values)
+        lambda_max: maximum of lambda_ value (suppose input = input + lambda_ * mixup_values)
         max_num_mix: maximum number of mixups (random int in [1, max_num_mix])
         buffer_size: number of frames.
     """
@@ -35,6 +34,7 @@ class FeatureBuffer(torch.nn.Module):
     """
 
     def __init__(self, *, buffer_size: int, feature_dim: int):
+        super().__init__()
         self.filled = False
         self.pos = 0
         self.buffer_size = buffer_size
@@ -93,6 +93,7 @@ class Mixup(torch.nn.Module):
     """
 
     def __init__(self, *, cfg: MixupConfig):
+        super().__init__()
         self.apply_prob = cfg.apply_prob
         self.lambda_min = cfg.lambda_min
         self.lambda_max = cfg.lambda_max
@@ -103,6 +104,11 @@ class Mixup(torch.nn.Module):
         self.feature_buffer = FeatureBuffer(buffer_size=self.buffer_size, feature_dim=self.feature_dim)
 
     def forward(self, input: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
+        """
+        :param input: [B, T, F]
+        :param sequence_mask: [B, T]
+        :return tensor as [B, T, F]
+        """
         assert (
             input.size()[-1] == self.feature_dim
         ), "the given feature dimension does not match input feature dimension"
