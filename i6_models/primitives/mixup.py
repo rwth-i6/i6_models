@@ -39,6 +39,9 @@ class FeatureBuffer(torch.nn.Module):
         self.register_buffer("cache", torch.zeros((self.buffer_size, feature_dim)))
 
     def append(self, tensor: torch.Tensor):
+        """
+        :param tensor: [T', F]
+        """
         t_dim = tensor.shape[0]
         if t_dim > self.buffer_size:
             tensor = tensor[: self.buffer_size]
@@ -55,6 +58,10 @@ class FeatureBuffer(torch.nn.Module):
             self.pos = end_pos
 
     def get_random(self, b_dim: int, t_dim: int, max_num_mixup: int, n_mask: torch.tensor) -> torch.Tensor:
+        """
+        :param n_mask: [B, M]
+        :returnn tensor as # [T, M', F]
+        """
         if not self.filled and self.pos == 0:
             return None
         else:
@@ -102,12 +109,21 @@ class Mixup(torch.nn.Module):
         return input_
 
     def _append_to_buffer(self, input: torch.Tensor, sequence_mask: torch.Tensor):
+        """
+        :param input: [B, T, F]
+        :param sequence_mask: [B, T]
+        """
         _, _, f_dim = input.size()
         # mask out the padded frames before append it to feature_buffer
-        input_flat = torch.masked_select(input, sequence_mask.unsqueeze(-1)).view(-1, f_dim)
+        input_flat = torch.masked_select(input, sequence_mask.unsqueeze(-1)).view(-1, f_dim)  # [B*T, F]
         self.feature_buffer.append(input_flat)
 
     def _maybe_apply_mixup(self, input: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+        """
+        :param input: [B, T, F]
+        :param sequence_mask: [B, T]
+        :return tensor as [B,T,F]
+        """
         if random.random() >= self.apply_prob:
             return input
 
@@ -123,7 +139,7 @@ class Mixup(torch.nn.Module):
         row_vector = torch.arange(0, max_num_mixup, 1)  # [M]
         n_mask = torch.unsqueeze(num_mixup, dim=-1) > row_vector  # [B, M]
 
-        mixup_values = self.feature_buffer.getRandom(b_dim, t_dim, max_num_mixup, n_mask).to(
+        mixup_values = self.feature_buffer.get_random(b_dim, t_dim, max_num_mixup, n_mask).to(
             input.device
         )  # [T, M', F] (M' denotes sum of num_mixup over the batch)
 
