@@ -59,7 +59,7 @@ class FeatureBuffer(torch.nn.Module):
             self.cache[:end_pos] = tensor[delta_pos:]
             self.pos = end_pos
 
-    def get_random(self, b_dim: int, t_dim: int, max_num_mixup: int, n_mask: torch.tensor) -> torch.Tensor:
+    def get_random(self, b_dim: int, t_dim: int, max_num_mixup: int, n_mask: torch.Tensor) -> Optional[torch.Tensor]:
         """
         :param n_mask: [B, M]
         :returnn tensor as # [T, M', F]
