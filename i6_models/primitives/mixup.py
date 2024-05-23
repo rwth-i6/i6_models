@@ -126,7 +126,7 @@ class Mixup(torch.nn.Module):
         :param sequence_mask: [B, T]
         :return tensor as [B,T,F]
         """
-        if random.random() >= self.apply_prob:
+        if torch.randn(()) >= self.apply_prob:
             return input
 
         b_dim, t_dim, f_dim = input.size()  # [B, T, F]
