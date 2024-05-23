@@ -49,9 +49,9 @@ class FeedForwardLayerV1(nn.Module):
         self, tensor: torch.Tensor, sequence_mask: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        :param tensor: shape [B,T,F], F=in_features
+        :param tensor: shape [B,T,F], F=input_dim
         :param sequence_mask: shape [B,T]
-        :return: shape [B,T,F'], F=in_features
+        :return: shape [B,T,F'], F'=output_dim
         """
         tensor = self.linear_ff(tensor)  # [B,T,F]
         tensor = self.activation(tensor)  # [B,T,F]
