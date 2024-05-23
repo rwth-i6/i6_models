@@ -77,8 +77,8 @@ class FeatureBuffer(torch.nn.Module):
                 start_indicies, n_mask
             )  # [B, M'] (M' denotes sum of num_mixup over the batch)
 
-            idx = torch.arange(t_dim)
-            idx = torch.unsqueeze(idx, dim=-1) + start_indicies_flat  # [T, M']
+            idx = torch.arange(t_dim)  # [T]
+            idx = idx[:, None] + start_indicies_flat[None, :]  # [T, M']
             mixup_values = self.cache[idx]  # [T, M', F]
             return mixup_values
 
