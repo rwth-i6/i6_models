@@ -13,8 +13,7 @@ def test_output_shape():
     dropout = 0.1
     max_seq_lens = 100
 
-    # skip even window sizes for now
-    for window_size, stride in product(range(1, 22, 2), range(1, 5)):
+    for window_size, stride in product(range(1, 22), range(1, 5)):
         frontend = WindowConvolutionFrontendV1(
             WindowConvolutionFrontendV1Config(
                 input_dim=80,

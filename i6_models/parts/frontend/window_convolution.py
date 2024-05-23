@@ -12,7 +12,7 @@ from torch.nn import functional as F
 
 from i6_models.config import ModelConfiguration
 
-from .common import mask_pool, get_same_padding
+from .common import mask_pool, apply_same_padding
 
 
 @dataclass
@@ -36,7 +36,6 @@ class WindowConvolutionFrontendV1Config(ModelConfiguration):
 
     def __post_init__(self):
         super().__post_init__()
-        assert self.kernel_size % 2 == 1, "Only odd kernel sizes are supported so far"
         assert self.stride >= 1, "Choose an integer >= 1 for stride"
         assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
 
@@ -58,10 +57,11 @@ class WindowConvolutionFrontendV1(nn.Module):
             out_channels=cfg.output_dim,
             kernel_size=cfg.kernel_size,
             stride=cfg.stride,
-            padding=get_same_padding(cfg.kernel_size),
+            padding=0,
             bias=True,
         )
         self.activation = cfg.activation
+        self.pad = lambda x: apply_same_padding(x, cfg.kernel_size)
         self.dropout = torch.nn.Dropout(cfg.dropout)
 
     def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -74,6 +74,7 @@ class WindowConvolutionFrontendV1(nn.Module):
         """
         # torch 1d convolution is over last dim but we want time conv
         x = x.transpose(1, 2)  # [B, F, T]
+        x = self.pad(x)
         x = self.conv(x).transpose(1, 2)  # [B, T', F']
 
         # change masking according to stride value
