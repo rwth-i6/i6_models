@@ -36,9 +36,7 @@ class FeatureBuffer(torch.nn.Module):
         self.filled = False
         self.pos = 0
         self.buffer_size = buffer_size
-        self.cache = torch.nn.parameter.Parameter(
-            data=torch.zeros((self.buffer_size, feature_dim)), requires_grad=False
-        )
+        self.register_buffer("cache", torch.zeros((self.buffer_size, feature_dim)))
 
     def append(self, tensor: torch.Tensor):
         t_dim = tensor.shape[0]
