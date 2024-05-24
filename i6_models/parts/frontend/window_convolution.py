@@ -22,7 +22,7 @@ class WindowConvolutionFrontendV1Config(ModelConfiguration):
         input_dim: number of input features to module
         output_dim: output dimension
         dropout: dropout after linear layer
-        kernel_size: number of feature frames to convolve (kernel size)
+        kernel_size: number of feature frames to convolve
         stride: skip (stride - 1) feature frames; stride > 1 implies subsampling
         activation: activation function applied after linear computation
     """
