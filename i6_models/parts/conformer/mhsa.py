@@ -89,7 +89,7 @@ class ConformerMHSAV2(torch.nn.Module):
         which will be applied/added to dot product, used to mask padded key positions out
         """
         inv_sequence_mask = compat.logical_not(sequence_mask)
-        output_tensor = self.layernorm(input_tensor)  # [B,T,F]
+        output_tensor = self.layernorm(input_tensor)  # [B, T, F]
 
         output_tensor, _ = self.mhsa(
             output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
