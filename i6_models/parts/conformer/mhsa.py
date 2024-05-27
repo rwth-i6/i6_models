@@ -84,7 +84,7 @@ class ConformerMHSAV2(torch.nn.Module):
         """
         Apply layer norm, multi-head self attention and dropout
 
-        :param input_tensor: Input to the self attention of shape (B, T, F)
+        :param input_tensor: Input to the self attention of shape [B, T, F]
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
         which will be applied/added to dot product, used to mask padded key positions out
         """
