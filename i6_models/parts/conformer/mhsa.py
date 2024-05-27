@@ -82,7 +82,7 @@ class ConformerMHSAV2(torch.nn.Module):
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
-        Apply layer norm and multi-head self attention and dropout
+        Apply layer norm, multi-head self attention and dropout
 
         :param input_tensor: Input to the self attention of shape (B, T, F)
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
