@@ -1,12 +1,12 @@
 __all__ = ["MultiheadAttentionV1", "MultiheadAttentionV1Config"]
 
 import math
-
+from dataclasses import dataclass
 import torch
 from torch import nn
+
 from i6_models.config import ModelConfiguration
 from i6_models.util import compat
-from dataclasses import dataclass
 
 
 @dataclass
