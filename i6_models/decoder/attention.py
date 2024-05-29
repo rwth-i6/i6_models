@@ -201,8 +201,8 @@ class AttentionLSTMDecoderV1(nn.Module):
         readout_in = readout_in.view(readout_in.size(0), readout_in.size(1), -1, 2)  # [B,N,D/2,2]
         readout, _ = torch.max(readout_in, dim=-1)  # [B,N,D/2]
 
-        output = self.output(readout)
-        decoder_logits = self.output_dropout(output)
+        readout_drop = self.output_dropout(readout)
+        decoder_logits = self.output(readout_drop)
 
         state = lstm_state, att_context, accum_att_weights
 
