@@ -20,6 +20,30 @@ def get_same_padding(input_size: Union[int, Tuple[int, ...]]) -> Union[int, Tupl
         raise TypeError(f"unexpected size type {type(input_size)}")
 
 
+def apply_same_padding(x: torch.Tensor, kernel_size: Union[int, Tuple[int, ...]], **kwargs) -> torch.Tensor:
+    """
+    Pad tensor almost symmetrically in one or more dimensions in order to not reduce time dimension
+    when applying convolution with the given kernel. As opposed to the standard padding parameter
+    this also handles even kernel sizes.
+
+    :param x:
+    :param kernel_size: kernel size of the convolution for which the tensor is padded
+    :param kwargs: keyword args passed to functional.pad
+    :return: padded tensor
+    """
+    if isinstance(kernel_size, int):
+        h = (kernel_size - 1) // 2
+        return functional.pad(x, (h, kernel_size - 1 - h), **kwargs)
+    elif isinstance(kernel_size, tuple):
+        paddings = ()
+        for k in reversed(kernel_size):  # padding function starts with last dim
+            h = (k - 1) // 2
+            paddings += (h, k - 1 - h)
+        return functional.pad(x, paddings, **kwargs)
+    else:
+        raise TypeError(f"Unexpected size type {type(kernel_size)}")
+
+
 def mask_pool(seq_mask: torch.Tensor, *, kernel_size: int, stride: int, padding: int) -> torch.Tensor:
     """
     apply strides to the masking
