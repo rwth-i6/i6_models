@@ -33,21 +33,15 @@ class MultiheadAttentionV1(torch.nn.Module):
         self.out_proj = torch.nn.Linear(in_features=cfg.input_dim, out_features=cfg.input_dim, bias=True)
         self.in_proj = torch.nn.Linear(in_features=cfg.input_dim, out_features=3 * cfg.input_dim, bias=True)
 
-        self.norm = math.sqrt(float(self.input_dim/self.num_att_heads))
+        self.norm = math.sqrt(float(self.input_dim / self.num_att_heads))
         self.softmax = torch.nn.Softmax(-1)
         self.dropout = torch.nn.Dropout(cfg.att_weights_dropout)
 
-
-    def forward(
-            self,  
-            query: torch.Tensor,
-            key: torch.Tensor,
-            value: torch.Tensor,
-            key_padding_mask: torch.Tensor):
+    def forward(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor):
 
         assert query is value is key, "only supports self attention for now"
 
-        batch_dim , num_tokens, embed_dim = query.shape
+        batch_dim, num_tokens, embed_dim = query.shape
         x = self.in_proj(query)
 
         hidden_dim = query.size(-1)
@@ -56,7 +50,7 @@ class MultiheadAttentionV1(torch.nn.Module):
         query = query.view(batch_dim, -1, self.num_att_heads, self.dim_heads)  # [B, T, D//H, D']
         key = key.view(batch_dim, -1, self.num_att_heads, self.dim_heads)  # [B, T, D//H, D']
         value = value.view(batch_dim, -1, self.num_att_heads, self.dim_heads)  # [B, T, D//H, D']
-    
+
         query = torch.transpose(query, 1, 2)  # [B, D//H, T, D']
         key = torch.transpose(key, 1, 2)  # [B, D//H, T, D']
         value = torch.transpose(value, 1, 2)  # [B, D//H, T, D']
@@ -68,9 +62,9 @@ class MultiheadAttentionV1(torch.nn.Module):
 
         if key_padding_mask is not None:
             key_padding_mask = key_padding_mask.view(batch_dim, 1, 1, key_padding_mask.size(1))
-            dot = dot.masked_fill(key_padding_mask, -float('inf'))
+            dot = dot.masked_fill(key_padding_mask, -float("inf"))
 
-        alpha = self.softmax(dot)# [B, D//H, T, T]
+        alpha = self.softmax(dot)  # [B, D//H, T, T]
         alpha = self.dropout(alpha)
 
         att_out = torch.matmul(alpha, value)  # [B, D//H, T, D']
