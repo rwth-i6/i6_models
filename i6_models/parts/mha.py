@@ -11,6 +11,14 @@ from dataclasses import dataclass
 
 @dataclass
 class MultiheadAttentionV1Config(ModelConfiguration):
+    """
+    Attributes:
+        input_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
+        num_att_heads: number of attention heads
+        att_weights_dropout: attention weights dropout
+        dropout: multi-headed self attention output dropout
+    """
+
     input_dim: int
     num_att_heads: int
     att_weights_dropout: float
@@ -22,6 +30,10 @@ class MultiheadAttentionV1Config(ModelConfiguration):
 
 
 class MultiheadAttentionV1(torch.nn.Module):
+    """
+    Native Multihead Attention implementation based on 'Attention Is All You Need'
+    """
+
     def __init__(self, cfg: MultiheadAttentionV1Config):
         super().__init__()
         self.cfg = cfg
@@ -38,6 +50,19 @@ class MultiheadAttentionV1(torch.nn.Module):
         self.dropout = torch.nn.Dropout(cfg.att_weights_dropout)
 
     def forward(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor):
+        """
+        Computes the forward pass of the MultiheadAttentionV1 module.
+
+        Attributes:
+            query (torch.Tensor): The input query tensor of shape (B, T, F).
+            key (torch.Tensor): The input key tensor of shape (B, T, F).
+            value (torch.Tensor): The input value tensor of shape (B, T, F).
+            key_padding_mask (torch.Tensor): The key padding mask tensor of shape (batch_dim, num_tokens).
+
+        Note:
+            - Only self attention is supported for now.
+            - The key_padding_mask tensor is expected to have the shape (batch_dim, num_tokens).
+        """
 
         assert query is value is key, "only supports self attention for now"
 

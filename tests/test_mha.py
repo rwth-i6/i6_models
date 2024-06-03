@@ -6,6 +6,10 @@ from i6_models.parts.mha import MultiheadAttentionV1, MultiheadAttentionV1Config
 
 
 def test_MultiheadAttentionV1():
+    """
+    Test the functionality of the MultiheadAttentionV1 module.
+    """
+
     def get_output_shape(input_shape, cfg, key_padding_mask=None, need_weights=True):
         input_tensor = torch.randn(input_shape)
         mha = MultiheadAttentionV1(cfg)
@@ -21,6 +25,10 @@ def test_MultiheadAttentionV1():
 
 
 def test_ComparisonMHAV1Torch():
+    """
+    Compares the output of the MultiheadAttentionV1 module with the output of the torch.nn.MultiheadAttention module.
+    """
+
     def get_output(mha, input_tensor, key_padding_mask=None, need_weights=True):
         output, _ = mha(input_tensor, input_tensor, input_tensor, key_padding_mask)
         return output
