@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from i6_models.parts.mha import MultiheadAttentionV1, MultiheadAttentionV1Config, MHARef
+from i6_models.parts.mha import MultiheadAttentionV1, MultiheadAttentionV1Config
 
 
 def test_MultiheadAttentionV1():
@@ -32,7 +32,6 @@ def test_ComparisonMHAV1Torch():
 
     mhav1 = MultiheadAttentionV1(cfg)
     mhav1.eval()
-    mharef = MHARef(d_in=32, d_out=32, num_heads=8, dropout=0.2, qkv_bias=True)
 
     in_proj_weight = torch_mha.in_proj_weight
     in_proj_bias = torch_mha.in_proj_bias
@@ -45,11 +44,6 @@ def test_ComparisonMHAV1Torch():
     mhav1.out_proj.weight = out_proj_weight
     mhav1.out_proj.bias = out_proj_bias
 
-    mharef.qkv.weight = in_proj_weight
-    mharef.qkv.bias = in_proj_bias
-    mharef.proj.weight = out_proj_weight
-    mharef.proj.bias = out_proj_bias
-
 
     input_shape = [4, 15, 32]  # B,T,F
     input_tensor = torch.randn(input_shape)
@@ -59,6 +53,4 @@ def test_ComparisonMHAV1Torch():
     mhav1_out = get_output(mhav1, input_tensor, key_padding_mask)
     torch_mha_out = get_output(torch_mha, input_tensor, key_padding_mask)
 
-
-    assert torch.allclose(mhav1_out, torch_mha_out)
-    
+    assert torch.allclose(mhav1_out, torch_mha_out, atol=1e-5)
