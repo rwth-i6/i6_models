@@ -166,7 +166,7 @@ class ConformerEncoder(nn.Module):
         self.num_layers_set = sorted(cfg.num_layers_set)
         self.max_k = max(cfg.num_layers_set)
         self.min_k = min(cfg.num_layers_set)
-        self.module_list = torch.nn.ModuleList([ConformerBlock(cfg.block_cfg) for _ in range(self.max_k)])
+        self.module_list = torch.nn.ModuleList([ConformerBlock(cfg.block_cfg) for _ in range(cfg.num_layers_set)])
         self.sampler = RelaxedTopK(k=self.min_k)
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros(cfg.num_layers * 4)))
@@ -210,7 +210,7 @@ class ConformerEncoder(nn.Module):
                 k = max(
                     (48 - k_reduction_per_iter)
                     - (global_train_step // k_anneal_num_steps_per_iter * k_reduction_per_iter),
-                    self.small_model_num_mods,
+                    self.min_k,
                 )
                 self.sampler.k = k
                 gumbel_softmax = self.sampler(self.layer_gates)
