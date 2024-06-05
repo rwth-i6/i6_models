@@ -142,7 +142,7 @@ class ConformerEncoderConfig(ModelConfiguration):
     frontend: ModuleFactoryV1
     block_cfg: ConformerBlockConfig
     num_layers_set: List[int]
-    layer_dropout_kwargs: Dict[str]
+    layer_dropout_kwargs: Dict[str, float]
 
 
 class ConformerEncoder(nn.Module):
@@ -170,7 +170,7 @@ class ConformerEncoder(nn.Module):
         self.sampler = RelaxedTopK(k=self.min_k)
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros(cfg.num_layers * 4)))
-        self.gates.data.normal_(0.5, 0.00)
+        self.layer_gates.data.normal_(0.5, 0.00)
         self.recog_num_mods = 4 * cfg.num_layers
 
     def forward(
