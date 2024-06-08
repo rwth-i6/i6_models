@@ -9,7 +9,7 @@ class LayerNormNC(nn.LayerNorm):
     see here: https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     """
 
-    def __init__(self, channels: int):
+    def __init__(self, channels: int, **kwargs):
         """
         :param channels: number of channels for normalization
         """
