@@ -102,7 +102,7 @@ class ConformerBlock(nn.Module):
         for scale, module, layer_gate, apply_layer_drop in zip(
             self.scales, self.module_list, layer_gates, if_layer_drop
         ):
-            assert 0 <= layer_gate <= 1, "layer_gate should be in range between 0 and 1"
+            # assert 0 <= layer_gate <= 1, "layer_gate should be in range between 0 and 1"
             if hard_prune and layer_gate == 0:
                 x = x
             elif not apply_layer_drop:
@@ -171,7 +171,7 @@ class ConformerEncoder(nn.Module):
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros(cfg.num_layers * 4)))
         self.layer_gates.data.normal_(0.5, 0.00)
-        self.recog_num_mods = 4 * cfg.num_layers
+        self.recog_num_layers = 4 * cfg.num_layers
 
     def forward(
         self,
@@ -208,8 +208,10 @@ class ConformerEncoder(nn.Module):
             # Stage 1: jointly train one large model and one small model
             if global_train_step <= k_anneal_num_steps_per_iter * k_anneal_num_iters:
                 k = max(
-                    (48 - k_reduction_per_iter)
-                    - (global_train_step // k_anneal_num_steps_per_iter * k_reduction_per_iter),
+                    int(
+                        (48 - k_reduction_per_iter)
+                        - (global_train_step // k_anneal_num_steps_per_iter * k_reduction_per_iter)
+                    ),
                     self.min_k,
                 )
                 self.sampler.k = k
@@ -259,7 +261,7 @@ class ConformerEncoder(nn.Module):
                             )
                         )
 
-                _, remove_layer_indices = torch.topk(self.gates, k=48 - self.min_k, largest=False)
+                _, remove_layer_indices = torch.topk(self.layer_gates, k=48 - self.min_k, largest=False)
 
                 # largest model
                 for i in range(len(self.module_list)):
@@ -299,7 +301,7 @@ class ConformerEncoder(nn.Module):
                     random_idx = np.random.choice(list(range(len(self.num_layers_set))[1:-1]), 1)[0]
                     self.random_idx = random_idx
                     _, medium_remove_layers_indices = torch.topk(
-                        self.gates, k=48 - self.num_layers_set[random_idx], largest=False
+                        self.layer_gates, k=48 - self.num_layers_set[random_idx], largest=False
                     )
 
                     for i in range(len(self.module_list)):
@@ -309,8 +311,8 @@ class ConformerEncoder(nn.Module):
                                 layer_gates.append(0)
                             else:
                                 layer_gates.append(1)
-                        outputs[1 + self.random_idx] = self.module_list[i](
-                            outputs[1 + self.random_idx],
+                        outputs[self.random_idx] = self.module_list[i](
+                            outputs[self.random_idx],
                             sequence_mask,
                             layer_gates=torch.tensor(layer_gates),
                             if_layer_drop=torch.tensor([False] * 4),
@@ -328,9 +330,9 @@ class ConformerEncoder(nn.Module):
 
         # in recognition
         else:
-            idx = self.num_layers_set.index(self.recog_num_mods)
-            remove_mods_indices = torch.topk(
-                self.gates, k=4 * len(self.module_list) - self.recog_num_mods, largest=False
+            idx = self.num_layers_set.index(self.recog_num_layers)
+            _, remove_mods_indices = torch.topk(
+                self.layer_gates, k=4 * len(self.module_list) - self.recog_num_layers, largest=False
             )
             for i in range(len(self.module_list)):
                 layer_gates = []
