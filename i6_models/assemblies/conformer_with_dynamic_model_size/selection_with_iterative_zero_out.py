@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 from dataclasses import dataclass, field
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union, Callable
 
 import numpy as np
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
@@ -144,7 +144,7 @@ class ConformerEncoderConfig(ModelConfiguration):
     block_cfg: ConformerBlockConfig
     num_layers_set: List[int]
     layer_dropout_kwargs: Dict[str, float]
-    layer_gate_activation: str
+    layer_gate_activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
 
 class ConformerEncoder(nn.Module):
@@ -173,16 +173,15 @@ class ConformerEncoder(nn.Module):
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros(cfg.num_layers * 4)))
         # one layer gate for each layer
         self.layer_gate_activation = cfg.layer_gate_activation
-        assert cfg.layer_gate_activation in [
-            "sigmoid",
-            "identity",
-        ], "currently only support sigmoid and identity activation"
-        if self.layer_gate_activation == "sigmoid":
+        assert isinstance(cfg.layer_gate_activation, torch.nn.Sigmoid) or isinstance(
+            cfg.num_layers_set, torch.nn.Identity
+        ), "currently only support sigmoid and identity activation"
+        if isinstance(cfg.layer_gate_activation, torch.nn.Sigmoid):
             self.layer_gates.data.normal_(10.0, 0.00)
-        elif self.layer_gate_activation == "identity":
+        elif isinstance(cfg.layer_gate_activation, torch.nn.Identity):
             self.layer_gates.data.normal_(1.0, 0.00)
         self.register_buffer("iter_idx", torch.tensor(0))
-        self.recog_num_mods = 4 * cfg.num_layers
+        self.recog_num_layers = 4 * cfg.num_layers
 
     def forward(
         self,
@@ -217,11 +216,9 @@ class ConformerEncoder(nn.Module):
         num_zeroout_elements_per_iter.insert(0, 0)
 
         outputs = [x for _ in range(len(self.num_layers_set))]
-        total_utilised_layers = torch.tensor(0.0).to("cuda")
+        total_utilised_layers = torch.tensor(0.0).to(x.device)
 
-        layer_gates_after_act = self.layer_gates
-        if self.layer_gate_activation == "sigmoid":
-            layer_gates_after_act = torch.sigmoid(self.layer_gates)
+        layer_gates_after_act = self.layer_gate_activation(self.layer_gates)
 
         # in training
         if self.training:
@@ -335,9 +332,9 @@ class ConformerEncoder(nn.Module):
 
         # in recognition
         else:
-            idx = self.num_layers_set.index(self.recog_num_mods)
-            remove_mods_indices = torch.topk(
-                self.layer_gates, k=4 * len(self.module_list) - self.recog_num_mods, largest=False
+            idx = self.num_layers_set.index(self.recog_num_layers)
+            _, remove_mods_indices = torch.topk(
+                self.layer_gates, k=4 * len(self.module_list) - self.recog_num_layers, largest=False
             )
             for i in range(len(self.module_list)):
                 layer_gates = []
