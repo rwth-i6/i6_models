@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-__all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config", "ConformerMHSAV2", "ConformerMHSAV2Config"]
+__all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config"]
 from dataclasses import dataclass
 import torch
 
 from i6_models.config import ModelConfiguration
 from i6_models.util import compat
-from i6_models.parts.mha import MultiheadAttentionV1
 
 
 @dataclass
@@ -54,42 +53,6 @@ class ConformerMHSAV1(torch.nn.Module):
         """
         inv_sequence_mask = compat.logical_not(sequence_mask)
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
-
-        output_tensor, _ = self.mhsa(
-            output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
-        )  # [B,T,F]
-        output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
-
-        return output_tensor
-
-
-class ConformerMHSAV2Config(ConformerMHSAV1Config):
-    pass
-
-
-class ConformerMHSAV2(torch.nn.Module):
-    """
-    Conformer multi-headed self-attention module
-    """
-
-    def __init__(self, cfg: ConformerMHSAV2Config):
-
-        super().__init__()
-
-        self.layernorm = torch.nn.LayerNorm(cfg.input_dim)
-        self.mhsa = MultiheadAttentionV1(cfg)
-        self.dropout = cfg.dropout
-
-    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
-        """
-        Apply layer norm, multi-head self attention and dropout
-
-        :param input_tensor: Input to the self attention of shape [B, T, F]
-        :param sequence_mask: bool mask of shape [B, T], True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
-        which will be applied/added to dot product, used to mask padded key positions out
-        """
-        inv_sequence_mask = compat.logical_not(sequence_mask)
-        output_tensor = self.layernorm(input_tensor)  # [B, T, F]
 
         output_tensor, _ = self.mhsa(
             output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
