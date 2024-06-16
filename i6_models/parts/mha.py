@@ -49,7 +49,7 @@ class MultiheadAttentionV1(torch.nn.Module):
         self.softmax = torch.nn.Softmax(-1)
         self.dropout = torch.nn.Dropout(cfg.att_weights_dropout)
 
-    def forward(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor):
+    def forward(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor, *args, **kwargs): #TODO: Handle need_weights
         """
         Computes the forward pass of the MultiheadAttentionV1 module.
 
