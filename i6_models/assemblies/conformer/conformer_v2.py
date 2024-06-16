@@ -9,6 +9,11 @@ from dataclasses import dataclass, field
 from typing import Tuple, List, Optional
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
+from i6_models.parts.conformer import (
+    ConformerMHSAV2,
+    ConformerMHSAV2Config,
+)
+
 from .conformer_v1 import (
     ConformerConvolutionV1,
     ConformerConvolutionV1Config,
@@ -35,14 +40,14 @@ class ConformerBlockV2Config(ModelConfiguration):
     ff_cfg: ConformerPositionwiseFeedForwardV1Config
     mhsa_cfg: ConformerMHSAV1Config
     conv_cfg: ConformerConvolutionV1Config
-    modules: List[str] = field(default_factory=lambda: ["ff", "mhsa", "conv", "ff"])
-    scales: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.0, 0.5])
+    modules: List[str] = field(default_factory=lambda: ["ff", "mhsa", "custom-mha", "conv", "ff"])
+    scales: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.0, 1.0, 0.5])
 
     def __post__init__(self):
         super().__post_init__()
         assert len(self.modules) == len(self.scales), "modules and scales must have same length"
         for module_name in self.modules:
-            assert module_name in ["ff", "mhsa", "conv"], "module not supported"
+            assert module_name in ["ff", "mhsa", "custom-mha", "conv"], "module not supported"
 
 
 class ConformerBlockV2(nn.Module):
@@ -63,6 +68,8 @@ class ConformerBlockV2(nn.Module):
                 modules.append(ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg))
             elif module_name == "mhsa":
                 modules.append(ConformerMHSAV1(cfg=cfg.mhsa_cfg))
+            elif module_name == "custom-mha":
+                modules.append(ConformerMHSAV2(cfg=cfg.mhsa_cfg))
             elif module_name == "conv":
                 modules.append(ConformerConvolutionV1(model_cfg=cfg.conv_cfg))
             else:
@@ -79,7 +86,7 @@ class ConformerBlockV2(nn.Module):
         :return: torch.Tensor of shape [B, T, F]
         """
         for scale, module in zip(self.scales, self.module_list):
-            if isinstance(module, ConformerMHSAV1):
+            if isinstance(module, ConformerMHSAV1) or isinstance(module, ConformerMHSAV2):
                 x = scale * module(x, sequence_mask) + x
             else:
                 x = scale * module(x) + x
