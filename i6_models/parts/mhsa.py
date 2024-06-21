@@ -52,11 +52,10 @@ class MultiheadSelfAttentionV1(torch.nn.Module):
         """
         Computes the forward pass of the MultiheadSelfAttentionV1 module.
         Attributes:
-        
+
             qkv (torch.Tensor): The input tensor of shape (B, T, F).
             key_padding_mask (torch.Tensor): The key padding mask tensor of shape (batch_dim, num_tokens).
         """
-
 
         batch_dim, num_tokens, embed_dim = qkv.shape
         x = self.in_proj(qkv)
