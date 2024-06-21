@@ -1,4 +1,4 @@
-__all__ = ["MultiheadAttentionV1", "MultiheadAttentionV1Config", "MHARef"]
+__all__ = ["MultiheadSelfAttentionV1", "MultiheadSelfAttentionV1Config"]
 
 import math
 from dataclasses import dataclass
@@ -6,17 +6,16 @@ import torch
 
 from i6_models.config import ModelConfiguration
 from i6_models.util import compat
-from dataclasses import dataclass
 
 
 @dataclass
-class MultiheadAttentionV1Config(ModelConfiguration):
+class MultiheadSelfAttentionV1Config(ModelConfiguration):
     """
     Attributes:
         input_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
         num_att_heads: number of attention heads
         att_weights_dropout: attention weights dropout
-        dropout: multi-headed self attention output dropout
+        dropout: attention weight dropout probability
     """
 
     input_dim: int
@@ -29,12 +28,12 @@ class MultiheadAttentionV1Config(ModelConfiguration):
         assert self.input_dim % self.num_att_heads == 0, "input_dim must be divisible by num_att_heads"
 
 
-class MultiheadAttentionV1(torch.nn.Module):
+class MultiheadSelfAttentionV1(torch.nn.Module):
     """
-    Native Multihead Attention implementation based on 'Attention Is All You Need'
+    Native Multihead Self Attention implementation based on 'Attention Is All You Need'
     """
 
-    def __init__(self, cfg: MultiheadAttentionV1Config):
+    def __init__(self, cfg: MultiheadSelfAttentionV1Config):
         super().__init__()
         self.cfg = cfg
         self.num_att_heads = cfg.num_att_heads
@@ -49,27 +48,20 @@ class MultiheadAttentionV1(torch.nn.Module):
         self.softmax = torch.nn.Softmax(-1)
         self.dropout = torch.nn.Dropout(cfg.att_weights_dropout)
 
-    def forward(self, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, key_padding_mask: torch.Tensor):
+    def forward(self, qkv: torch.Tensor, key_padding_mask: torch.Tensor):
         """
-        Computes the forward pass of the MultiheadAttentionV1 module.
-
+        Computes the forward pass of the MultiheadSelfAttentionV1 module.
         Attributes:
-            query (torch.Tensor): The input query tensor of shape (B, T, F).
-            key (torch.Tensor): The input key tensor of shape (B, T, F).
-            value (torch.Tensor): The input value tensor of shape (B, T, F).
+        
+            qkv (torch.Tensor): The input tensor of shape (B, T, F).
             key_padding_mask (torch.Tensor): The key padding mask tensor of shape (batch_dim, num_tokens).
-
-        Note:
-            - Only self attention is supported for now.
-            - The key_padding_mask tensor is expected to have the shape (batch_dim, num_tokens).
         """
 
-        assert query is value is key, "only supports self attention for now"
 
-        batch_dim, num_tokens, embed_dim = query.shape
-        x = self.in_proj(query)
+        batch_dim, num_tokens, embed_dim = qkv.shape
+        x = self.in_proj(qkv)
 
-        hidden_dim = query.size(-1)
+        hidden_dim = qkv.size(-1)
         query, key, value = x.unflatten(-1, (3, hidden_dim)).unsqueeze(0).transpose(0, -2).squeeze(-2).contiguous()
 
         query = query.view(batch_dim, -1, self.num_att_heads, self.dim_heads)  # [B, T, D//H, D']
