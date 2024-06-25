@@ -119,7 +119,7 @@ class ConformerRelPosEncoderV1(ConformerEncoderV2):
         """
         :param cfg: conformer encoder configuration with subunits for frontend and conformer blocks
         """
-        super().__init__()
+        super().__init__(cfg)
 
         self.frontend = cfg.frontend()
         self.module_list = torch.nn.ModuleList([ConformerRelPosBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
