@@ -1,10 +1,4 @@
-__all__ = [
-    "DiphoneLogitsV1",
-    "DiphoneProbsV1",
-    "DiphoneBackendV1Config",
-    "DiphoneBackendV1",
-    "PhonemeStateClassV1",
-]
+__all__ = ["FactoredDiphoneBlockV1Config", "FactoredDiphoneBlockV1", "BoundaryClassV1"]
 
 from .diphone import *
-from .util import PhonemeStateClassV1
+from .util import BoundaryClassV1

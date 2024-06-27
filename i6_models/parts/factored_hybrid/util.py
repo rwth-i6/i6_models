@@ -4,7 +4,7 @@ from typing import Callable, Union
 from torch import nn
 
 
-class PhonemeStateClassV1(Enum):
+class BoundaryClassV1(Enum):
     """Phoneme state class augmentation selector"""
 
     none = 1
@@ -15,7 +15,7 @@ class PhonemeStateClassV1(Enum):
         return self.value
 
     @staticmethod
-    def from_flags(cls, use_word_end_classes: bool, use_boundary_classes: bool) -> "PhonemeStateClassV1":
+    def from_flags(cls, use_word_end_classes: bool, use_boundary_classes: bool) -> "BoundaryClassV1":
         assert not (use_word_end_classes and use_boundary_classes), "cannot use both classes"
 
         if use_boundary_classes:
@@ -29,13 +29,13 @@ class PhonemeStateClassV1(Enum):
 def get_center_dim(
     n_contexts: int,
     num_hmm_states_per_phone: int,
-    ph_class: Union[int, PhonemeStateClassV1],
+    ph_class: Union[int, BoundaryClassV1],
 ) -> int:
     """
     :return: number of center phonemes given the augmentation values
     """
 
-    factor = ph_class.factor() if isinstance(ph_class, PhonemeStateClassV1) else ph_class
+    factor = ph_class.factor() if isinstance(ph_class, BoundaryClassV1) else ph_class
     return n_contexts * num_hmm_states_per_phone * factor
 
 
