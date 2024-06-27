@@ -66,8 +66,8 @@ def get_mlp(
             ]
             for layer in [
                 nn.Linear(in_dim, hidden_dim),
-                nn.Dropout(dropout),
                 activation(),
+                nn.Dropout(dropout),
             ]
         ],
         nn.Linear(hidden_dim, num_output, bias=True),
