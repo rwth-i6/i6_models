@@ -24,7 +24,7 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
         dropout: dropout probabilty
         left_context_embedding_dim: embedding dimension of the left context
             values. Good choice is in the order of n_contexts.
-        n_contexts: the number of raw phonemes/acoustic contexts
+        num_contexts: the number of raw phonemes/acoustic contexts
         num_hmm_states_per_phone: the number of HMM states per phoneme
         num_inputs: input dimension of the output block, must match w/ output dimension
             of main encoder (e.g. Conformer)
@@ -33,7 +33,7 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
     """
 
     left_context_embedding_dim: int
-    n_contexts: int
+    num_contexts: int
     num_hmm_states_per_phone: int
     boundary_class: Union[int, BoundaryClassV1]
 
@@ -48,7 +48,7 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
 
         assert self.context_mix_mlp_dim > 0
         assert self.context_mix_mlp_num_layers > 0
-        assert self.n_contexts > 0
+        assert self.num_contexts > 0
         assert self.num_hmm_states_per_phone > 0
         assert self.num_inputs > 0
         assert self.left_context_embedding_dim > 0
@@ -66,20 +66,20 @@ class FactoredDiphoneBlockV1(nn.Module):
     def __init__(self, cfg: FactoredDiphoneBlockV1Config):
         super().__init__()
 
-        self.n_contexts = cfg.n_contexts
+        self.n_contexts = cfg.num_contexts
 
         self.left_context_encoder = get_mlp(
             num_input=cfg.num_inputs,
-            num_output=cfg.n_contexts,
+            num_output=cfg.num_contexts,
             hidden_dim=cfg.context_mix_mlp_dim,
             num_layers=cfg.context_mix_mlp_num_layers,
             dropout=cfg.dropout,
             activation=cfg.activation,
         )
-        self.left_context_embedding = nn.Embedding(cfg.n_contexts, cfg.left_context_embedding_dim)
+        self.left_context_embedding = nn.Embedding(cfg.num_contexts, cfg.left_context_embedding_dim)
         self.center_encoder = get_mlp(
             num_input=cfg.num_inputs + cfg.left_context_embedding_dim,
-            num_output=get_center_dim(cfg.n_contexts, cfg.num_hmm_states_per_phone, cfg.boundary_class),
+            num_output=get_center_dim(cfg.num_contexts, cfg.num_hmm_states_per_phone, cfg.boundary_class),
             hidden_dim=cfg.context_mix_mlp_dim,
             num_layers=cfg.context_mix_mlp_num_layers,
             dropout=cfg.dropout,
@@ -90,6 +90,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         self,
         features: Tensor,  # B, T, F
         contexts_left: Tensor,  # B, T
+        **kwargs,
     ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         :param features: Main encoder output. shape B, T, F. F=num_inputs

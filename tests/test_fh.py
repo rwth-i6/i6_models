@@ -31,7 +31,7 @@ def test_output_shape():
                 context_mix_mlp_num_layers=2,
                 dropout=0.1,
                 left_context_embedding_dim=32,
-                n_contexts=n_ctx,
+                num_contexts=n_ctx,
                 num_hmm_states_per_phone=states_per_ph,
                 num_inputs=n_in,
                 boundary_class=we_class,
