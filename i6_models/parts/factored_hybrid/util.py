@@ -70,5 +70,5 @@ def get_mlp(
                 nn.Dropout(dropout),
             ]
         ],
-        nn.Linear(hidden_dim, num_output, bias=True),
+        nn.Linear(hidden_dim, num_output),
     )
