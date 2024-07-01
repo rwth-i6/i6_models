@@ -21,6 +21,7 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
         rel_pos_clip: maximal relative postion for embedding
         att_weights_dropout: attention weights dropout
         dropout: multi-headed self attention output dropout
+        broadcast_dropout: whether to broadcast dropout on the feature axis to time axis
     """
 
     input_dim: int
@@ -28,6 +29,7 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
     rel_pos_clip: int
     att_weights_dropout: float
     dropout: float
+    broadcast_dropout: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -72,6 +74,7 @@ class ConformerMHSARelPosV1(nn.Module):
             self.register_parameter("rel_pos_embeddings", None)
 
         self.dropout = cfg.dropout
+        self.broadcast_dropout = cfg.broadcast_dropout
 
         self._reset_parameters()  # initialize parameters
 
@@ -166,5 +169,12 @@ class ConformerMHSARelPosV1(nn.Module):
         output_tensor = self.out_proj(attn_output)
 
         output_tensor = F.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
+
+        if self.broadcast_dropout:
+            output_tensor = F.dropout1d(
+                output_tensor.transpose(1, 2), p=self.dropout, training=self.training
+            ).transpose(1, 2)
+        else:
+            output_tensor = F.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
 
         return output_tensor

@@ -16,12 +16,14 @@ class ConformerMHSAV1Config(ModelConfiguration):
         num_att_heads: number of attention heads
         att_weights_dropout: attention weights dropout
         dropout: multi-headed self attention output dropout
+        broadcast_dropout: whether to broadcast dropout on the feature axis to time axis
     """
 
     input_dim: int
     num_att_heads: int
     att_weights_dropout: float
     dropout: float
+    broadcast_dropout: False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -42,6 +44,7 @@ class ConformerMHSAV1(torch.nn.Module):
             cfg.input_dim, cfg.num_att_heads, dropout=cfg.att_weights_dropout, batch_first=True
         )
         self.dropout = cfg.dropout
+        self.broadcast_dropout = cfg.broadcast_dropout
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
@@ -57,6 +60,12 @@ class ConformerMHSAV1(torch.nn.Module):
         output_tensor, _ = self.mhsa(
             output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
         )  # [B,T,F]
-        output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
+
+        if self.broadcast_dropout:
+            output_tensor = torch.nn.functional.dropout1d(
+                output_tensor.transpose(1, 2), p=self.dropout, training=self.training
+            ).transpose(1, 2)
+        else:
+            output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
 
         return output_tensor

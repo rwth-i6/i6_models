@@ -18,12 +18,14 @@ class ConformerPositionwiseFeedForwardV1Config(ModelConfiguration):
         input_dim: input dimension
         hidden_dim: hidden dimension (normally set to 4*input_dim as suggested by the paper)
         dropout: dropout probability
+        broadcast_dropout: whether to broadcast dropout on the feature axis to time axis
         activation: activation function
     """
 
     input_dim: int
     hidden_dim: int
     dropout: float
+    broadcast_dropout: bool = False
     activation: Callable[[torch.Tensor], torch.Tensor] = nn.functional.silu
 
 
@@ -40,6 +42,7 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         self.activation = cfg.activation
         self.linear_out = nn.Linear(in_features=cfg.hidden_dim, out_features=cfg.input_dim, bias=True)
         self.dropout = cfg.dropout
+        self.broadcast_dropout = cfg.broadcast_dropout
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
@@ -49,7 +52,17 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
         tensor = self.layer_norm(tensor)
         tensor = self.linear_ff(tensor)  # [B,T,F]
         tensor = self.activation(tensor)  # [B,T,F]
-        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
-        tensor = self.linear_out(tensor)  # [B,T,F]
-        tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
+
+        if self.broadcast_dropout:
+            tensor = nn.functional.dropout1d(tensor.transpose(1, 2), p=self.dropout, training=self.training).transpose(
+                1, 2
+            )
+            tensor = self.linear_out(tensor)
+            tensor = nn.functional.dropout1d(tensor.transpose(1, 2), p=self.dropout, training=self.training).transpose(
+                1, 2
+            )
+        else:
+            tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
+            tensor = self.linear_out(tensor)  # [B,T,F]
+            tensor = nn.functional.dropout(tensor, p=self.dropout, training=self.training)  # [B,T,F]
         return tensor
