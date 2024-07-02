@@ -16,7 +16,7 @@ def test_dim_calcs():
     assert get_center_dim(n_ctx, 3, BoundaryClassV1.boundary) == 504
 
 
-def test_output_shape():
+def test_output_shape_and_norm():
     n_ctx = 42
     n_in = 32
 
