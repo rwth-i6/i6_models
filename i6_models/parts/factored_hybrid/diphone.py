@@ -86,7 +86,10 @@ class FactoredDiphoneBlockV1(nn.Module):
             activation=cfg.activation,
         )
 
-    def forward(
+    def forward(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor]:
+        return self.forward_factored(*args, **kwargs)
+
+    def forward_factored(
         self,
         features: Tensor,  # B, T, F
         contexts_left: Tensor,  # B, T
