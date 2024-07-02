@@ -23,7 +23,7 @@ class ConformerMHSAV1Config(ModelConfiguration):
     num_att_heads: int
     att_weights_dropout: float
     dropout: float
-    broadcast_dropout: False
+    broadcast_dropout: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -66,6 +66,8 @@ class ConformerMHSAV1(torch.nn.Module):
                 output_tensor.transpose(1, 2), p=self.dropout, training=self.training
             ).transpose(1, 2)
         else:
-            output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
+            output_tensor = torch.nn.functional.dropout(
+                output_tensor, p=self.dropout, training=self.training
+            )  # [B,T,F]
 
         return output_tensor
