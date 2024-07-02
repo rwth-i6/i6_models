@@ -93,7 +93,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         self,
         features: Tensor,  # B, T, F
         contexts_left: Tensor,  # B, T
-        **kwargs,
+        **kwargs,  # kwargs because the train_step function passes contexts_center for right context training
     ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         :param features: Main encoder output. shape B, T, F. F=num_inputs
