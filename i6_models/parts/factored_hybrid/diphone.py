@@ -118,14 +118,14 @@ class FactoredDiphoneBlockV1(nn.Module):
         left_logits = self.left_context_encoder(features)  # B, T, C
 
         # here we forward every context to compute p(c, l|x) = p(c|l, x) * p(l|x)
-        contexts_left = torch.arange(self.n_contexts)
-        contexts_embedded_left = self.left_context_embedding(contexts_left)
+        contexts_left = torch.arange(self.n_contexts).to(device=features.device)  # C
+        contexts_embedded_left = self.left_context_embedding(contexts_left)  # C, E
 
         features = features.expand((self.n_contexts, -1, -1, -1))  # C, B, T, F
         contexts_embedded_left_ = contexts_embedded_left.reshape((self.n_contexts, 1, 1, -1)).expand(
-            (-1, *features.shape[1:3], -1)
+            (-1, features.shape[1], features.shape[2], -1)
         )  # C, B, T, E
-        features_center = torch.cat((features, contexts_embedded_left_), -1)  # C, B, T, F+E
+        features_center = torch.cat((features, contexts_embedded_left_), dim=-1)  # C, B, T, F+E
         logits_center = self.center_encoder(features_center)  # C, B, T, F'
         log_probs_center = F.log_softmax(logits_center, -1)
         log_probs_center = log_probs_center.permute((1, 2, 3, 0))  # B, T, F', C
@@ -133,6 +133,6 @@ class FactoredDiphoneBlockV1(nn.Module):
         log_probs_left = log_probs_left.unsqueeze(-2)  # B, T, 1, C
 
         joint_log_probs = log_probs_center + log_probs_left  # B, T, F', C
-        joint_log_probs = torch.flatten(joint_log_probs, start_dim=2)  # B, T, joint
+        joint_log_probs = torch.flatten(joint_log_probs, start_dim=2)  # B, T, F'*C
 
         return joint_log_probs
