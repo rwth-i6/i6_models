@@ -118,7 +118,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         left_logits = self.left_context_encoder(features)  # B, T, C
 
         # here we forward every context to compute p(c, l|x) = p(c|l, x) * p(l|x)
-        contexts_left = torch.arange(self.n_contexts).to(device=features.device)  # C
+        contexts_left = torch.arange(self.n_contexts, device=features.device)  # C
         contexts_embedded_left = self.left_context_embedding(contexts_left)  # C, E
 
         features = features.expand((self.n_contexts, -1, -1, -1))  # C, B, T, F
