@@ -25,6 +25,13 @@ class BoundaryClassV1(Enum):
         else:
             return cls.none
 
+    @classmethod
+    def from_dense_label_info(cls, li: "i6_core.mm.context_label.DenseLabelInfo") -> "BoundaryClassV1":
+        return cls.from_flags(
+            use_word_end_classes=li.use_word_end_classes,
+            use_boundary_classes=li.use_boundary_classes,
+        )
+
 
 def get_center_dim(
     n_contexts: int,
