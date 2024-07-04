@@ -14,7 +14,7 @@ class BoundaryClassV1(Enum):
     def factor(self):
         return self.value
 
-    @staticmethod
+    @classmethod
     def from_flags(cls, use_word_end_classes: bool, use_boundary_classes: bool) -> "BoundaryClassV1":
         assert not (use_word_end_classes and use_boundary_classes), "cannot use both classes"
 
