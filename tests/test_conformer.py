@@ -37,7 +37,7 @@ def test_conformer_convolution_output_shape():
 def test_ConformerPositionwiseFeedForwardV1():
     def get_output_shape(input_shape, input_dim, hidden_dim, dropout, activation):
         x = torch.randn(input_shape)
-        cfg = ConformerPositionwiseFeedForwardV2Config(
+        cfg = ConformerPositionwiseFeedForwardV1Config(
             input_dim=input_dim, hidden_dim=hidden_dim, dropout=dropout, activation=activation
         )
         conf_ffn_part = ConformerPositionwiseFeedForwardV1(cfg)
