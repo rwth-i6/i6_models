@@ -101,13 +101,13 @@ class FactoredDiphoneBlockV1(nn.Module):
         :return: tuple of logits for p(c|l,x), p(l|x) and the embedded left context values.
         """
 
-        left_logits = self.left_context_encoder(features)  # B, T, C
+        logits_left = self.left_context_encoder(features)  # B, T, C
         # in training we forward exactly one context per T, so: B, T, E
         contexts_embedded_left = self.left_context_embedding(contexts_left)
         features_center = torch.cat((features, contexts_embedded_left), -1)  # B, T, F+E
         logits_center = self.center_encoder(features_center)  # B, T, C
 
-        return logits_center, left_logits, contexts_embedded_left
+        return logits_center, logits_left, contexts_embedded_left
 
     def forward_joint(self, features: Tensor) -> Tensor:
         """
@@ -115,7 +115,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         :return: log probabilities for p(c,l|x).
         """
 
-        left_logits = self.left_context_encoder(features)  # B, T, C
+        logits_left = self.left_context_encoder(features)  # B, T, C
 
         # here we forward every context to compute p(c, l|x) = p(c|l, x) * p(l|x)
         contexts_left = torch.arange(self.n_contexts, device=features.device)  # C
@@ -129,7 +129,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         logits_center = self.center_encoder(features_center)  # C, B, T, F'
         log_probs_center = F.log_softmax(logits_center, -1)
         log_probs_center = log_probs_center.permute((1, 2, 3, 0))  # B, T, F', C
-        log_probs_left = F.log_softmax(left_logits, -1)
+        log_probs_left = F.log_softmax(logits_left, -1)
         log_probs_left = log_probs_left.unsqueeze(-2)  # B, T, 1, C
 
         joint_log_probs = log_probs_center + log_probs_left  # B, T, F', C
