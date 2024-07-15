@@ -23,7 +23,7 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
         context_mix_mlp_num_layers: how many hidden layers on the MLPs there should be
         dropout: dropout probabilty
         left_context_embedding_dim: embedding dimension of the left context
-            values. Good choice is in the order of n_contexts.
+            values. Good choice is in the order of num_contexts.
         num_contexts: the number of raw phonemes/acoustic contexts
         num_hmm_states_per_phone: the number of HMM states per phoneme
         num_inputs: input dimension of the output block, must match w/ output dimension
@@ -66,7 +66,12 @@ class FactoredDiphoneBlockV1(nn.Module):
     def __init__(self, cfg: FactoredDiphoneBlockV1Config):
         super().__init__()
 
-        self.n_contexts = cfg.num_contexts
+        self.boundary_class = cfg.boundary_class
+        self.num_contexts = cfg.num_contexts
+        self.num_hmm_states_per_phone = cfg.num_hmm_states_per_phone
+
+        self.num_center = get_center_dim(self.num_contexts, self.num_hmm_states_per_phone, self.boundary_class)
+        self.num_diphone = self.num_center * self.num_contexts
 
         self.left_context_encoder = get_mlp(
             num_input=cfg.num_inputs,
@@ -79,7 +84,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         self.left_context_embedding = nn.Embedding(cfg.num_contexts, cfg.left_context_embedding_dim)
         self.center_encoder = get_mlp(
             num_input=cfg.num_inputs + cfg.left_context_embedding_dim,
-            num_output=get_center_dim(cfg.num_contexts, cfg.num_hmm_states_per_phone, cfg.boundary_class),
+            num_output=self.num_center,
             hidden_dim=cfg.context_mix_mlp_dim,
             num_layers=cfg.context_mix_mlp_num_layers,
             dropout=cfg.dropout,
@@ -118,14 +123,14 @@ class FactoredDiphoneBlockV1(nn.Module):
         logits_left = self.left_context_encoder(features)  # B, T, C
 
         # here we forward every context to compute p(c, l|x) = p(c|l, x) * p(l|x)
-        contexts_left = torch.arange(self.n_contexts, device=features.device)  # C
+        contexts_left = torch.arange(self.num_contexts, device=features.device)  # C
         contexts_embedded_left = self.left_context_embedding(contexts_left)  # C, E
 
-        features = features.expand((self.n_contexts, -1, -1, -1))  # C, B, T, F
-        contexts_embedded_left_ = contexts_embedded_left.reshape((self.n_contexts, 1, 1, -1)).expand(
-            (-1, features.shape[1], features.shape[2], -1)
+        features_expanded = features.expand((self.num_contexts, -1, -1, -1))  # C, B, T, F
+        contexts_embedded_left_ = contexts_embedded_left.reshape((self.num_contexts, 1, 1, -1)).expand(
+            (-1, features.shape[0], features.shape[1], -1)
         )  # C, B, T, E
-        features_center = torch.cat((features, contexts_embedded_left_), dim=-1)  # C, B, T, F+E
+        features_center = torch.cat((features_expanded, contexts_embedded_left_), dim=-1)  # C, B, T, F+E
         logits_center = self.center_encoder(features_center)  # C, B, T, F'
         log_probs_center = F.log_softmax(logits_center, -1)
         log_probs_center = log_probs_center.permute((1, 2, 3, 0))  # B, T, F', C
