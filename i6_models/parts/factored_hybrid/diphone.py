@@ -140,4 +140,9 @@ class FactoredDiphoneBlockV1(nn.Module):
         joint_log_probs = log_probs_center + log_probs_left  # B, T, F', C
         joint_log_probs = torch.flatten(joint_log_probs, start_dim=2)  # B, T, F'*C
 
+        # assert shape for ONNX converter
+        joint_log_probs = joint_log_probs.reshape(
+            (features.shape[0], features.shape[1], self.num_diphone)
+        )  # B, T, F'*C
+
         return joint_log_probs
