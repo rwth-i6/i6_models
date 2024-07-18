@@ -117,14 +117,10 @@ class ConformerMHSARelPosV1(nn.Module):
         key_seq = F.linear(output_tensor, self.k_proj_weight, bias_k)
         value_seq = F.linear(output_tensor, self.v_proj_weight, bias_v)
 
-        q1 = query_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head).transpose(
-            1, 2
-        )  # [B, #heads, T, F']
-        k_t = key_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head).permute(
-            0, 2, 3, 1
-        )  # [B, #heads, F', T']
-        # attention between query and key sequences
-        attn1 = torch.matmul(q1, k_t)  # [B, #heads, T, T']i
+        q1 = query_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head)  # [B, T, #heads, F']
+        k = key_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head)  # [B, T', #heads, F]
+
+        attn1 = torch.einsum("bihf, bjhf -> bhij", q1, k)
 
         if self.rel_pos_clip:
             q2 = (
@@ -144,9 +140,10 @@ class ConformerMHSARelPosV1(nn.Module):
             rel_pos_embeddings = self.rel_pos_embeddings[final_mat]  # [T, T', F']
 
             # attention between query sequence and relative positional embeddings
-            attn2 = torch.matmul(q2, rel_pos_embeddings.transpose(1, 2)).transpose(0, 1)  # [B*#heads, T, T']
-            attn2 = attn2.contiguous().view(
-                batch_dim_size, self.num_heads, time_dim_size, time_dim_size
+            attn2 = (
+                torch.einsum("ixf, ijf -> xij", q2, rel_pos_embeddings)
+                .contiguous()
+                .view(batch_dim_size, self.num_heads, time_dim_size, time_dim_size)
             )  # [B, #heads, T, T']
 
             attn = (attn1 + attn2 + mask) * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
@@ -159,12 +156,13 @@ class ConformerMHSARelPosV1(nn.Module):
         )  # [B, #heads, T, T']
 
         # sequence of weighted sums over value sequence
-        v = value_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head).transpose(
-            1, 2
-        )  # [B, #heads, T', F']
+        v = value_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head)  # [B, T, H, F']
         attn_output = (
-            torch.matmul(attn_output_weights, v).transpose(1, 2).contiguous().view(batch_dim_size, -1, self.embed_dim)
-        )  # [B, T, F]
+            torch.einsum("bhij, bjhf -> bhif", attn_output_weights, v)
+            .transpose(1, 2)
+            .contiguous()
+            .view(batch_dim_size, -1, self.embed_dim)
+        )
 
         output_tensor = self.out_proj(attn_output)
 
