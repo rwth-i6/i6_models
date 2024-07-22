@@ -19,20 +19,21 @@ from .util import BoundaryClassV1, get_center_dim, get_mlp
 class FactoredDiphoneBlockV1Config(ModelConfiguration):
     """
     Attributes:
-        context_mix_mlp_dim: inner dimension of the context mixing MLP layers
-        context_mix_mlp_num_layers: how many hidden layers on the MLPs there should be
-        dropout: dropout probabilty
-        left_context_embedding_dim: embedding dimension of the left context
-            values. Good choice is in the order of num_contexts.
         num_contexts: the number of raw phonemes/acoustic contexts
         num_hmm_states_per_phone: the number of HMM states per phoneme
+        boundary_class: the phoneme state augmentation to apply
+
+        activation: activation function to use in the context mixing MLP.
+        context_mix_mlp_dim: inner dimension of the context mixing MLP layers
+        context_mix_mlp_num_layers: how many hidden layers on the MLPs there should be
+        left_context_embedding_dim: embedding dimension of the left context
+            values. Good choice is in the order of num_contexts.
+
+        dropout: dropout probabilty
         num_inputs: input dimension of the output block, must match w/ output dimension
             of main encoder (e.g. Conformer)
-        phoneme_state_class: the phoneme state augmentation to apply
-        activation: activation function to use in the context mixing MLP.
     """
 
-    left_context_embedding_dim: int
     num_contexts: int
     num_hmm_states_per_phone: int
     boundary_class: Union[int, BoundaryClassV1]
@@ -40,18 +41,22 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
     activation: Callable[[], nn.Module]
     context_mix_mlp_dim: int
     context_mix_mlp_num_layers: int
+    left_context_embedding_dim: int
+
     dropout: float
     num_inputs: int
 
-    def __post_init__(self) -> None:
+    def __post_init__(self):
         super().__post_init__()
 
-        assert self.context_mix_mlp_dim > 0
-        assert self.context_mix_mlp_num_layers > 0
         assert self.num_contexts > 0
         assert self.num_hmm_states_per_phone > 0
-        assert self.num_inputs > 0
+        
+        assert self.context_mix_mlp_dim > 0
+        assert self.context_mix_mlp_num_layers > 0
         assert self.left_context_embedding_dim > 0
+        
+        assert self.num_inputs > 0
         assert 0.0 <= self.dropout <= 1.0, "dropout must be a probability"
 
 
@@ -60,7 +65,7 @@ class FactoredDiphoneBlockV1(nn.Module):
     Diphone FH model output block.
 
     Consumes the output h(x) of a main encoder model and computes factored or joint
-    output logits/probabilities for p(c|l,x) and p(l|x).
+    output logits/probabilities for p(c|l,h(x)) and p(l|h(x)).
     """
 
     def __init__(self, cfg: FactoredDiphoneBlockV1Config):
