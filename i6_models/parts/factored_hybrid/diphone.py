@@ -51,11 +51,11 @@ class FactoredDiphoneBlockV1Config(ModelConfiguration):
 
         assert self.num_contexts > 0
         assert self.num_hmm_states_per_phone > 0
-        
+
         assert self.context_mix_mlp_dim > 0
         assert self.context_mix_mlp_num_layers > 0
         assert self.left_context_embedding_dim > 0
-        
+
         assert self.num_inputs > 0
         assert 0.0 <= self.dropout <= 1.0, "dropout must be a probability"
 
