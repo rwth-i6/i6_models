@@ -20,6 +20,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
         dropout: dropout probability
         activation: activation function applied after normalization
         norm: normalization layer with input of shape [N,C,T]
+        broadcast_dropout: whether to broadcast dropout on the feature axis to time axis
     """
 
     channels: int
@@ -27,6 +28,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     dropout: float
     activation: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
+    broadcast_dropout: bool = False
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
@@ -62,7 +64,8 @@ class ConformerConvolutionV1(nn.Module):
         self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
         self.layer_norm = nn.LayerNorm(model_cfg.channels)
         self.norm = deepcopy(model_cfg.norm)
-        self.dropout = nn.Dropout(model_cfg.dropout)
+        self.dropout = nn.Dropout1d(model_cfg.dropout) if model_cfg.broadcast_dropout else nn.Dropout(model_cfg.dropout)
+        self.broadcast_dropout = model_cfg.broadcast_dropout
         self.activation = model_cfg.activation
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -84,4 +87,9 @@ class ConformerConvolutionV1(nn.Module):
         tensor = self.activation(tensor)
         tensor = self.pointwise_conv2(tensor)
 
-        return self.dropout(tensor)
+        if self.broadcast_dropout:
+            tensor = self.dropout(tensor.transpose(1, 2)).transpose(1, 2)
+        else:
+            tensor = self.dropout(tensor)
+
+        return tensor
