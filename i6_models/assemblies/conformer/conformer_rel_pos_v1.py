@@ -14,12 +14,12 @@ from typing import List
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
-    ConformerConvolutionV1,
-    ConformerConvolutionV1Config,
+    ConformerConvolutionV2,
+    ConformerConvolutionV2Config,
     ConformerMHSARelPosV1,
     ConformerMHSARelPosV1Config,
-    ConformerPositionwiseFeedForwardV1,
-    ConformerPositionwiseFeedForwardV1Config,
+    ConformerPositionwiseFeedForwardV2,
+    ConformerPositionwiseFeedForwardV2Config,
 )
 from i6_models.assemblies.conformer import ConformerEncoderV2
 
@@ -28,18 +28,18 @@ from i6_models.assemblies.conformer import ConformerEncoderV2
 class ConformerRelPosBlockV1Config(ModelConfiguration):
     """
     Attributes:
-        ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
+        ff_cfg: Configuration for ConformerPositionwiseFeedForwardV2
         mhsa_cfg: Configuration for ConformerMHSARelPosV1
-        conv_cfg: Configuration for ConformerConvolutionV1
+        conv_cfg: Configuration for ConformerConvolutionV2
         modules: List of modules to use for ConformerRelPosBlockV1,
             "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
         scales: List of scales to apply to the module outputs before the residual connection
     """
 
     # nested configurations
-    ff_cfg: ConformerPositionwiseFeedForwardV1Config
+    ff_cfg: ConformerPositionwiseFeedForwardV2Config
     mhsa_cfg: ConformerMHSARelPosV1Config
-    conv_cfg: ConformerConvolutionV1Config
+    conv_cfg: ConformerConvolutionV2Config
     modules: List[str] = field(default_factory=lambda: ["ff", "mhsa", "conv", "ff"])
     scales: List[float] = field(default_factory=lambda: [0.5, 1.0, 1.0, 0.5])
 
@@ -66,11 +66,11 @@ class ConformerRelPosBlockV1(nn.Module):
         modules = []
         for module_name in cfg.modules:
             if module_name == "ff":
-                modules.append(ConformerPositionwiseFeedForwardV1(cfg=cfg.ff_cfg))
+                modules.append(ConformerPositionwiseFeedForwardV2(cfg=cfg.ff_cfg))
             elif module_name == "mhsa":
                 modules.append(ConformerMHSARelPosV1(cfg=cfg.mhsa_cfg))
             elif module_name == "conv":
-                modules.append(ConformerConvolutionV1(model_cfg=cfg.conv_cfg))
+                modules.append(ConformerConvolutionV2(model_cfg=cfg.conv_cfg))
             else:
                 raise NotImplementedError
 
@@ -112,7 +112,8 @@ class ConformerRelPosEncoderV1Config(ModelConfiguration):
 class ConformerRelPosEncoderV1(ConformerEncoderV2):
     """
     Modifications compared to ConformerEncoderV2:
-    - uses multi-headed self-attention with Shaw's relative positional encoding
+    - supports Shaw's relative positional encoding using learnable position embeddings 
+      and Transformer-XL style relative PE using fixed sinusoidal or learnable position embeddings
     """
 
     def __init__(self, cfg: ConformerRelPosEncoderV1Config):

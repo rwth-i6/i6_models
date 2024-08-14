@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-__all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config"]
+__all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config", "ConformerMHSAV2", "ConformerMHSAV2Config"]
 from dataclasses import dataclass
 import torch
 
 from i6_models.config import ModelConfiguration
 from i6_models.util import compat
 
+from typing import Optional
 
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
@@ -16,14 +17,12 @@ class ConformerMHSAV1Config(ModelConfiguration):
         num_att_heads: number of attention heads
         att_weights_dropout: attention weights dropout
         dropout: multi-headed self attention output dropout
-        broadcast_dropout: whether to broadcast dropout on the feature axis to time axis
     """
 
     input_dim: int
     num_att_heads: int
     att_weights_dropout: float
     dropout: float
-    broadcast_dropout: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -44,7 +43,6 @@ class ConformerMHSAV1(torch.nn.Module):
             cfg.input_dim, cfg.num_att_heads, dropout=cfg.att_weights_dropout, batch_first=True
         )
         self.dropout = cfg.dropout
-        self.broadcast_dropout = cfg.broadcast_dropout
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
@@ -60,14 +58,79 @@ class ConformerMHSAV1(torch.nn.Module):
         output_tensor, _ = self.mhsa(
             output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
         )  # [B,T,F]
+        output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
 
-        if self.broadcast_dropout:
+        return output_tensor
+
+
+@dataclass
+class ConformerMHSAV2Config(ConformerMHSAV1Config):
+    """
+    New attribute:
+        dropout_broadcast_axes: string of axes to which dropout is broadcast, e.g. "T" for broadcasting to the time axis
+                                setting to None to disable broadcasting
+    """
+
+    dropout_broadcast_axes: Optional[str] = None
+
+    def check_valid(self):
+        assert self.dropout_broadcast_axes is None or self.dropout_broadcast_axes in [
+            "B",
+            "T",
+            "BT",
+        ], "invalid value, supported are None, 'B', 'T' and 'BT'"
+
+    def __post__init__(self):
+        super().__post_init__()
+        self.check_valid()
+
+
+class ConformerMHSAV2(ConformerMHSAV1):
+    """
+    Augments ConformerMHSAV1 with dropout broadcasting
+    """
+
+    def __init__(self, cfg: ConformerMHSAV2Config):
+
+        super().__init__(cfg)
+
+        self.dropout_broadcast_axes = cfg.dropout_broadcast_axes
+
+    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+        """
+        Apply layer norm and multi-head self attention and dropout
+
+        :param input_tensor: Input to the self attention of shape (B, T, F)
+        :param sequence_mask: Bool mask of shape (B, T), True signals within sequence, False outside, will be inverted to match the torch.nn.MultiheadAttention module
+                              which will be applied/added to dot product, used to mask padded key positions out
+        """
+        inv_sequence_mask = compat.logical_not(sequence_mask)
+        output_tensor = self.layernorm(input_tensor)  # [B,T,F]
+
+        output_tensor, _ = self.mhsa(
+            output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
+        )  # [B,T,F]
+
+        if self.dropout_broadcast_axes is None:
+            output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)
+        elif self.dropout_broadcast_axes == "T":
             output_tensor = torch.nn.functional.dropout1d(
                 output_tensor.transpose(1, 2), p=self.dropout, training=self.training
             ).transpose(1, 2)
-        else:
-            output_tensor = torch.nn.functional.dropout(
-                output_tensor, p=self.dropout, training=self.training
-            )  # [B,T,F]
+        elif self.dropout_broadcast_axes == "B":
+            output_tensor = torch.nn.functional.dropout1d(
+                output_tensor.permute(1, 2, 0), p=self.dropout, training=self.training
+            ).permute(2, 0, 1)
+        elif self.dropout_broadcast_axes == "BT":
+            batch_dim_size = output_tensor.shape[0]
+            feature_dim_size = output_tensor.shape[-1]
 
-        return output_tensor
+            output_tensor = (
+                torch.nn.functional.dropout1d(
+                    output_tensor.reshape(-1, feature_dim_size).transpose(0, 1), p=self.dropout, training=self.training
+                )
+                .transpose(0, 1)
+                .reshape(batch_dim_size, -1, feature_dim_size)
+            )
+
+        return output_tensor  # [B,T,F]
