@@ -99,7 +99,14 @@ class ConformerConvolutionV2Config(ConformerConvolutionV1Config):
     dropout_broadcast_axes: Optional[str] = None
 
     def check_valid(self):
-        pass
+        assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
+
+        assert self.dropout_broadcast_axes is None or self.dropout_broadcast_axes in [
+            "B",
+            "T",
+            "BT",
+        ], "invalid value, supported are None, 'B', 'T' and 'BT'"
+
 
 
 class ConformerConvolutionV2(ConformerConvolutionV1):

@@ -39,7 +39,6 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
     rel_pos_clip: Optional[int] = None
     with_pos_bias: bool = False
     pos_emb_dropout: float = 0.0
-    broadcast_dropout: bool = False
     dropout_broadcast_axes: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -112,7 +111,7 @@ class ConformerMHSARelPosV1(nn.Module):
         # TODO: choose kind of initialization
         if self.learnable_pos_emb:
             nn.init.normal_(self.rel_pos_embeddings)
-        else:
+        if self.with_pos_bias:
             nn.init.constant_(self.pos_bias_u, 0.0)
             nn.init.constant_(self.pos_bias_v, 0.0)
         nn.init.constant_(self.in_proj_bias, 0.0)
