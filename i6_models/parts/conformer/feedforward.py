@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-__all__ = ["ConformerPositionwiseFeedForwardV1", "ConformerPositionwiseFeedForwardV1Config", "ConformerPositionwiseFeedForwardV2", "ConformerPositionwiseFeedForwardV2Config"]
+__all__ = [
+    "ConformerPositionwiseFeedForwardV1",
+    "ConformerPositionwiseFeedForwardV1Config",
+    "ConformerPositionwiseFeedForwardV2",
+    "ConformerPositionwiseFeedForwardV2Config",
+]
 
 from dataclasses import dataclass
 from typing import Callable, Optional

@@ -9,6 +9,7 @@ from i6_models.util import compat
 
 from typing import Optional
 
+
 @dataclass
 class ConformerMHSAV1Config(ModelConfiguration):
     """

@@ -112,7 +112,7 @@ class ConformerRelPosEncoderV1Config(ModelConfiguration):
 class ConformerRelPosEncoderV1(ConformerEncoderV2):
     """
     Modifications compared to ConformerEncoderV2:
-    - supports Shaw's relative positional encoding using learnable position embeddings 
+    - supports Shaw's relative positional encoding using learnable position embeddings
       and Transformer-XL style relative PE using fixed sinusoidal or learnable position embeddings
     """
 

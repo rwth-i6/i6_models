@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-__all__ = ["ConformerConvolutionV1", "ConformerConvolutionV1Config", "ConformerConvolutionV2", "ConformerConvolutionV2Config"]
+__all__ = [
+    "ConformerConvolutionV1",
+    "ConformerConvolutionV1Config",
+    "ConformerConvolutionV2",
+    "ConformerConvolutionV2Config",
+]
 
 from dataclasses import dataclass
 from copy import deepcopy
@@ -106,7 +111,6 @@ class ConformerConvolutionV2Config(ConformerConvolutionV1Config):
             "T",
             "BT",
         ], "invalid value, supported are None, 'B', 'T' and 'BT'"
-
 
 
 class ConformerConvolutionV2(ConformerConvolutionV1):
