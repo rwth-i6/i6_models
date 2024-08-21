@@ -90,27 +90,22 @@ class ConformerPositionwiseFeedForwardV2(ConformerPositionwiseFeedForwardV1):
     def __init__(self, cfg: ConformerPositionwiseFeedForwardV2Config):
         super().__init__(cfg)
 
+        self.dropout = nn.Dropout1d(cfg.dropout) if cfg.dropout_broadcast_axes else nn.Dropout(cfg.dropout)
         self.dropout_broadcast_axes = cfg.dropout_broadcast_axes
 
     def _broadcast_dropout(self, tensor: torch.Tensor) -> torch.Tensor:
         if self.dropout_broadcast_axes is None:
-            tensor = torch.nn.functional.dropout(tensor, p=self.dropout, training=self.training)
+            tensor = self.dropout(tensor)
         elif self.dropout_broadcast_axes == "T":
-            tensor = torch.nn.functional.dropout1d(
-                tensor.transpose(1, 2), p=self.dropout, training=self.training
-            ).transpose(1, 2)
+            tensor = self.dropout(tensor.transpose(1, 2)).transpose(1, 2)
         elif self.dropout_broadcast_axes == "B":
-            tensor = torch.nn.functional.dropout1d(
-                tensor.permute(1, 2, 0), p=self.dropout, training=self.training
-            ).permute(2, 0, 1)
+            tensor = self.dropout(tensor.permute(1, 2, 0)).permute(2, 0, 1)
         elif self.dropout_broadcast_axes == "BT":
             batch_dim_size = tensor.shape[0]
             feature_dim_size = tensor.shape[-1]
 
             tensor = (
-                torch.nn.functional.dropout1d(
-                    tensor.reshape(-1, feature_dim_size).transpose(0, 1), p=self.dropout, training=self.training
-                )
+                self.dropout(tensor.reshape(-1, feature_dim_size).transpose(0, 1))
                 .transpose(0, 1)
                 .reshape(batch_dim_size, -1, feature_dim_size)
             )

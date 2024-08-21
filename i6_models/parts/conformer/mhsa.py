@@ -95,6 +95,7 @@ class ConformerMHSAV2(ConformerMHSAV1):
 
         super().__init__(cfg)
 
+        self.dropout = torch.nn.Dropout1d(cfg.dropout) if cfg.dropout_broadcast_axes else torch.nn.Dropout(cfg.dropout)
         self.dropout_broadcast_axes = cfg.dropout_broadcast_axes
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
@@ -113,23 +114,17 @@ class ConformerMHSAV2(ConformerMHSAV1):
         )  # [B,T,F]
 
         if self.dropout_broadcast_axes is None:
-            output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)
+            output_tensor = self.dropout(output_tensor)
         elif self.dropout_broadcast_axes == "T":
-            output_tensor = torch.nn.functional.dropout1d(
-                output_tensor.transpose(1, 2), p=self.dropout, training=self.training
-            ).transpose(1, 2)
+            output_tensor = self.dropout(output_tensor.transpose(1, 2)).transpose(1, 2)
         elif self.dropout_broadcast_axes == "B":
-            output_tensor = torch.nn.functional.dropout1d(
-                output_tensor.permute(1, 2, 0), p=self.dropout, training=self.training
-            ).permute(2, 0, 1)
+            output_tensor = self.dropout(output_tensor.permute(1, 2, 0)).permute(2, 0, 1)
         elif self.dropout_broadcast_axes == "BT":
             batch_dim_size = output_tensor.shape[0]
             feature_dim_size = output_tensor.shape[-1]
 
             output_tensor = (
-                torch.nn.functional.dropout1d(
-                    output_tensor.reshape(-1, feature_dim_size).transpose(0, 1), p=self.dropout, training=self.training
-                )
+                self.dropout(output_tensor.reshape(-1, feature_dim_size).transpose(0, 1))
                 .transpose(0, 1)
                 .reshape(batch_dim_size, -1, feature_dim_size)
             )
