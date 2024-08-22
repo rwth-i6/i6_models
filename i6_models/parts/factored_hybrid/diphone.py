@@ -207,11 +207,11 @@ class FactoredDiphoneBlockV2(FactoredDiphoneBlockV1):
         :return: tuple of logits for p(c|l,x), p(l|x), p(r|c,x) and the embedded left context and center state values.
         """
 
-        logits_center, logits_left, contexts_embedded_left = super().forward_factored(features, contexts_left)
+        logits_center, logits_left, contexts_left_embedded = super().forward_factored(features, contexts_left)
 
         # in training we forward exactly one context per T, so: B, T, E
         center_states_embedded = self.center_state_embedding(contexts_center)
         features_right = torch.cat((features, center_states_embedded), -1)  # B, T, F+E
         logits_right = self.right_context_encoder(features_right)
 
-        return logits_center, logits_left, logits_right, contexts_embedded_left, center_states_embedded
+        return logits_center, logits_left, logits_right, contexts_left_embedded, center_states_embedded
