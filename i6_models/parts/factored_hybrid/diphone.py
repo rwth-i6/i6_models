@@ -190,6 +190,10 @@ class FactoredDiphoneBlockV2(FactoredDiphoneBlockV1):
             activation=cfg.activation,
         )
 
+    # update type definitions
+    def forward(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        return super().forward(*args, **kwargs)
+
     def forward_factored(
         self,
         features: Tensor,  # B, T, F
