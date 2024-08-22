@@ -110,6 +110,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         """
         :param features: Main encoder output. shape B, T, F. F=num_inputs
         :param contexts_left: The left contexts used to compute p(c|l,x), shape B, T.
+            Valid values range from [0, num_contexts).
         :return: tuple of logits for p(c|l,x), p(l|x) and the embedded left context values.
         """
 
@@ -203,7 +204,10 @@ class FactoredDiphoneBlockV2(FactoredDiphoneBlockV1):
         """
         :param features: Main encoder output. shape B, T, F. F=num_inputs
         :param contexts_left: The left contexts used to compute p(c|l,x), shape B, T.
+            Valid values range from [0, num_contexts).
         :param contexts_center: The center states used to compute p(r|c,x), shape B, T.
+            Given that the center state also contains the word-end class and HMM state ID, the valid values
+            range from [0, num_center_states), where num_center_states >= num_contexts.
         :return: tuple of logits for p(c|l,x), p(l|x), p(r|c,x) and the embedded left context and center state values.
         """
 
