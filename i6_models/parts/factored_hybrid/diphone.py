@@ -1,6 +1,8 @@
 __all__ = [
     "FactoredDiphoneBlockV1Config",
     "FactoredDiphoneBlockV1",
+    "FactoredDiphoneBlockV2Config",
+    "FactoredDiphoneBlockV2",
 ]
 
 from dataclasses import dataclass
@@ -108,6 +110,7 @@ class FactoredDiphoneBlockV1(nn.Module):
         """
         :param features: Main encoder output. shape B, T, F. F=num_inputs
         :param contexts_left: The left contexts used to compute p(c|l,x), shape B, T.
+            Valid values range from [0, num_contexts).
         :return: tuple of logits for p(c|l,x), p(l|x) and the embedded left context values.
         """
 
@@ -148,3 +151,71 @@ class FactoredDiphoneBlockV1(nn.Module):
         )  # B, T, F'*C
 
         return joint_log_probs
+
+
+@dataclass
+class FactoredDiphoneBlockV2Config(FactoredDiphoneBlockV1Config):
+    """
+    Attributes:
+        Same attributes as parent class. In addition:
+
+        center_state_embedding_dim: embedding dimension of the center state
+            values. Good choice is in the order of num_center_states.
+    """
+
+    center_state_embedding_dim: int
+
+    def __post_init__(self):
+        super().__post_init__()
+
+        assert self.center_state_embedding_dim > 0
+
+
+class FactoredDiphoneBlockV2(FactoredDiphoneBlockV1):
+    """
+    Like FactoredDiphoneBlockV1, but computes an additional diphone output on the right context `p(r|c,x)`.
+
+    This additional output is ignored when computing the joint, and only used in training.
+    """
+
+    def __init__(self, cfg: FactoredDiphoneBlockV2Config):
+        super().__init__(cfg)
+
+        self.center_state_embedding = nn.Embedding(self.num_center, cfg.center_state_embedding_dim)
+        self.right_context_encoder = get_mlp(
+            num_input=cfg.num_inputs + cfg.center_state_embedding_dim,
+            num_output=self.num_contexts,
+            hidden_dim=cfg.context_mix_mlp_dim,
+            num_layers=cfg.context_mix_mlp_num_layers,
+            dropout=cfg.dropout,
+            activation=cfg.activation,
+        )
+
+    # update type definitions
+    def forward(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        return super().forward(*args, **kwargs)
+
+    def forward_factored(
+        self,
+        features: Tensor,  # B, T, F
+        contexts_left: Tensor,  # B, T
+        contexts_center: Tensor,  # B, T
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        """
+        :param features: Main encoder output. shape B, T, F. F=num_inputs
+        :param contexts_left: The left contexts used to compute p(c|l,x), shape B, T.
+            Valid values range from [0, num_contexts).
+        :param contexts_center: The center states used to compute p(r|c,x), shape B, T.
+            Given that the center state also contains the word-end class and HMM state ID, the valid values
+            range from [0, num_center_states), where num_center_states >= num_contexts.
+        :return: tuple of logits for p(c|l,x), p(l|x), p(r|c,x) and the embedded left context and center state values.
+        """
+
+        logits_center, logits_left, contexts_left_embedded = super().forward_factored(features, contexts_left)
+
+        # in training we forward exactly one context per T, so: B, T, E
+        center_states_embedded = self.center_state_embedding(contexts_center)
+        features_right = torch.cat((features, center_states_embedded), -1)  # B, T, F+E
+        logits_right = self.right_context_encoder(features_right)
+
+        return logits_center, logits_left, logits_right, contexts_left_embedded, center_states_embedded
