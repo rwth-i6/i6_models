@@ -134,3 +134,19 @@ def test_tri_output_shape_and_norm():
             assert output_left.shape == (b, t, n_ctx)
             assert output_center.shape == (b, t, cdim)
             assert output_right.shape == (b, t, n_ctx)
+
+            try:
+                tri_block.forward_joint(encoder_output)
+            except NotImplementedError:
+                pass
+            else:
+                assert False, "expected Error, did not get any"
+
+            encoder_output = torch.rand((b, t, n_in))
+            output = tri_block.forward_joint_diphone(features=encoder_output)
+            cdim = get_center_dim(n_ctx, states_per_ph, we_class)
+            assert output.shape == (b, t, cdim * n_ctx)
+            output_p = torch.exp(output)
+            ones_hopefully = torch.sum(output_p, dim=-1)
+            close_to_one = torch.abs(1 - ones_hopefully).flatten() < 1e-3
+            assert all(close_to_one)

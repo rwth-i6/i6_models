@@ -71,3 +71,9 @@ class FactoredTriphoneBlockV1(FactoredDiphoneBlockV1):
         logits_right = self.right_context_encoder(features_right)  # B, T, C
 
         return logits_center, logits_left, logits_right, contexts_left_embedded, center_states_embedded
+
+    def forward_joint(self, features: Tensor) -> Tensor:
+        raise NotImplementedError(
+            "It is computationally infeasible to forward the full triphone joint, "
+            "only the diphone joint can be computed via forward_joint_diphone."
+        )
