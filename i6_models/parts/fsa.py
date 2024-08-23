@@ -8,6 +8,7 @@ import torch
 
 TWeightedFsa = TypeVar("TWeightedFsa", bound="WeightedFsa")
 
+
 class WeightedFsa(NamedTuple):
     """
     Convenience class that represents an FSA. It supports scaling the weights of the
@@ -20,6 +21,7 @@ class WeightedFsa(NamedTuple):
     :param weights: a [E,] tensor of weights for each edge scaled by the tdp_scale
     :param start_end_states: a [N, 2] tensor of start and end states for each of the N sequences
     """
+
     num_states: torch.IntTensor
     edges: torch.IntTensor
     weights: torch.FloatTensor
@@ -27,11 +29,8 @@ class WeightedFsa(NamedTuple):
 
     def __mul__(self: TWeightedFsa, scale: float) -> TWeightedFsa:
         """Multiply the weights, i.e. the third element, with a scale."""
-        return WeightedFsa._make(
-            tensor * scale if i == 2 else tensor
-            for i, tensor in enumerate(self)
-        )
-    
+        return WeightedFsa._make(tensor * scale if i == 2 else tensor for i, tensor in enumerate(self))
+
     def to(self: TWeightedFsa, device: str) -> TWeightedFsa:
         """Move the tensors to a given device. This wraps around the
         PyTorch `Tensor.to(device)` method."""
@@ -49,8 +48,10 @@ class TorchFsaBuilder:
     :param config_path: path to the RASR fsa exporter config
     :param tdp_scale: multiply the weights by this scale
     """
+
     def __init__(self, config_path: str, tdp_scale: float = 1.0):
         import librasr
+
         self.config_path = config_path
         config = librasr.Configuration()
         config.set_from_file(self.config_path)
@@ -61,7 +62,7 @@ class TorchFsaBuilder:
         state = self.__dict__.copy()
         del state["builder"]
         return state
-    
+
     def __setstate__(self, state):
         self.__dict__.update(state)
         config = librasr.Configuration()
@@ -94,6 +95,7 @@ class TorchFsaBuilder:
         :param seq_tags: an iterable object of sequence tags
         :return: a concatenated FSA
         """
+
         def append_fsa(a, b):
             edges = torch.from_numpy(np.int32(b[2])).reshape((3, b[1]))
             return (
