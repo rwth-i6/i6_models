@@ -42,7 +42,11 @@ class FactoredTriphoneBlockV1(FactoredDiphoneBlockV1):
             activation=cfg.activation,
         )
 
-    def forward(
+    # update type definitions
+    def forward(self, *args, **kwargs) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        return super().forward(*args, **kwargs)
+
+    def forward_factored(
         self,
         features: Tensor,  # B, T, F
         contexts_left: Tensor,  # B, T
@@ -58,7 +62,7 @@ class FactoredTriphoneBlockV1(FactoredDiphoneBlockV1):
         :return: tuple of logits for p(c|l,x), p(l|x), p(r|c,l,x) and the embedded left context and center state values.
         """
 
-        logits_center, logits_left, contexts_left_embedded = super().forward(features, contexts_left)
+        logits_center, logits_left, contexts_left_embedded = super().forward_factored(features, contexts_left)
 
         # This logic is very similar to FactoredDiphoneBlockV2.forward, but not the same.
         # This class computes `p(r|c,l,h(x))` while FactoredDiphoneBlockV2 computes `p(r|c,h(x))`.

@@ -129,9 +129,7 @@ def test_tri_output_shape_and_norm():
             contexts_center = torch.randint(0, tri_block.num_center, (b, t))
             encoder_output = torch.rand((b, t, n_in))
             output_center, output_left, output_right, _, _ = tri_block(
-                features=encoder_output,
-                contexts_left=contexts_left,
-                contexts_center=contexts_center,
+                features=encoder_output, contexts_left=contexts_left, contexts_center=contexts_center
             )
             assert output_left.shape == (b, t, n_ctx)
             assert output_center.shape == (b, t, cdim)
