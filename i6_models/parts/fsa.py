@@ -15,9 +15,8 @@ class WeightedFsa(NamedTuple):
     fsa by simple left-multiplication and moving the tensors to a different device.
     It can simply be passed to `i6_native_ops.fbw.fbw_loss` and `i6_native_ops.fast_viterbi.align_viterbi`.
     :param num_states: the total number of all states S
-    :param edges: a [4, E] tensor of edges where each column is an edge consisting
-        of from-state, to-state, emission idx and the index of the sequence
-        it belongs to
+    :param edges: a [4, E] tensor of edges with number of edges E and where each column is an edge
+        consisting of from-state, to-state, emission idx and the index of the sequence it belongs to
     :param weights: a [E,] tensor of weights for each edge scaled by the tdp_scale
     :param start_end_states: a [N, 2] tensor of start and end states for each of the N sequences
     """
