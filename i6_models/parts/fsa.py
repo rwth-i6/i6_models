@@ -83,7 +83,7 @@ class TorchFsaBuilder:
         raw_fsa = self.builder.build_by_segment_name(seq_tag)
         return raw_fsa
 
-    def build_batch(self, seq_tags: Iterable[str]) -> TWeightedFsa:
+    def build_batch(self, seq_tags: Iterable[str]) -> WeightedFsa:
         """
         Build and concatenate the FSAs for a batch of sequence tags
         and reformat as an input to `i6_native_ops.fbw.fbw_loss`.
