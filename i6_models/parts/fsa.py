@@ -7,8 +7,6 @@ from typing import Iterable, NamedTuple, Tuple, TypeVar
 import numpy as np
 import torch
 
-TWeightedFsa = TypeVar("TWeightedFsa", bound="WeightedFsa")
-
 
 class WeightedFsa(NamedTuple):
     """
@@ -98,6 +96,7 @@ class TorchFsaBuilder:
         the state IDs of each single FSA are incrememented and made unique in
         the batch.
         Additionally we apply an optional scale to the weights.
+        
         :param seq_tags: an iterable object of sequence tags
         :return: a concatenated FSA
         """
