@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 __all__ = ["TorchFsaBuilder", "WeightedFsa"]
 
-from __future__ import annotations
 from functools import reduce
 from typing import Iterable, NamedTuple, Tuple, TypeVar
 
 import numpy as np
 import torch
+import librasr
 
 
 class WeightedFsa(NamedTuple):
@@ -13,6 +15,7 @@ class WeightedFsa(NamedTuple):
     Convenience class that represents an FSA. It supports scaling the weights of the
     fsa by simple left-multiplication and moving the tensors to a different device.
     It can simply be passed to :func:`i6_native_ops.fbw.fbw_loss` and :func:`i6_native_ops.fast_viterbi.align_viterbi`.
+
     :param num_states: the total number of all states S
     :param edges: a [4, E] tensor of edges with number of edges E and where each column is an edge
         consisting of from-state, to-state, emission idx and the index of the sequence it belongs to
@@ -34,7 +37,7 @@ class WeightedFsa(NamedTuple):
             self.start_end_states,
         )
 
-    def to(self, device: str) -> WeightedFsa:
+    def to(self, device: torch.device) -> WeightedFsa:
         """Move the tensors to a given device. This wraps around the
         PyTorch `Tensor.to(device)` method."""
         return WeightedFsa._make(tensor.to(device) for tensor in self)
@@ -48,13 +51,12 @@ class TorchFsaBuilder:
     This class provides an explicit implementation of the `__getstate__` and `__setstate__`
     functions, necessary for pickling as the C++-class `librasr.AllophoneStateFsaBuilder`
     is not picklable.
+
     :param config_path: path to the RASR fsa exporter config
     :param tdp_scale: multiply the weights by this scale
     """
 
     def __init__(self, config_path: str, tdp_scale: float = 1.0):
-        import librasr
-
         self.config_path = config_path
         config = librasr.Configuration()
         config.set_from_file(self.config_path)
@@ -75,7 +77,7 @@ class TorchFsaBuilder:
     def build_single(self, seq_tag: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
         """
         Build the FSA for the given sequence tag in the corpus.
-        
+
         :param seq_tag: sequence tag
         :return: FSA as a tuple containing
             * number of states S
@@ -96,7 +98,7 @@ class TorchFsaBuilder:
         the state IDs of each single FSA are incrememented and made unique in
         the batch.
         Additionally we apply an optional scale to the weights.
-        
+
         :param seq_tags: an iterable object of sequence tags
         :return: a concatenated FSA
         """
