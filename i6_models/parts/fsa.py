@@ -1,5 +1,6 @@
 __all__ = ["TorchFsaBuilder", "WeightedFsa"]
 
+from __future__ import annotations
 from functools import reduce
 from typing import Iterable, NamedTuple, Tuple, TypeVar
 
@@ -13,7 +14,7 @@ class WeightedFsa(NamedTuple):
     """
     Convenience class that represents an FSA. It supports scaling the weights of the
     fsa by simple left-multiplication and moving the tensors to a different device.
-    It can simply be passed to `i6_native_ops.fbw.fbw_loss` and `i6_native_ops.fast_viterbi.align_viterbi`.
+    It can simply be passed to :func:`i6_native_ops.fbw.fbw_loss` and :func:`i6_native_ops.fast_viterbi.align_viterbi`.
     :param num_states: the total number of all states S
     :param edges: a [4, E] tensor of edges with number of edges E and where each column is an edge
         consisting of from-state, to-state, emission idx and the index of the sequence it belongs to
@@ -26,11 +27,16 @@ class WeightedFsa(NamedTuple):
     weights: torch.FloatTensor
     start_end_states: torch.IntTensor
 
-    def __mul__(self: TWeightedFsa, scale: float) -> TWeightedFsa:
+    def __mul__(self: TWeightedFsa, scale: float) -> WeightedFsa:
         """Multiply the weights, i.e. the third element, with a scale."""
-        return WeightedFsa._make(tensor * scale if i == 2 else tensor for i, tensor in enumerate(self))
+        return WeightedFsa(
+            self.num_states,
+            self.edges,
+            self.weights * scale,
+            self.start_end_states,
+        )
 
-    def to(self: TWeightedFsa, device: str) -> TWeightedFsa:
+    def to(self, device: str) -> WeightedFsa:
         """Move the tensors to a given device. This wraps around the
         PyTorch `Tensor.to(device)` method."""
         return WeightedFsa._make(tensor.to(device) for tensor in self)
@@ -71,6 +77,7 @@ class TorchFsaBuilder:
     def build_single(self, seq_tag: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
         """
         Build the FSA for the given sequence tag in the corpus.
+        
         :param seq_tag: sequence tag
         :return: FSA as a tuple containing
             * number of states S
