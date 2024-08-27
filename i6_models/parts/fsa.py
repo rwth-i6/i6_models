@@ -25,7 +25,7 @@ class WeightedFsa(NamedTuple):
     weights: torch.FloatTensor
     start_end_states: torch.IntTensor
 
-    def __mul__(self: TWeightedFsa, scale: float) -> WeightedFsa:
+    def __mul__(self, scale: float) -> WeightedFsa:
         """Multiply the weights, i.e. the third element, with a scale."""
         return WeightedFsa(
             self.num_states,
