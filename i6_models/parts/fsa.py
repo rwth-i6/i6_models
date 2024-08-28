@@ -3,7 +3,7 @@ from __future__ import annotations
 __all__ = ["TorchFsaBuilder", "WeightedFsa"]
 
 from functools import reduce
-from typing import Iterable, NamedTuple, Tuple, TypeVar
+from typing import Iterable, NamedTuple, Tuple, Union
 
 import numpy as np
 import torch
@@ -37,7 +37,7 @@ class WeightedFsa(NamedTuple):
             self.start_end_states,
         )
 
-    def to(self, device: torch.device) -> WeightedFsa:
+    def to(self, device: Union[str, torch.device]) -> WeightedFsa:
         """Move the tensors to a given device. This wraps around the
         PyTorch `Tensor.to(device)` method."""
         return WeightedFsa._make(tensor.to(device) for tensor in self)
