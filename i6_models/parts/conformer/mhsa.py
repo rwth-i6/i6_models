@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 __all__ = ["ConformerMHSAV1", "ConformerMHSAV1Config", "ConformerMHSAV2", "ConformerMHSAV2Config"]
+
 from dataclasses import dataclass
+from typing import Optional, Literal
 import torch
 
 from i6_models.config import ModelConfiguration
 from i6_models.util import compat
-
-from typing import Optional
+from i6_models.parts.dropout import BroadcastDropout
 
 
 @dataclass
@@ -72,10 +73,11 @@ class ConformerMHSAV2Config(ConformerMHSAV1Config):
                                 setting to None to disable broadcasting
     """
 
-    dropout_broadcast_axes: Optional[str] = None
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
 
     def check_valid(self):
-        assert self.dropout_broadcast_axes is None or self.dropout_broadcast_axes in [
+        assert self.dropout_broadcast_axes in [
+            None,
             "B",
             "T",
             "BT",
@@ -95,8 +97,7 @@ class ConformerMHSAV2(ConformerMHSAV1):
 
         super().__init__(cfg)
 
-        self.dropout = torch.nn.Dropout1d(cfg.dropout) if cfg.dropout_broadcast_axes else torch.nn.Dropout(cfg.dropout)
-        self.dropout_broadcast_axes = cfg.dropout_broadcast_axes
+        self.dropout = BroadcastDropout(cfg.dropout, dropout_broadcast_axes=cfg.dropout_broadcast_axes)
 
     def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
         """
@@ -113,20 +114,6 @@ class ConformerMHSAV2(ConformerMHSAV1):
             output_tensor, output_tensor, output_tensor, key_padding_mask=inv_sequence_mask, need_weights=False
         )  # [B,T,F]
 
-        if self.dropout_broadcast_axes is None:
-            output_tensor = self.dropout(output_tensor)
-        elif self.dropout_broadcast_axes == "T":
-            output_tensor = self.dropout(output_tensor.transpose(1, 2)).transpose(1, 2)
-        elif self.dropout_broadcast_axes == "B":
-            output_tensor = self.dropout(output_tensor.permute(1, 2, 0)).permute(2, 0, 1)
-        elif self.dropout_broadcast_axes == "BT":
-            batch_dim_size = output_tensor.shape[0]
-            feature_dim_size = output_tensor.shape[-1]
-
-            output_tensor = (
-                self.dropout(output_tensor.reshape(-1, feature_dim_size).transpose(0, 1))
-                .transpose(0, 1)
-                .reshape(batch_dim_size, -1, feature_dim_size)
-            )
+        output_tensor = self.dropout(output_tensor)
 
         return output_tensor  # [B,T,F]

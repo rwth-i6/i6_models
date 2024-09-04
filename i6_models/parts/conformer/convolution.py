@@ -9,11 +9,12 @@ __all__ = [
 
 from dataclasses import dataclass
 from copy import deepcopy
+from typing import Callable, Union, Optional, Literal
 
 import torch
 from torch import nn
 from i6_models.config import ModelConfiguration
-from typing import Callable, Union, Optional
+from i6_models.parts.dropout import BroadcastDropout
 
 
 @dataclass
@@ -101,12 +102,13 @@ class ConformerConvolutionV2Config(ConformerConvolutionV1Config):
     Allows even kernel size
     """
 
-    dropout_broadcast_axes: Optional[str] = None
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
 
-        assert self.dropout_broadcast_axes is None or self.dropout_broadcast_axes in [
+        assert self.dropout_broadcast_axes in [
+            None,
             "B",
             "T",
             "BT",
@@ -124,10 +126,7 @@ class ConformerConvolutionV2(ConformerConvolutionV1):
         """
         super().__init__(model_cfg)
 
-        self.dropout_broadcast_axes = model_cfg.dropout_broadcast_axes
-        self.dropout = (
-            nn.Dropout1d(model_cfg.dropout) if model_cfg.dropout_broadcast_axes else nn.Dropout(model_cfg.dropout)
-        )
+        self.dropout = BroadcastDropout(model_cfg.dropout, dropout_broadcast_axes=model_cfg.dropout_broadcast_axes)
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
@@ -148,20 +147,6 @@ class ConformerConvolutionV2(ConformerConvolutionV1):
         tensor = self.activation(tensor)
         tensor = self.pointwise_conv2(tensor)
 
-        if self.dropout_broadcast_axes is None:
-            tensor = self.dropout(tensor)
-        elif self.dropout_broadcast_axes == "T":
-            tensor = self.dropout(tensor.transpose(1, 2)).transpose(1, 2)
-        elif self.dropout_broadcast_axes == "B":
-            tensor = self.dropout(tensor.permute(1, 2, 0)).permute(2, 0, 1)
-        elif self.dropout_broadcast_axes == "BT":
-            batch_dim_size = tensor.shape[0]
-            feature_dim_size = tensor.shape[-1]
-
-            tensor = (
-                self.dropout(tensor.reshape(-1, feature_dim_size).transpose(0, 1))
-                .transpose(0, 1)
-                .reshape(batch_dim_size, -1, feature_dim_size)
-            )
+        tensor = self.dropout(tensor)
 
         return tensor

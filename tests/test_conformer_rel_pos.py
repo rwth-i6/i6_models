@@ -76,10 +76,13 @@ def test_ConformerMHSARelPosV1():
         input_shape,
         seq_len,
         input_dim,
+        with_bias=True,
         num_att_heads=8,
         att_weights_dropout=0.1,
         dropout=0.1,
         learnable_pos_emb=True,
+        with_linear_pos=False,
+        separate_pos_emb_per_head=False,
         rel_pos_clip=16,
         with_pos_bias=False,
         pos_emb_dropout=0.0,
@@ -90,9 +93,12 @@ def test_ConformerMHSARelPosV1():
         cfg = ConformerMHSARelPosV1Config(
             input_dim=input_dim,
             num_att_heads=num_att_heads,
+            with_bias=with_bias,
             att_weights_dropout=att_weights_dropout,
             dropout=dropout,
             learnable_pos_emb=learnable_pos_emb,
+            with_linear_pos=with_linear_pos,
+            separate_pos_emb_per_head=separate_pos_emb_per_head,
             rel_pos_clip=rel_pos_clip,
             with_pos_bias=with_pos_bias,
             pos_emb_dropout=pos_emb_dropout,
@@ -110,7 +116,9 @@ def test_ConformerMHSARelPosV1():
     input_shape = [4, 15, 32]  # B,T,F
     seq_len = [15, 12, 10, 15]
 
-    for learnable_pos_emb, with_pos_bias, pos_emb_dropout in product([True, False], [True, False], [0.0, 0.1]):
+    for learnable_pos_emb, with_pos_bias, pos_emb_dropout, with_linear_pos, separate_pos_emb_per_head in product(
+        [True, False], [True, False], [0.0, 0.1], [True, False], [True, False]
+    ):
         assert get_output_shape(
             input_shape,
             seq_len,
@@ -118,4 +126,6 @@ def test_ConformerMHSARelPosV1():
             learnable_pos_emb=learnable_pos_emb,
             with_pos_bias=with_pos_bias,
             pos_emb_dropout=pos_emb_dropout,
+            with_linear_pos=with_linear_pos,
+            separate_pos_emb_per_head=separate_pos_emb_per_head,
         ) == [4, 15, 32]
