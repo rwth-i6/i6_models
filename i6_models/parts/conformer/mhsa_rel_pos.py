@@ -21,12 +21,12 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
     Attributes:
         input_dim: input dim and total dimension for query/key and value projections, should be divisible by `num_att_heads`
         num_att_heads: number of attention heads
-        with_bias: whether to add bias to qkv and output lienar projections
+        with_bias: whether to add bias to qkv and output linear projections
         att_weights_dropout: attention weights dropout
         learnable_pos_emb: whether to use learnable relative positional embeddings instead of fixed sinusoidal ones
         rel_pos_clip: maximal relative postion for embedding
         with_linear_pos: whether to linearly transform the positional embeddings
-        separate_pos_emb_per_head: whether to apply separate linear transformation on positional embeddings for each head
+        separate_pos_emb_per_head: whether to create head-dependent positional embeddings
         with_pos_bias: whether to add additional position bias terms to the attention scores
         pos_emb_dropout: dropout for the positional embeddings
         dropout: multi-headed self attention output dropout
