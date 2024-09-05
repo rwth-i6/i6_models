@@ -207,10 +207,8 @@ class ConformerMHSARelPosV1(nn.Module):
         # sequence of weighted sums over value sequence
         v = value_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head)  # [B, T, H, F']
         attn_output = (
-            torch.einsum("bhij, bjhf -> bhif", attn_output_weights, v)
-            .transpose(1, 2)
-            .contiguous()
-            .view(batch_dim_size, -1, self.embed_dim)
+            torch.einsum("bhij, bjhf -> bihf", attn_output_weights, v)
+            .reshape(batch_dim_size, -1, self.embed_dim)
         )
 
         output_tensor = self.out_proj(attn_output)

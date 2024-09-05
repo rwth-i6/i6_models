@@ -27,12 +27,13 @@ class BroadcastDropout(nn.Module):
 
     def forward(self, tensor: torch.Tensor) -> torch.Tensor:
         """
-        assumes input tensor of shape [B, T, F]
-        return tensor of shape [B, T, F]
+        :param tensor: input tensor of shape [B, T, F]
+        :return: tensor of shape [B, T, F]
         """
         if self.dropout_broadcast_axes is None:
             tensor = torch.nn.functional.dropout(tensor, p=self.p, training=self.training)
         elif self.dropout_broadcast_axes == "T":  # [B, T, F] -> [B, F, T] -> [B, T, F]
+            # torch.nn.functional.dropout1d expects a 3D tensor and broadcasts in the last dimension.
             tensor = torch.nn.functional.dropout1d(tensor.transpose(1, 2), p=self.p, training=self.training).transpose(
                 1, 2
             )
