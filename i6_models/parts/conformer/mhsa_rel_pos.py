@@ -144,7 +144,7 @@ class ConformerMHSARelPosV1(nn.Module):
         mask = (
             torch.zeros_like(inv_sequence_mask, dtype=input_tensor.dtype)
             .masked_fill(inv_sequence_mask, float("-inf"))
-            .view(batch_dim_size, 1, 1, time_dim_size)
+            .reshape(batch_dim_size, 1, 1, time_dim_size)
         )  # [B, 1, 1, T']
 
         # query, key and value sequences
