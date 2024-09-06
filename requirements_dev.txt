@@ -1,4 +1,4 @@
 onnx
 onnxruntime
-espnet
+espnet >= 202402
 typeguard >= 4.3.0
