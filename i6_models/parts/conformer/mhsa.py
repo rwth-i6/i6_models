@@ -73,7 +73,7 @@ class ConformerMHSAV2Config(ConformerMHSAV1Config):
                                 setting to None to disable broadcasting
     """
 
-    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
 
     def check_valid(self):
         assert self.dropout_broadcast_axes in [

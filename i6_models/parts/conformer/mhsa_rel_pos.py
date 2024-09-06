@@ -45,7 +45,7 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
     separate_pos_emb_per_head: bool
     pos_emb_dropout: float
     dropout: float
-    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
 
     def __post_init__(self) -> None:
         super().__post_init__()

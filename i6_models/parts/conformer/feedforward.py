@@ -62,14 +62,19 @@ class ConformerPositionwiseFeedForwardV1(nn.Module):
 
 
 @dataclass
-class ConformerPositionwiseFeedForwardV2Config(ConformerPositionwiseFeedForwardV1Config):
+class ConformerPositionwiseFeedForwardV2Config(ModelConfiguration):
     """
     New attribute:
         dropout_broadcast_axes: string of axes to which dropout is broadcast, e.g. "T" for broadcasting to the time axis
                                 setting to None to disable broadcasting
+    Default value for `activation` removed
     """
 
-    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
+    input_dim: int
+    hidden_dim: int
+    dropout: float
+    activation: Callable[[torch.Tensor], torch.Tensor]
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
 
     def check_valid(self):
         assert self.dropout_broadcast_axes in [

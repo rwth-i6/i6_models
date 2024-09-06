@@ -1,4 +1,4 @@
 onnx
 onnxruntime
 espnet
-typeguard
+typeguard >= 4.3.0

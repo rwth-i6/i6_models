@@ -99,10 +99,9 @@ class ConformerConvolutionV2Config(ConformerConvolutionV1Config):
     New attribute:
         dropout_broadcast_axes: string of axes to which dropout is broadcast, e.g. "T" for broadcasting to the time axis
                                 setting to None to disable broadcasting
-    Allows even kernel size
     """
 
-    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]] = None
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
 
     def check_valid(self):
         assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"

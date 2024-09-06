@@ -140,6 +140,8 @@ def test_ConformerMHSARelPosV1_against_Espnet():
     dropout_rate = 0.1
     batch_dim_size = 4
     time_dim_size = 50
+    seq_len = torch.Tensor([50, 10, 20, 40])
+    sequence_mask = torch.less(torch.arange(time_dim_size)[None, :], seq_len[:, None])
 
     espnet_mhsa_module = RelPositionMultiHeadedAttention(
         num_heads=num_heads, embed_size=embed_size, dropout_rate=dropout_rate
@@ -186,7 +188,6 @@ def test_ConformerMHSARelPosV1_against_Espnet():
     )
 
     input_tensor = torch.rand((batch_dim_size, time_dim_size, embed_size))
-    sequence_mask = torch.ones((batch_dim_size, time_dim_size))
     inv_sequence_mask = torch.logical_not(sequence_mask)
 
     input_tensor_layernorm = own_mhsa_module.layernorm(input_tensor)
@@ -202,4 +203,4 @@ def test_ConformerMHSARelPosV1_against_Espnet():
 
     own_output_tensor = own_mhsa_module(input_tensor, sequence_mask=sequence_mask)
 
-    assert torch.allclose(espnet_output_tensor, own_output_tensor, rtol=1e-03)
+    assert torch.allclose(espnet_output_tensor, own_output_tensor, rtol=1e-03, atol=1e-6)
