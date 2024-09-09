@@ -1,4 +1,3 @@
 onnx
 onnxruntime
 espnet @ git+https://github.com/espnet/espnet.git@9d607c1e7af91c2f611f7dd181ad091649f215c4
-typeguard >= 4.3.0
