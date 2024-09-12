@@ -61,9 +61,20 @@ class ConformerMHSARelPosV1Config(ModelConfiguration):
 class ConformerMHSARelPosV1(nn.Module):
     """
     Conformer multi-headed self-attention module supporting
-        - relative positional encoding proposed by Shaw et al. (cf. https://arxiv.org/abs/1803.02155) by setting `learnable_pos_emb` to True and `with_pos_bias` to False
-        - and Transformer-XL style relative PE by Dai et al. (cf. https://arxiv.org/abs/1901.02860) by setting `learnable_pos_emb` to False and `with_pos_bias` to True
-
+        - self-attention with relative positional encoding proposed by Shaw et al. (cf. https://arxiv.org/abs/1803.02155)
+            * learnable_pos_emb = True
+            * with_pos_bias = False
+            * with_linear_pos = False
+            * separate_pos_emb_per_head = False (RETURNN default)
+            * with_bias = False (RETURNN default)
+        - and self-attention with Transformer-XL style relative PE by Dai et al.
+            (cf. https://arxiv.org/abs/1901.02860, https://github.com/kimiyoung/transformer-xl/blob/master/pytorch/mem_transformer.py,
+                 https://github.com/espnet/espnet/blob/master/espnet2/asr_transducer/encoder/modules/attention.py#L9)
+            * learnable_pos_emb = False
+            * with_pos_bias = True
+            * with_linear_pos = False (paper implementation) / with_linear_pos = True (ESPnet default)
+            * separate_pos_emb_per_head = False (paper implementation) / separate_pos_emb_per_head = True (ESPnet default)
+            * with_bias = False (paper implementation) / with_bias = True (ESPnet default)
     """
 
     def __init__(self, cfg: ConformerMHSARelPosV1Config):
