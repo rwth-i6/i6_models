@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-__all__ = ["ConformerConvolutionV1", "ConformerConvolutionV1Config"]
+__all__ = [
+    "ConformerConvolutionV1",
+    "ConformerConvolutionV1Config",
+    "ConformerConvolutionV2",
+    "ConformerConvolutionV2Config",
+]
 
 from dataclasses import dataclass
 from copy import deepcopy
+from typing import Callable, Union, Optional, Literal
 
 import torch
 from torch import nn
 from i6_models.config import ModelConfiguration
-from typing import Callable, Union
+from i6_models.parts.dropout import BroadcastDropout
 
 
 @dataclass
@@ -85,3 +91,61 @@ class ConformerConvolutionV1(nn.Module):
         tensor = self.pointwise_conv2(tensor)
 
         return self.dropout(tensor)
+
+
+@dataclass
+class ConformerConvolutionV2Config(ConformerConvolutionV1Config):
+    """
+    New attribute:
+        dropout_broadcast_axes: string of axes to which dropout is broadcast, e.g. "T" for broadcasting to the time axis
+                                setting to None to disable broadcasting
+    """
+
+    dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
+
+    def check_valid(self):
+        assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
+
+        assert self.dropout_broadcast_axes in [
+            None,
+            "B",
+            "T",
+            "BT",
+        ], "invalid value, supported are None, 'B', 'T' and 'BT'"
+
+
+class ConformerConvolutionV2(ConformerConvolutionV1):
+    """
+    Augments ConformerMHSAV1 with dropout broadcasting
+    """
+
+    def __init__(self, model_cfg: ConformerConvolutionV2Config):
+        """
+        :param model_cfg: model configuration for this module
+        """
+        super().__init__(model_cfg)
+
+        self.dropout = BroadcastDropout(model_cfg.dropout, dropout_broadcast_axes=model_cfg.dropout_broadcast_axes)
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        """
+        :param tensor: input tensor of shape [B,T,F]
+        :return: torch.Tensor of shape [B,T,F]
+        """
+        tensor = self.layer_norm(tensor)
+        tensor = self.pointwise_conv1(tensor)  # [B,T,2F]
+        tensor = nn.functional.glu(tensor, dim=-1)  # [B,T,F]
+
+        # conv layers expect shape [B,F,T] so we have to transpose here
+        tensor = tensor.transpose(1, 2)  # [B,F,T]
+        tensor = self.depthwise_conv(tensor)
+
+        tensor = self.norm(tensor)
+        tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
+
+        tensor = self.activation(tensor)
+        tensor = self.pointwise_conv2(tensor)
+
+        tensor = self.dropout(tensor)
+
+        return tensor
