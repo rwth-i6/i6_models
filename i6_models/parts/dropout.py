@@ -18,7 +18,8 @@ class BroadcastDropout(nn.Module):
         super().__init__()
 
         self.p = p
-        assert dropout_broadcast_axes is None or dropout_broadcast_axes in [
+        assert dropout_broadcast_axes in [
+            None,
             "B",
             "T",
             "BT",
