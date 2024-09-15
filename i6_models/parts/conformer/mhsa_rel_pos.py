@@ -252,7 +252,7 @@ class ConformerMHSARelPosV1(nn.Module):
 
         sinusoid_input = torch.outer(pos_seq, inv_freq)
 
-        pos_emb = torch.zeros(pos_seq.shape[0], embed_dim)
+        pos_emb = torch.zeros(pos_seq.shape[0], embed_dim, device=pos_seq.device)
 
         pos_emb[:, 0::2] = sinusoid_input.sin()
         pos_emb[:, 1::2] = sinusoid_input.cos()
