@@ -24,7 +24,8 @@ class ZoneoutLSTMCell(nn.Module):
     def forward(
         self, inputs: torch.Tensor, state: Tuple[torch.Tensor, torch.Tensor]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        h, c = self.cell(inputs)
+        with torch.autocast(device_type="cuda", enabled=False):
+            h, c = self.cell(inputs)
         prev_h, prev_c = state
         h = self._zoneout(prev_h, h, self.zoneout_h)
         c = self._zoneout(prev_c, c, self.zoneout_c)
