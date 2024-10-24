@@ -132,7 +132,7 @@ class AttentionLSTMDecoderV1(nn.Module):
         labels: torch.Tensor,
         enc_seq_len: torch.Tensor,
         state: Optional[Tuple[torch.Tensor, ...]] = None,
-        shift_embeddings=True,
+        shift_embeddings: bool = True,
     ):
         """
         :param encoder_outputs: encoder outputs of shape [B,T,D], same for training and search
