@@ -66,13 +66,8 @@ class RandomMask(nn.Module):
                 min_len = seq_len - num_mask - 1
             mask_idc = np.random.choice(seq_len - min_len, num_mask, replace=False)
 
-            mask_idc = np.asarray(
-                [mask_idc[j] + offset for j in range(len(mask_idc)) for offset in range(self.mask_length)]
-            )
-            mask_idcs.append(mask_idc)
-
-        for i, mask_idc in enumerate(mask_idcs):
-            mask[i, mask_idc] = True
+            for j in mask_idc:
+                mask[i, j : j+self.mask_length] = True
 
         tensor[mask] = self.mask_emb.to(tensor.device)
 
