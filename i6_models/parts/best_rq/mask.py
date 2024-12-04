@@ -19,16 +19,14 @@ class RandomMask(nn.Module):
         self,
         input_dim: int,
         mask_replace_val: str,
-        mask_prob: float,
+        mask_percentage: float,
         mask_length: int,
-        min_masks: int = 0,
     ):
         """
         :param input_dim: number of feature dimension of input
         :param mask_replace_val: the way to replace masked frames, either with zeros or lernable embeddings
-        :param mask_prob: percentage of frames to be masked out
+        :param mask_percentage: percentage of frames to be masked out
         :param mask_length: the length of each mask span
-        :param min_masks: minimum number of masks
         """
         super().__init__()
 
@@ -37,9 +35,8 @@ class RandomMask(nn.Module):
             self.mask_emb = nn.Parameter(torch.FloatTensor(input_dim).uniform_())
         elif mask_replace_val == "zero":
             self.mask_emb = torch.zeros(input_dim)
-        self.mask_prob = mask_prob
+        self.mask_percentage = mask_percentage
         self.mask_length = mask_length
-        self.min_masks = min_masks
 
     def forward(
         self,
@@ -60,10 +57,9 @@ class RandomMask(nn.Module):
 
             num_mask = int(
                 # add a random number for probabilistic rounding
-                self.mask_prob * seq_len / float(self.mask_length)
+                self.mask_percentage * seq_len / float(self.mask_length)
                 + np.random.rand()
             )
-            num_mask = max(self.min_masks, num_mask)
 
             min_len = self.mask_length
             if seq_len - min_len <= num_mask:
