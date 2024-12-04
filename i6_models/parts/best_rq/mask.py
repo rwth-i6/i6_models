@@ -67,7 +67,7 @@ class RandomMask(nn.Module):
             mask_idc = np.random.choice(seq_len - min_len, num_mask, replace=False)
 
             for j in mask_idc:
-                mask[i, j : j+self.mask_length] = True
+                mask[i, j : j + self.mask_length] = True
 
         tensor[mask] = self.mask_emb.to(tensor.device)
 
