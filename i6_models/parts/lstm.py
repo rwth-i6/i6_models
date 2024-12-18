@@ -1,4 +1,4 @@
-__all__ = ["LstmBlockV1Config", "LstmBlockV1", "LstmBlockV2Config", "LstmBlockV2"]
+__all__ = ["LstmBlockV1Config", "LstmBlockV1"]
 
 from dataclasses import dataclass
 import torch
@@ -60,17 +60,5 @@ class LstmBlockV1(nn.Module):
             padding_value=0.0,
             batch_first=True,
         )
-
-        return lstm_out, seq_len
-
-
-@dataclass
-class LstmBlockV2Config(LstmBlockV1Config):
-    pass
-
-
-class LstmBlockV2(LstmBlockV1):
-    def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> (torch.Tensor, torch.Tensor):
-        lstm_out, _ = self.lstm_stack(x)
 
         return lstm_out, seq_len
