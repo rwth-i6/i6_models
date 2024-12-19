@@ -19,13 +19,13 @@ class LstmBlockV1Config(ModelConfiguration):
     enforce_sorted: bool
 
     @classmethod
-    def from_dict(cls, model_cfg_dict: Dict):
+    def from_dict(cls, model_cfg_dict: Dict[str, Any]):
         model_cfg_dict = model_cfg_dict.copy()
         return cls(**model_cfg_dict)
 
 
 class LstmBlockV1(nn.Module):
-    def __init__(self, model_cfg: Union[LstmBlockV1Config, Dict], **kwargs):
+    def __init__(self, model_cfg: Union[LstmBlockV1Config, Dict[str, Any]], **kwargs):
         """
         Model definition of LSTM block. Contains single lstm stack and padding sequence in forward call.
 
@@ -34,7 +34,7 @@ class LstmBlockV1(nn.Module):
         """
         super().__init__()
 
-        self.cfg = LstmBlockV1Config.from_dict(model_cfg) if isinstance(model_cfg, Dict) else model_cfg
+        self.cfg = LstmBlockV1Config.from_dict(model_cfg) if isinstance(model_cfg, dict) else model_cfg
 
         self.dropout = self.cfg.dropout
         self.enforce_sorted = self.cgf.enforce_sorted
