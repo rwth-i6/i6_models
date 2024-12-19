@@ -16,12 +16,12 @@ from i6_models.parts.lstm import LstmBlockV1Config, LstmBlockV1
 class LstmEncoderV1Config(ModelConfiguration):
     """
     :param init_args: used to initialize parameters of modules, example:
-                      ```
-                        {
-                            "init_args_w": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
-                            "init_args_b": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
-                        }
-                      ```
+        ```
+        {
+            "init_args_w": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
+            "init_args_b": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
+        }
+        ```
     """
 
     input_dim: int
