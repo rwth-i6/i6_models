@@ -52,7 +52,7 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
             samples = self.noise_distribution_sampler.sample(self.num_samples).cuda()
 
             # log-probabilities for the noise distribution k * q(w|h)
-            ws = torch.log(torch.Tensor([self.num_samples]))
+            ws = torch.log(torch.tensor(float(self.num_samples)))
             sampled_prob = ws + self.noise_distribution_sampler.log_prob(samples)  # [num_samples]
             true_sample_prob = ws + self.noise_distribution_sampler.log_prob(target)  # [B x T]
 
