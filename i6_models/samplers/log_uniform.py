@@ -27,8 +27,8 @@ class LogUniformSampler(nn.Module):
 
         self._cat_sampler = torch.distributions.categorical.Categorical(probs=self._distribution)
 
-    def sample(self, num_samples):
+    def sample(self, num_samples: int) -> torch.Tensor:
         return self._cat_sampler.sample(torch.Size([num_samples]))
 
-    def log_prob(self, indices):
+    def log_prob(self, indices: torch.Tensor) -> torch.Tensor:
         return self._cat_sampler.log_prob(indices)
