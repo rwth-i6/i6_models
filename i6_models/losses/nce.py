@@ -17,21 +17,36 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
     def __init__(
         self,
         num_samples: int,
+        *,
         model: nn.Module,
         noise_distribution_sampler: nn.Module,
         log_norm_term: Optional[float] = None,
         reduction: str = "none",
+        device: Optional[str] = None,
     ) -> None:
+        """
+        Noise contrastive estimation loss implementation.
+        Used to estimate the softmax. Normally for very large softmax sizes, for example word-level LM.
+
+        :param num_samples: num of samples for the estimation, normally a value between 1000-4000.
+                            2000 is a good starting point.
+        :param model: model on which the NCE loss is to be applied.
+        :param noise_distribution_sampler: for example `i6_model.samplers.LogUniformSampler`.
+        :param log_norm_term: normalisation term for true/sampled logits.
+        :param reduction: reduction method for binary cross entropy.
+        :param device: device where the loss will be placed.
+        """
         super().__init__()
 
         self.num_samples = num_samples
         self.model = model  # only used to access weights of output layer for NCE computation
         self.noise_distribution_sampler = noise_distribution_sampler
         self.log_norm_term = log_norm_term
+        self.device = device
 
         self._bce = nn.BCEWithLogitsLoss(reduction=reduction)
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor):
+    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         # input: [B x T, F] target: [B x T]
 
         with torch.no_grad():
