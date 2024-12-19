@@ -1,14 +1,19 @@
 __all__ = ["LogUniformSampler"]
 
 
-import math
-
 import torch
 from torch import nn
+from typing import Optional
 
 
 class LogUniformSampler(nn.Module):
     def __init__(self, num_classes: int, *, device: Optional[torch.device] = None):
+        """
+        Samples from a log uniform distribution from classes.
+
+        :param num_classes: number of classes from which the distribution is sampled.
+        :param device: device on which the distribution is sampled.
+        """
         super().__init__()
 
         # assumes count-sorted vocabulary, descending
