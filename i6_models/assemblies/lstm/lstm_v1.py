@@ -22,17 +22,17 @@ class LstmEncoderV1Config(ModelConfiguration):
     init_args: Optional[Dict[str, Any]] = None
 
     @classmethod
-    def from_dict(cls, model_cfg_dict: Dict):
+    def from_dict(cls, model_cfg_dict: Dict[str, Any]):
         model_cfg_dict = model_cfg_dict.copy()
         model_cfg_dict["lstm_layers_cfg"] = LstmBlockV1Config.from_dict(model_cfg_dict["lstm_layers_cfg"])
         return cls(**model_cfg_dict)
 
 
 class LstmEncoderV1(nn.Module):
-    def __init__(self, model_cfg: Union[LstmEncoderV1Config, Dict], **kwargs):
+    def __init__(self, model_cfg: Union[LstmEncoderV1Config, Dict[str, Any]], **kwargs):
         super().__init__()
 
-        self.cfg = LstmEncoderV1Config.from_dict(model_cfg) if isinstance(model_cfg, Dict) else model_cfg
+        self.cfg = LstmEncoderV1Config.from_dict(model_cfg) if isinstance(model_cfg, dict) else model_cfg
 
         self.embedding = nn.Embedding(self.cfg.input_dim, self.cfg.embed_dim)
         self.embed_dropout = nn.Dropout(self.cfg.embed_dropout)
