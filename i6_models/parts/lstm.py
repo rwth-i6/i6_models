@@ -42,7 +42,7 @@ class LstmBlockV1(nn.Module):
             bidirectional=self.cfg.bidirectional,
         )
 
-    def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+    def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         if not torch.jit.is_scripting() and not torch.jit.is_tracing():
             if seq_len.get_device() >= 0:
                 seq_len = seq_len.cpu()
