@@ -20,6 +20,7 @@ from i6_models.parts.conformer_with_dynamic_model_size.stochastic_depth import S
 
 EPSILON = np.finfo(np.float32).tiny
 
+
 @dataclass
 class ConformerBlockConfig(ModelConfiguration):
     """
@@ -78,13 +79,13 @@ class ConformerBlock(nn.Module):
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
     def forward(
-            self,
-            x: torch.tensor,
-            /,
-            sequence_mask: torch.tensor,
-            layer_gates: torch.tensor,
-            if_layer_drop: torch.tensor,
-            hard_prune: bool = False,
+        self,
+        x: torch.tensor,
+        /,
+        sequence_mask: torch.tensor,
+        layer_gates: torch.tensor,
+        if_layer_drop: torch.tensor,
+        hard_prune: bool = False,
     ) -> torch.Tensor:
         """
         :param x: input tensor of shape [B, T, F]
@@ -100,7 +101,7 @@ class ConformerBlock(nn.Module):
         assert len(if_layer_drop) == len(self.scales)
 
         for scale, module, layer_gate, apply_layer_drop in zip(
-                self.scales, self.module_list, layer_gates, if_layer_drop
+            self.scales, self.module_list, layer_gates, if_layer_drop
         ):
             # assert 0 <= layer_gate <= 1, "layer_gate should be in range between 0 and 1"
             if hard_prune and layer_gate == 0:
@@ -168,22 +169,25 @@ class ConformerEncoder(nn.Module):
         self.min_pct = min(cfg.pct_params_set)
         self.module_list = torch.nn.ModuleList([ConformerBlock(cfg.block_cfg) for _ in range(cfg.num_layers)])
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
-        self.softmax_kwargs =  cfg.softmax_kwargs
+        self.softmax_kwargs = cfg.softmax_kwargs
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros((cfg.num_layers * 4, cfg.num_layers * 4))))
         self.layer_gates.data.normal_(EPSILON, 0.00)
-        self.register_parameter("selected_mod_indices", nn.Parameter(torch.tensor([[-1]*len(self.layer_gates)]*len(self.pct_params_set)), requires_grad=False))
+        self.register_parameter(
+            "selected_mod_indices",
+            nn.Parameter(torch.tensor([[-1] * len(self.layer_gates)] * len(self.pct_params_set)), requires_grad=False),
+        )
 
         self.random_idx = -1
         self.recog_param_pct = 1
 
     def forward(
-            self,
-            data_tensor: torch.Tensor,
-            /,
-            sequence_mask: torch.Tensor,
-            global_train_step: int,
-            stage_1_global_steps: int,
-            params_kwargs: dict
+        self,
+        data_tensor: torch.Tensor,
+        /,
+        sequence_mask: torch.Tensor,
+        global_train_step: int,
+        stage_1_global_steps: int,
+        params_kwargs: dict,
     ) -> Tuple[List[torch.Tensor], torch.Tensor, torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
@@ -214,7 +218,8 @@ class ConformerEncoder(nn.Module):
                 print("current pct", pct)
                 tau = max(
                     self.softmax_kwargs["initial_tau"] * self.softmax_kwargs["tau_annealing"] ** global_train_step,
-                    self.softmax_kwargs["min_tau"])
+                    self.softmax_kwargs["min_tau"],
+                )
                 gumbel_softmax = torch.nn.functional.softmax(self.layer_gates / tau, dim=1)
                 num_params = torch.tensor(params_kwargs["num_params"]).to(gumbel_softmax.device)
                 rest_params = torch.tensor(params_kwargs["rest_params"]).to(gumbel_softmax.device)
@@ -224,17 +229,18 @@ class ConformerEncoder(nn.Module):
                 gumbel_softmax = gumbel_softmax[:k]
                 gumbel_softmax_matmal = torch.matmul(gumbel_softmax, torch.transpose(gumbel_softmax, 0, 1))
                 if self.softmax_kwargs["softmax_constraint_norm"] == "L2_norm_sqrt":
-                    softmax_constraint = torch.sqrt(torch.sum(
-                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.square(torch.diagonal(gumbel_softmax_matmal) - 1)))
+                    softmax_constraint = torch.sqrt(
+                        torch.sum(torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1)))
+                        + torch.sum(torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
+                    )
                 elif self.softmax_kwargs["softmax_constraint_norm"] == "L2_norm":
                     softmax_constraint = torch.sum(
-                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
+                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))
+                    ) + torch.sum(torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
                 elif self.softmax_kwargs["softmax_constraint_norm"] == "L1_norm":
                     softmax_constraint = torch.sum(
-                        torch.abs(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.abs(torch.diagonal(gumbel_softmax_matmal) - 1))
+                        torch.abs(torch.triu(gumbel_softmax_matmal, diagonal=1))
+                    ) + torch.sum(torch.abs(torch.diagonal(gumbel_softmax_matmal) - 1))
 
                 layer_weights = torch.sum(gumbel_softmax, dim=0)
                 selected_layer_indices = torch.argmax(gumbel_softmax, dim=1)
@@ -260,7 +266,7 @@ class ConformerEncoder(nn.Module):
                     outputs[0] = self.module_list[i](
                         outputs[0],
                         sequence_mask,
-                        layer_gates=layer_weights[4 * i: 4 * i + 4],
+                        layer_gates=layer_weights[4 * i : 4 * i + 4],
                         if_layer_drop=torch.tensor([False] * 4),
                     )
 
@@ -279,15 +285,15 @@ class ConformerEncoder(nn.Module):
                             gumbel_softmax = torch.nn.functional.softmax(self.layer_gates / tau, dim=1)
                             num_params = torch.tensor(params_kwargs["num_params"]).to(gumbel_softmax.device)
                             rest_params = torch.tensor(params_kwargs["rest_params"]).to(gumbel_softmax.device)
-                            num_params_cum_sum = torch.cumsum(torch.sum(num_params * gumbel_softmax, dim=1),
-                                                              dim=0) + rest_params
+                            num_params_cum_sum = (
+                                torch.cumsum(torch.sum(num_params * gumbel_softmax, dim=1), dim=0) + rest_params
+                            )
                             small_model_params = torch.tensor(params_kwargs["total_params"]) * p
                             k = abs(num_params_cum_sum - small_model_params).argmin(dim=-1) + 1
                             gumbel_softmax = gumbel_softmax[:k]
                             selected_indices = sorted(list(torch.argmax(gumbel_softmax, dim=1)))
-                            self.selected_mod_indices[i][:len(selected_indices)] = torch.tensor(selected_indices)
+                            self.selected_mod_indices[i][: len(selected_indices)] = torch.tensor(selected_indices)
                     print(self.selected_mod_indices)
-
 
             # Stage 2: fix the selection and jointly train
             else:
