@@ -29,9 +29,7 @@ class ConformerMHSAV1Config(ModelConfiguration):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        assert (
-                self.input_dim % self.num_att_heads == 0
-        ), "input_dim must be divisible by num_att_heads"
+        assert self.input_dim % self.num_att_heads == 0, "input_dim must be divisible by num_att_heads"
 
 
 class ConformerMHSAWithGateV1(torch.nn.Module):
@@ -51,7 +49,11 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
         self.dropout = cfg.dropout
 
     def forward(
-            self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor, head_gates: torch.Tensor = None, hard_prune: bool = False
+        self,
+        input_tensor: torch.Tensor,
+        sequence_mask: torch.Tensor,
+        head_gates: torch.Tensor = None,
+        hard_prune: bool = False,
     ) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
@@ -69,16 +71,9 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
         output_tensor = self.layernorm(input_tensor)  # [B,T,F]
 
         output_tensor = self.mhsa(
-            output_tensor,
-            output_tensor,
-            output_tensor,
-            mask=att_mask,
-            head_gates=head_gates,
-            hard_prune=hard_prune
+            output_tensor, output_tensor, output_tensor, mask=att_mask, head_gates=head_gates, hard_prune=hard_prune
         )  # [B,T,F]
-        output_tensor = torch.nn.functional.dropout(
-            output_tensor, p=self.dropout, training=self.training
-        )  # [B,T,F]
+        output_tensor = torch.nn.functional.dropout(output_tensor, p=self.dropout, training=self.training)  # [B,T,F]
 
         return output_tensor
 
@@ -115,10 +110,13 @@ class MultiheadAttention(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        """ same initialization as default pytorch linear layer"""
-        for weight, bias in [(self.linear_q_weight, self.linear_q_bias), (self.linear_k_weight, self.linear_k_bias),
-                             (self.linear_v_weight, self.linear_v_bias),
-                             (self.linear_out_weight, self.linear_out_bias)]:
+        """same initialization as default pytorch linear layer"""
+        for weight, bias in [
+            (self.linear_q_weight, self.linear_q_bias),
+            (self.linear_k_weight, self.linear_k_bias),
+            (self.linear_v_weight, self.linear_v_bias),
+            (self.linear_out_weight, self.linear_out_bias),
+        ]:
             init.kaiming_uniform_(weight, a=math.sqrt(5))
             if bias is not None:
                 fan_in, _ = init._calculate_fan_in_and_fan_out(weight)
@@ -153,12 +151,12 @@ class MultiheadAttention(torch.nn.Module):
             v_weights = torch.reshape(self.linear_v_weight, (-1, self.d_k, input_dim))  # (h, d_k, F)
             v_bias = torch.reshape(self.linear_v_bias, (-1, self.d_k))  # (h, d_k)
             if not hard_prune and self.training:
-                q_weights = torch.einsum('hij,h->hij', q_weights, head_gates)  # (h, d_k, h*d_k)
-                q_bias = torch.einsum('hi,h->hi', q_bias, head_gates)  # (h, d_k)
-                k_weights = torch.einsum('hij,h->hij', k_weights, head_gates)  # (h, d_k, h*d_k)
-                k_bias = torch.einsum('hi,h->hi', k_bias, head_gates)  # (h, d_k)
-                v_weights = torch.einsum('hij,h->hij', v_weights, head_gates)  # (h, d_k, h*d_k)
-                v_bias = torch.einsum('hi,h->hi', v_bias, head_gates)  # (h, d_k)
+                q_weights = torch.einsum("hij,h->hij", q_weights, head_gates)  # (h, d_k, h*d_k)
+                q_bias = torch.einsum("hi,h->hi", q_bias, head_gates)  # (h, d_k)
+                k_weights = torch.einsum("hij,h->hij", k_weights, head_gates)  # (h, d_k, h*d_k)
+                k_bias = torch.einsum("hi,h->hi", k_bias, head_gates)  # (h, d_k)
+                v_weights = torch.einsum("hij,h->hij", v_weights, head_gates)  # (h, d_k, h*d_k)
+                v_bias = torch.einsum("hi,h->hi", v_bias, head_gates)  # (h, d_k)
             else:
                 q_weights = q_weights[head_gates.bool()]  # (h', d_k, h*d_k)
                 q_bias = q_bias[head_gates.bool()]  # (h', d_k)
@@ -207,15 +205,11 @@ class MultiheadAttention(torch.nn.Module):
             min_value = torch.finfo(scores.dtype).min
             scores = scores.masked_fill(mask, min_value)
 
-            self.attn = torch.softmax(scores, dim=-1).masked_fill(
-                mask, 0.0
-            )  # (batch, head, time1, time2)
+            self.attn = torch.softmax(scores, dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
         else:
             self.attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
 
-        p_attn = torch.nn.functional.dropout(
-            self.attn, p=self.dropout, training=self.training
-        )
+        p_attn = torch.nn.functional.dropout(self.attn, p=self.dropout, training=self.training)
         x = torch.matmul(p_attn, value)  # (batch, head, time1, d_k)
 
         num_heads = self.h
@@ -226,8 +220,8 @@ class MultiheadAttention(torch.nn.Module):
             out_weights = torch.reshape(self.linear_out_weight, (input_dim, self.d_k, -1))  # (F, d_k, h')
 
             if not hard_prune and self.training:
-                x = torch.einsum('bhtd,h->bhtd', x, head_gates)
-                out_weights = torch.einsum('ijH,h->ijH', out_weights, head_gates)   # (F, d_k, h')
+                x = torch.einsum("bhtd,h->bhtd", x, head_gates)
+                out_weights = torch.einsum("ijH,h->ijH", out_weights, head_gates)  # (F, d_k, h')
             else:
                 num_heads = torch.count_nonzero(head_gates)
                 if not x.size()[1] == num_heads:
@@ -237,9 +231,7 @@ class MultiheadAttention(torch.nn.Module):
             out_weights = torch.reshape(out_weights, (input_dim, -1))
         # ===============================================
 
-        x = (
-            x.transpose(1, 2).contiguous().view(n_batch, -1, num_heads * self.d_k)
-        )  # (batch, time1, d_model)
+        x = x.transpose(1, 2).contiguous().view(n_batch, -1, num_heads * self.d_k)  # (batch, time1, d_model)
 
         return F.linear(x, out_weights, self.linear_out_bias)  # (batch, time1, d_model)
 
