@@ -61,15 +61,21 @@ class ConformerBlock(nn.Module):
             self.layer_dropout = StochasticDepth(p=cfg.layer_dropout, mode="row")
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor, apply_layer_dropout: torch.Tensor,
-                module_gates: torch.Tensor,
-                hard_prune=False) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        /,
+        sequence_mask: torch.Tensor,
+        apply_layer_dropout: torch.Tensor,
+        module_gates: torch.Tensor,
+        hard_prune=False,
+    ) -> torch.Tensor:
         """
         :param x: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
         :param apply_ff_adaptive_dropout: if apply adaptive dropout to feed-forward layers
         :param module_gates:  gates that element-wise multiplied with each module (layer)
-        :param hard_prune: 
+        :param hard_prune:
             if hard prune is True, the module_gates will be binary and the layer with module_gates == 0 will be directly jumped
             if hard prune is False, the module_gates could be float number between range 0 and 1
         :return: torch.Tensor of shape [B, T, F]
@@ -81,8 +87,10 @@ class ConformerBlock(nn.Module):
             x = x
         else:
             if apply_layer_dropout[0] is True and self.layer_dropout is not None:
-                x = self.layer_dropout(
-                    0.5 * self.ff1(x, channel_chunk_gates=module_gates[0:4], hard_prune=hard_prune)) + x
+                x = (
+                    self.layer_dropout(0.5 * self.ff1(x, channel_chunk_gates=module_gates[0:4], hard_prune=hard_prune))
+                    + x
+                )
             else:
                 x = 0.5 * self.ff1(x, channel_chunk_gates=module_gates[0:4], hard_prune=hard_prune) + x  # [B, T, F]
 
@@ -95,27 +103,36 @@ class ConformerBlock(nn.Module):
                 x = self.conv(x) * module_gates[4] + x  # [B, T, F]
 
         h = self.mhsa.mhsa.h
-        if hard_prune and sum(module_gates[5:5 + h]) == 0:
+        if hard_prune and sum(module_gates[5 : 5 + h]) == 0:
             x = x
         else:
             if apply_layer_dropout[2] is True and self.layer_dropout is not None:
-                x = self.layer_dropout(
-                    self.mhsa(x, sequence_mask, head_gates=module_gates[5:5 + h], hard_prune=hard_prune)) + x
+                x = (
+                    self.layer_dropout(
+                        self.mhsa(x, sequence_mask, head_gates=module_gates[5 : 5 + h], hard_prune=hard_prune)
+                    )
+                    + x
+                )
             else:
-                x = self.mhsa(x, sequence_mask, head_gates=module_gates[5:5 + h], hard_prune=hard_prune) + x
+                x = self.mhsa(x, sequence_mask, head_gates=module_gates[5 : 5 + h], hard_prune=hard_prune) + x
 
         if hard_prune and self.apply_ff_adaptive_dropout:
-            self.ff2.dropout = self.cfg.ff_cfg.dropout * (sum(module_gates[5 + h:9 + h]) / 4)
+            self.ff2.dropout = self.cfg.ff_cfg.dropout * (sum(module_gates[5 + h : 9 + h]) / 4)
 
-        if hard_prune and sum(module_gates[5 + h:9 + h]) == 0:
+        if hard_prune and sum(module_gates[5 + h : 9 + h]) == 0:
             x = x
         else:
             if apply_layer_dropout[3] is True and self.layer_dropout is not None:
-                x = self.layer_dropout(0.5 * self.ff2(x, channel_chunk_gates=module_gates[5 + h:9 + h],
-                                                      hard_prune=hard_prune)) + x  # [B, T, F]
+                x = (
+                    self.layer_dropout(
+                        0.5 * self.ff2(x, channel_chunk_gates=module_gates[5 + h : 9 + h], hard_prune=hard_prune)
+                    )
+                    + x
+                )  # [B, T, F]
             else:
-                x = 0.5 * self.ff2(x, channel_chunk_gates=module_gates[5 + h:9 + h],
-                                   hard_prune=hard_prune) + x  # [B, T, F]
+                x = (
+                    0.5 * self.ff2(x, channel_chunk_gates=module_gates[5 + h : 9 + h], hard_prune=hard_prune) + x
+                )  # [B, T, F]
 
         x = self.final_layer_norm(x)  # [B, T, F]
         return x
@@ -129,7 +146,7 @@ class ConformerEncoderConfig(ModelConfiguration):
         frontend: s pair of ConformerFrontend and corresponding config
         block_cfg: configuration for ConformerBlockV2
         pct_params_set: a predefined set of expected percentage of number of parameters that will be jointly train together
-        softmax_kwargs: define the related argument for temperature anealling and orthogonal constraint, e.g.         
+        softmax_kwargs: define the related argument for temperature anealling and orthogonal constraint, e.g.
             softmax_kwargs={
                 "softmax_constraint_norm": "L2_norm",
                 "initial_tau": 1,
@@ -173,20 +190,24 @@ class ConformerEncoder(nn.Module):
         self.module_list = torch.nn.ModuleList([ConformerBlock(cfg.block_cfg) for _ in range(cfg.num_layers)])
         self.softmax_kwargs = cfg.softmax_kwargs
         self.layer_gates = torch.nn.Parameter(
-            torch.FloatTensor(torch.zeros((cfg.num_layers * 15, cfg.num_layers * 15))))
+            torch.FloatTensor(torch.zeros((cfg.num_layers * 15, cfg.num_layers * 15)))
+        )
         self.layer_gates.data.normal_(EPSILON, 0.00)
-        self.register_parameter("selected_mod_indices", nn.Parameter(torch.tensor([[-1]*len(self.layer_gates)]*len(self.pct_params_set)), requires_grad=False))
+        self.register_parameter(
+            "selected_mod_indices",
+            nn.Parameter(torch.tensor([[-1] * len(self.layer_gates)] * len(self.pct_params_set)), requires_grad=False),
+        )
         self.recog_param_pct = 1
         self.random_idx = None
 
     def forward(
-            self,
-            data_tensor: torch.Tensor,
-            /,
-            sequence_mask: torch.Tensor,
-            global_train_step: int,
-            stage_1_global_steps: int,
-            params_kwargs: dict
+        self,
+        data_tensor: torch.Tensor,
+        /,
+        sequence_mask: torch.Tensor,
+        global_train_step: int,
+        stage_1_global_steps: int,
+        params_kwargs: dict,
     ) -> Tuple[List[torch.Tensor], torch.Tensor, torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
@@ -218,7 +239,8 @@ class ConformerEncoder(nn.Module):
                 print("current pct", pct)
                 tau = max(
                     self.softmax_kwargs["initial_tau"] * self.softmax_kwargs["tau_annealing"] ** global_train_step,
-                    self.softmax_kwargs["min_tau"])
+                    self.softmax_kwargs["min_tau"],
+                )
                 gumbel_softmax = torch.nn.functional.softmax(self.layer_gates / tau, dim=1)
                 num_params = torch.tensor(params_kwargs["num_params"]).to(gumbel_softmax.device)
                 rest_params = torch.tensor(params_kwargs["rest_params"]).to(gumbel_softmax.device)
@@ -229,33 +251,41 @@ class ConformerEncoder(nn.Module):
 
                 gumbel_softmax_matmal = torch.matmul(gumbel_softmax, torch.transpose(gumbel_softmax, 0, 1))
                 if self.softmax_kwargs["softmax_constraint_norm"] == "L2_norm_sqrt":
-                    softmax_constraint = torch.sqrt(torch.sum(
-                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.square(torch.diagonal(gumbel_softmax_matmal) - 1)))
+                    softmax_constraint = torch.sqrt(
+                        torch.sum(torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1)))
+                        + torch.sum(torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
+                    )
                 elif self.softmax_kwargs["softmax_constraint_norm"] == "L2_norm":
                     softmax_constraint = torch.sum(
-                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
+                        torch.square(torch.triu(gumbel_softmax_matmal, diagonal=1))
+                    ) + torch.sum(torch.square(torch.diagonal(gumbel_softmax_matmal) - 1))
                 elif self.softmax_kwargs["softmax_constraint_norm"] == "L1_norm":
                     softmax_constraint = torch.sum(
-                        torch.abs(torch.triu(gumbel_softmax_matmal, diagonal=1))) + torch.sum(
-                        torch.abs(torch.diagonal(gumbel_softmax_matmal) - 1))
+                        torch.abs(torch.triu(gumbel_softmax_matmal, diagonal=1))
+                    ) + torch.sum(torch.abs(torch.diagonal(gumbel_softmax_matmal) - 1))
 
                 module_gates = torch.sum(gumbel_softmax, dim=0)
                 selected_mod_indices = torch.argmax(gumbel_softmax, dim=1)
 
                 # large model
                 for i in range(len(self.module_list)):
-                    outputs[-1] = self.module_list[i](outputs[-1], sequence_mask,
-                                                      apply_layer_dropout=[False, False, False, False],
-                                                      module_gates=torch.tensor([1] * 15),
-                                                      hard_prune=True)
+                    outputs[-1] = self.module_list[i](
+                        outputs[-1],
+                        sequence_mask,
+                        apply_layer_dropout=[False, False, False, False],
+                        module_gates=torch.tensor([1] * 15),
+                        hard_prune=True,
+                    )
 
                 # small model
                 for i in range(len(self.module_list)):
-                    outputs[0] = self.module_list[i](outputs[0], sequence_mask,
-                                                     apply_layer_dropout=[False, False, False, False],
-                                                     module_gates=module_gates[i * 15:(i + 1) * 15], hard_prune=False)
+                    outputs[0] = self.module_list[i](
+                        outputs[0],
+                        sequence_mask,
+                        apply_layer_dropout=[False, False, False, False],
+                        module_gates=module_gates[i * 15 : (i + 1) * 15],
+                        hard_prune=False,
+                    )
 
                 if global_train_step == int(stage_1_global_steps):
                     for i in range(len(self.pct_params_set)):
@@ -266,13 +296,14 @@ class ConformerEncoder(nn.Module):
                             gumbel_softmax = torch.nn.functional.softmax(self.layer_gates / tau, dim=1)
                             num_params = torch.tensor(params_kwargs["num_params"]).to(gumbel_softmax.device)
                             rest_params = torch.tensor(params_kwargs["rest_params"]).to(gumbel_softmax.device)
-                            num_params_cum_sum = torch.cumsum(torch.sum(num_params * gumbel_softmax, dim=1),
-                                                              dim=0) + rest_params
+                            num_params_cum_sum = (
+                                torch.cumsum(torch.sum(num_params * gumbel_softmax, dim=1), dim=0) + rest_params
+                            )
                             small_model_params = torch.tensor(params_kwargs["total_params"]) * p
                             k = abs(num_params_cum_sum - small_model_params).argmin(dim=-1) + 1
                             gumbel_softmax = gumbel_softmax[:k]
                             selected_indices = sorted(list(torch.argmax(gumbel_softmax, dim=1)))
-                            self.selected_mod_indices[i][:len(selected_indices)] = torch.tensor(selected_indices)
+                            self.selected_mod_indices[i][: len(selected_indices)] = torch.tensor(selected_indices)
                     print(self.selected_mod_indices)
 
                 if global_train_step % 200 == 0:
@@ -297,10 +328,13 @@ class ConformerEncoder(nn.Module):
                         else:
                             apply_layer_dropout.append(False)
 
-                    outputs[-1] = self.module_list[i](outputs[-1], sequence_mask,
-                                                      apply_layer_dropout=apply_layer_dropout,
-                                                      module_gates=module_gates[15*i:15*i+15],
-                                                      hard_prune=True)
+                    outputs[-1] = self.module_list[i](
+                        outputs[-1],
+                        sequence_mask,
+                        apply_layer_dropout=apply_layer_dropout,
+                        module_gates=module_gates[15 * i : 15 * i + 15],
+                        hard_prune=True,
+                    )
 
                 # smallest model
                 for i in range(len(self.module_list)):
@@ -310,10 +344,13 @@ class ConformerEncoder(nn.Module):
                             gates.append(0)
                         else:
                             gates.append(1)
-                    outputs[0] = self.module_list[i](outputs[0], sequence_mask,
-                                                     apply_layer_dropout=[False, False, False, False],
-                                                     module_gates=torch.tensor(gates),
-                                                     hard_prune=True)
+                    outputs[0] = self.module_list[i](
+                        outputs[0],
+                        sequence_mask,
+                        apply_layer_dropout=[False, False, False, False],
+                        module_gates=torch.tensor(gates),
+                        hard_prune=True,
+                    )
 
                 # medium model
                 if len(self.pct_params_set) > 2:
@@ -329,10 +366,13 @@ class ConformerEncoder(nn.Module):
                                 gates.append(0)
                             else:
                                 gates.append(1)
-                        outputs[self.random_idx] = self.module_list[i](outputs[self.random_idx], sequence_mask,
-                                                                       apply_layer_dropout=[False, False, False, False],
-                                                                       module_gates=torch.tensor(gates),
-                                                                       hard_prune=True)
+                        outputs[self.random_idx] = self.module_list[i](
+                            outputs[self.random_idx],
+                            sequence_mask,
+                            apply_layer_dropout=[False, False, False, False],
+                            module_gates=torch.tensor(gates),
+                            hard_prune=True,
+                        )
 
                 if global_train_step % 200 == 0:
                     print(f"selected_mod_indices: {self.selected_mod_indices}")
