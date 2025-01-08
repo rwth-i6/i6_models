@@ -29,9 +29,7 @@ class ConformerConvolutionV1Config(ModelConfiguration):
     norm: Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]
 
     def check_valid(self):
-        assert (
-            self.kernel_size % 2 == 1
-        ), "ConformerConvolutionV1 only supports odd kernel sizes"
+        assert self.kernel_size % 2 == 1, "ConformerConvolutionV1 only supports odd kernel sizes"
 
     def __post_init__(self):
         super().__post_init__()
@@ -53,9 +51,7 @@ class ConformerConvolutionV1(nn.Module):
         """
         super().__init__()
         model_cfg.check_valid()
-        self.pointwise_conv1 = nn.Linear(
-            in_features=model_cfg.channels, out_features=2 * model_cfg.channels
-        )
+        self.pointwise_conv1 = nn.Linear(in_features=model_cfg.channels, out_features=2 * model_cfg.channels)
         self.depthwise_conv = nn.Conv1d(
             in_channels=model_cfg.channels,
             out_channels=model_cfg.channels,
@@ -63,9 +59,7 @@ class ConformerConvolutionV1(nn.Module):
             padding=(model_cfg.kernel_size - 1) // 2,
             groups=model_cfg.channels,
         )
-        self.pointwise_conv2 = nn.Linear(
-            in_features=model_cfg.channels, out_features=model_cfg.channels
-        )
+        self.pointwise_conv2 = nn.Linear(in_features=model_cfg.channels, out_features=model_cfg.channels)
         self.layer_norm = nn.LayerNorm(model_cfg.channels)
         self.norm = nn.LayerNorm(model_cfg.channels)
         self.dropout = nn.Dropout(model_cfg.dropout)
