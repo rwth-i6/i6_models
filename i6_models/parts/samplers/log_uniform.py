@@ -9,9 +9,12 @@ from typing import Optional
 class LogUniformSampler(nn.Module):
     def __init__(self, num_classes: int, *, device: Optional[torch.device] = None):
         """
-        Samples from a log uniform distribution from classes.
+        Samples from a log uniform distribution from classes. Sampling is performed with replacement, i.e. sampled
+        indices can appear more than one in sampled set. This can be implemented with
+        `torch.distributions.multinomial.Multinomial` or `torch.multinomial`.
 
-        :param num_classes: number of classes from which the distribution is sampled.
+        :param num_classes: number of classes from which the distribution is sampled. The class indices are sorted in
+            descending order according to their frequency.
         :param device: device on which the distribution is sampled.
         """
         super().__init__()
