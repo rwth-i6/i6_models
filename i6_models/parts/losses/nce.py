@@ -29,7 +29,9 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
 
         :param num_samples: num of samples for the estimation, normally a value between 1000-4000.
                             2000 is a good starting point.
-        :param model: model on which the NCE loss is to be applied.
+        :param model: model on which the NCE loss is to be applied. The model requires a member called `output`, which
+            is expected to be a linear layer with bias and weight members. The member `output` represents the output
+            layer of the model allowing access to the parameters during loss computation.
         :param noise_distribution_sampler: for example `i6_model.samplers.LogUniformSampler`.
         :param log_norm_term: normalisation term for true/sampled logits.
         :param reduction: reduction method for binary cross entropy.
@@ -46,8 +48,12 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         self._bce = nn.BCEWithLogitsLoss(reduction=reduction)
 
     def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        # input: [B x T, F] target: [B x T]
+        """
 
+        :param data: the tensor for the input data, where batch and time are flattened resulting in [B x T, F] shape.
+        :param target: the tensor for the target data, where batch and time are flattened resulting in [B x T] shape.
+        :return:
+        """
         with torch.no_grad():
             samples = self.noise_distribution_sampler.sample(self.num_samples).cuda()
 
