@@ -15,13 +15,19 @@ from i6_models.parts.lstm import LstmBlockV1Config, LstmBlockV1
 @dataclass
 class LstmEncoderV1Config(ModelConfiguration):
     """
-    :param init_args: used to initialize parameters of modules, example:
-        ```
-        {
-            "init_args_w": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
-            "init_args_b": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
-        }
-        ```
+    Attributes:
+        input_dim: input dimension size
+        embed_dim: embedding dimension
+        embed_dropout: dropout layer after the embedding layer
+        lstm_layers_cfg: configuration of the lstm block
+        lstm_dropout: dropout layer after the lstm block
+        init_args: used to initialize parameters of modules, example:
+            ```
+            {
+                "init_args_w": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
+                "init_args_b": {"func": "normal", "arg": {"mean": 0.0, "std": 0.1}},
+            }
+            ```
     """
 
     input_dim: int
@@ -39,7 +45,7 @@ class LstmEncoderV1Config(ModelConfiguration):
 
 
 class LstmEncoderV1(nn.Module):
-    def __init__(self, model_cfg: Union[LstmEncoderV1Config, Dict[str, Any]], **kwargs):
+    def __init__(self, model_cfg: Union[LstmEncoderV1Config, Dict[str, Any]]):
         """
         Model definition of LSTM encoder. Contains embedding layer followed by single lstm stack, dropout after both.
         Padding sequence in forward call.
@@ -78,6 +84,12 @@ class LstmEncoderV1(nn.Module):
                 init_func(param, **hyp)
 
     def forward(self, data_tensor: torch.Tensor, seq_len: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+
+        :param data_tensor:
+        :param seq_len:
+        :return:
+        """
         embed = self.embedding(data_tensor)
         embed = self.embed_dropout(embed)
 
