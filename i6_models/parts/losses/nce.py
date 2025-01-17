@@ -24,7 +24,7 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         device: Optional[str] = None,
     ) -> None:
         """
-        Noise contrastive estimation loss implementation.
+        Noise contrastive estimation (NCE) loss implementation.
         Used to estimate the softmax. Normally for very large softmax sizes, for example word-level LM.
 
         :param num_samples: num of samples for the estimation, normally a value between 1000-4000.
@@ -47,11 +47,14 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
 
         self._bce = nn.BCEWithLogitsLoss(reduction=reduction)
 
-    def forward(self, data: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def forward(self, encoder_output: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         """
 
-        :param data: the tensor for the input data, where batch and time are flattened resulting in [B x T, F] shape.
-        :param target: the tensor for the target data, where batch and time are flattened resulting in [B x T] shape.
+        :param encoder_output: here the INPUT to the final linear layer (variable `output` in the encoder model). Logit
+            computation is performed in this method, requiring the raw encoder output fo be fed. The implementation
+            requires a tensor where batch and time are flattened, requiring an `encoder_output` tensor shape [B x T, F].
+        :param labels: ground truth labels. A tensor with flattened batch and time is required, requiring a `labels`
+            tensor shape [B x T].
         :return:
         """
         with torch.no_grad():
@@ -60,9 +63,9 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
             # log-probabilities for the noise distribution k * q(w|h)
             ws = torch.log(torch.tensor(float(self.num_samples)))
             sampled_prob = ws + self.noise_distribution_sampler.log_prob(samples)  # [num_samples]
-            true_sample_prob = ws + self.noise_distribution_sampler.log_prob(target)  # [B x T]
+            true_sample_prob = ws + self.noise_distribution_sampler.log_prob(labels)  # [B x T]
 
-        all_classes = torch.cat((target, samples), 0)  # [B x T + num_sampled]
+        all_classes = torch.cat((labels, samples), 0)  # [B x T + num_sampled]
 
         # Steps:
         # - lookup embeddings + bias
@@ -75,19 +78,19 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         all_b = F.embedding(all_classes, torch.unsqueeze(self.model.output.bias, 1))  # [B X T + num_sampled, 1]
 
         # slice embeddings for targets and samples below
-        true_emb = torch.narrow(all_emb, 0, 0, data.shape[0])  # [B x T, F]
-        true_b = torch.narrow(all_b, 0, 0, data.shape[0])  # [B x T, 1]
+        true_emb = torch.narrow(all_emb, 0, 0, encoder_output.shape[0])  # [B x T, F]
+        true_b = torch.narrow(all_b, 0, 0, encoder_output.shape[0])  # [B x T, 1]
 
-        sampled_emb = torch.narrow(all_emb, 0, data.shape[0], self.num_samples)  # [num_sampled, F]
-        sampled_b = torch.narrow(all_b, 0, data.shape[0], self.num_samples).squeeze(
+        sampled_emb = torch.narrow(all_emb, 0, encoder_output.shape[0], self.num_samples)  # [num_sampled, F]
+        sampled_b = torch.narrow(all_b, 0, encoder_output.shape[0], self.num_samples).squeeze(
             1
         )  # [num_sampled], remove dim for broadcasting
 
         # compute logits log p(w|h)
-        sampled_logits = torch.matmul(data, sampled_emb.T)  # [B x T, num_sampled]
+        sampled_logits = torch.matmul(encoder_output, sampled_emb.T)  # [B x T, num_sampled]
 
         # row-wise dot product
-        true_logits = torch.multiply(data, true_emb)  # [B x T, F]
+        true_logits = torch.multiply(encoder_output, true_emb)  # [B x T, F]
         true_logits = torch.sum(true_logits, 1, keepdim=True)  # [B x T, 1]
 
         true_logits += true_b
