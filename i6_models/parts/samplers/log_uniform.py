@@ -37,7 +37,7 @@ class LogUniformSampler(nn.Module):
         Returns a random tensor in the size of [num_samples].
 
         :param num_samples: number of samples.
-        :return:
+        :return: [num_samples]
         """
         return self._cat_sampler.sample(torch.Size([num_samples]))
 
@@ -46,6 +46,6 @@ class LogUniformSampler(nn.Module):
         Return log-probability of the given indices in the size of [B x T]
 
         :param indices: the ground truth target labels as indices.
-        :return:
+        :return: [B x T]
         """
         return self._cat_sampler.log_prob(indices)
