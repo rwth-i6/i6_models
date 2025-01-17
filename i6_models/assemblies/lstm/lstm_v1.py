@@ -83,14 +83,14 @@ class LstmEncoderV1(nn.Module):
                     hyp = init_args_w["arg"]
                 init_func(param, **hyp)
 
-    def forward(self, data_tensor: torch.Tensor, seq_len: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
 
-        :param data_tensor:
-        :param seq_len:
-        :return:
+        :param x: [B, T, input_dim]
+        :param seq_len: [B]
+        :return: [B, T, lstm_layers_cfg.hidden_dim]
         """
-        embed = self.embedding(data_tensor)
+        embed = self.embedding(x)
         embed = self.embed_dropout(embed)
 
         out, _ = self.lstm_block(embed, seq_len)
