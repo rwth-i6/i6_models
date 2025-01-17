@@ -13,7 +13,7 @@ class LstmBlockV1Config(ModelConfiguration):
     """
     Attributes:
         input_dim: input dimension size
-        hidden_dim: hidden dimension of one direction of LSTM, the total output size is twice of this
+        hidden_dim: hidden dimension of one direction of LSTM
         num_layers: number of uni-directional LSTM layers, minimum 2
         bias: add a bias term to the LSTM layer
         dropout: nn.LSTM supports internal Dropout applied between each layer of LSTM (but not on input/output)
@@ -47,7 +47,7 @@ class LstmBlockV1Config(ModelConfiguration):
 
 
 class LstmBlockV1(nn.Module):
-    def __init__(self, model_cfg: Union[LstmBlockV1Config, Dict[str, Any]], **kwargs):
+    def __init__(self, model_cfg: Union[LstmBlockV1Config, Dict[str, Any]]):
         """
         Model definition of LSTM block. Contains single lstm stack and padding sequence in forward call. Including
         dropout, batch-first variant, hardcoded to use B,T,F input.
@@ -55,7 +55,6 @@ class LstmBlockV1(nn.Module):
         Supports: TorchScript, ONNX-export.
 
         :param model_cfg: holds model configuration as dataclass or dict instance.
-        :param kwargs:
         """
         super().__init__()
 
@@ -78,7 +77,7 @@ class LstmBlockV1(nn.Module):
 
         :param x: [B, T, input_dim]
         :param seq_len:[B], should be on CPU for Script/Trace mode
-        :return: [B, T, 2 * hidden_dim]
+        :return: [B, T, hidden_dim]
         """
         if not torch.jit.is_scripting() and not torch.jit.is_tracing():
             if seq_len.get_device() >= 0:
