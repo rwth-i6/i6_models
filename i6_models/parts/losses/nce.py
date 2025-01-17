@@ -55,7 +55,7 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
             requires a tensor where batch and time are flattened, requiring an `encoder_output` tensor shape [B x T, F].
         :param labels: ground truth labels. A tensor with flattened batch and time is required, requiring a `labels`
             tensor shape [B x T].
-        :return:
+        :return: [B x T, 1 + num_sampled] if reduction == "none'
         """
         with torch.no_grad():
             samples = self.noise_distribution_sampler.sample(self.num_samples).cuda()
