@@ -32,7 +32,7 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         :param model: model on which the NCE loss is to be applied. The model requires a member called `output`, which
             is expected to be a linear layer with bias and weight members. The member `output` represents the output
             layer of the model allowing access to the parameters during loss computation.
-        :param noise_distribution_sampler: for example `i6_model.samplers.LogUniformSampler`.
+        :param noise_distribution_sampler: for example `i6_models.parts.samplers.LogUniformSampler`.
         :param log_norm_term: normalisation term for true/sampled logits.
         :param reduction: reduction method for binary cross entropy.
         :param device: device where the loss will be placed.
