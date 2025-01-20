@@ -74,7 +74,6 @@ class LstmBlockV1(nn.Module):
 
     def forward(self, x: torch.Tensor, seq_len: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-
         :param x: [B, T, input_dim]
         :param seq_len:[B], should be on CPU for Script/Trace mode
         :return: [B, T, hidden_dim]
