@@ -79,10 +79,6 @@ class LstmBlockV1(nn.Module):
         :param seq_len:[B], should be on CPU for Script/Trace mode
         :return: [B, T, hidden_dim]
         """
-        if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-            if seq_len.get_device() >= 0:
-                seq_len = seq_len.cpu()
-
         lstm_packed_in = nn.utils.rnn.pack_padded_sequence(
             input=x, lengths=seq_len, enforce_sorted=self.enforce_sorted, batch_first=True
         )
