@@ -37,6 +37,12 @@ class LstmEncoderV1Config(ModelConfiguration):
     lstm_dropout: float
     init_args: Optional[Dict[str, Any]] = None
 
+    def __post_init__(self):
+        if self.init_args is not None:
+            for _, val in self.init_args.items():
+                assert "func" in val.keys()
+                assert "arg" in val.keys()
+
     @classmethod
     def from_dict(cls, model_cfg_dict: Dict[str, Any]):
         model_cfg_dict = model_cfg_dict.copy()
@@ -51,7 +57,6 @@ class LstmEncoderV1(nn.Module):
         Padding sequence in forward call.
 
         :param model_cfg: holds model configuration as dataclass or dict instance.
-        :param kwargs:
         """
         super().__init__()
 
