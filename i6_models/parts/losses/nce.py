@@ -17,7 +17,9 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         self,
         num_samples: int,
         *,
-        model: nn.Module,
+        # TODO model: nn.Module,
+        model_output_weights: torch.Tensor,
+        model_output_bias: torch.Tensor,
         noise_distribution_sampler: nn.Module,
         log_norm_term: Optional[float] = None,
         reduction: str = "none",
@@ -28,10 +30,9 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         Used to estimate the softmax. Normally for very large softmax sizes, for example word-level LM.
 
         :param num_samples: num of samples for the estimation, normally a value between 1000-4000.
-                            2000 is a good starting point.
-        :param model: model on which the NCE loss is to be applied. The model requires a member called `output`, which
-            is expected to be a linear layer with bias and weight members. The member `output` represents the output
-            layer of the model allowing access to the parameters during loss computation.
+            2000 is a good starting point.
+        :param model_output_weights: represents the weights of the output layer of the model.
+        :param model_output_bias: represents the bias of the output layer of the model.
         :param noise_distribution_sampler: for example `i6_models.parts.samplers.LogUniformSampler`.
         :param log_norm_term: normalisation term for true/sampled logits.
         :param reduction: reduction method for binary cross entropy.
@@ -40,7 +41,8 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         super().__init__()
 
         self.num_samples = num_samples
-        self.model = model  # only used to access weights of output layer for NCE computation
+        self.model_output_weights = model_output_weights
+        self.model_output_bias = model_output_bias
         self.noise_distribution_sampler = noise_distribution_sampler
         self.log_norm_term = log_norm_term
         self.device = device
@@ -55,7 +57,7 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
             requires a tensor where batch and time are flattened, requiring an `encoder_output` tensor shape [B x T, F].
         :param labels: ground truth labels. A tensor with flattened batch and time is required, requiring a `labels`
             tensor shape [B x T].
-        :return: [B x T, 1 + num_sampled] if reduction == "none'
+        :return: [B x T, 1 + num_sampled] if reduction == "none"
         """
         with torch.no_grad():
             samples = self.noise_distribution_sampler.sample(self.num_samples).cuda()
@@ -74,8 +76,8 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         # - feed into BCE with logits loss
 
         # do lookup once
-        all_emb = F.embedding(all_classes, self.model.output.weight)  # [B x T + num_sampled, F]
-        all_b = F.embedding(all_classes, torch.unsqueeze(self.model.output.bias, 1))  # [B X T + num_sampled, 1]
+        all_emb = F.embedding(all_classes, self.model_output_weights)  # [B x T + num_sampled, F]
+        all_b = F.embedding(all_classes, torch.unsqueeze(self.model_output_bias, 1))  # [B X T + num_sampled, 1]
 
         # slice embeddings for targets and samples below
         true_emb = torch.narrow(all_emb, 0, 0, encoder_output.shape[0])  # [B x T, F]
