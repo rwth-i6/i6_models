@@ -17,7 +17,6 @@ class NoiseContrastiveEstimationLossV1(nn.Module):
         self,
         num_samples: int,
         *,
-        # TODO model: nn.Module,
         model_output_weights: torch.Tensor,
         model_output_bias: torch.Tensor,
         noise_distribution_sampler: nn.Module,
