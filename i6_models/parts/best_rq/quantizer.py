@@ -12,7 +12,7 @@ class RandomProjectionQuantizer(nn.Module):
     """
     implement the fixed random projection quantizer from BestRQ
     C.f. https://arxiv.org/pdf/2202.01855 for theoretic background
-    code adapted from https://github.com/speechbrain/speechbrain/blob/16b6420d4ff23210cfca2e888be8853264e0cb17/speechbrain/nnet/quantisers.py#L127
+    code adapted from https://github.com/speechbrain/speechbrain/blob/7edb1397d8f92bb4fcaf17eb08e366e5b639ae88/speechbrain/nnet/quantisers.py#L127
     """
 
     def __init__(self, input_dim, codebook_dim, codebook_num_vars):
@@ -33,5 +33,5 @@ class RandomProjectionQuantizer(nn.Module):
         self.register_buffer("CB", F.normalize(torch.randn(codebook_num_vars, codebook_dim)))
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        x = F.normalize(x @ self.P)
+        x = F.normalize(x @ self.P, dim=2)
         return vector_norm((self.CB.unsqueeze(1) - x.unsqueeze(1)), dim=-1).argmin(dim=1)
