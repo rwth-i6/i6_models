@@ -1,3 +1,4 @@
-typeguard
-torch
+dm-tree
 librosa
+torch
+typeguard
