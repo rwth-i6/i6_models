@@ -61,7 +61,7 @@ class LstmBlockV1(nn.Module):
         self.cfg = LstmBlockV1Config.from_dict(model_cfg) if isinstance(model_cfg, dict) else model_cfg
 
         self.dropout = self.cfg.dropout
-        self.enforce_sorted = self.cgf.enforce_sorted
+        self.enforce_sorted = self.cfg.enforce_sorted
         self.lstm_stack = nn.LSTM(
             input_size=self.cfg.input_dim,
             hidden_size=self.cfg.hidden_dim,
