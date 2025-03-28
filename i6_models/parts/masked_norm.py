@@ -81,8 +81,11 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
             )
         assert mask.ndim == 2
 
-        # we use the mask to calculate the mean
         n = mask.sum()
+        if n == 0:
+            return inp
+
+        # we use the mask to calculate the mean
         mask = mask / n
         mask = mask.unsqueeze(-1)
 
