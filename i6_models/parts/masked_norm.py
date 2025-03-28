@@ -55,7 +55,7 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
         """
         Applies batch norm to `inp`.
 
-        :param inp: data to normalize, shape (B..., T, F)
+        :param inp: data to normalize, shape (B..., F, T)
         :param lengths_or_mask: seq length tensor if shape (B...,),
             or mask tensor if the shape is (B..., T).
         """
@@ -70,11 +70,13 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
             else:  # use exponential moving average
                 exponential_average_factor = self.momentum
 
-        assert inp.ndim - 3 < lengths_or_mask.ndim < inp.ndim
+        assert inp.ndim - 3 < lengths_or_mask.ndim < inp.ndim, (
+            f"mask ndim ({lengths_or_mask.ndim}) should be between {inp.ndim - 3} and {inp.ndim}"
+        )
         if lengths_or_mask.ndim == inp.ndim - 1:
             mask = lengths_or_mask.to(dtype=torch.float, device=inp.device)
         elif lengths_or_mask.ndim == inp.ndim - 2:
-            mask = _lengths_to_mask(lengths_or_mask, max_len=inp.shape[-2], dtype=inp.dtype)
+            mask = _lengths_to_mask(lengths_or_mask, max_len=inp.shape[-1], dtype=inp.dtype)
         else:
             raise ValueError(
                 f"length tensor shape mismatch {lengths_or_mask.shape} wrt. input tensor shape {inp.shape}"
@@ -87,9 +89,9 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
 
         # we use the mask to calculate the mean
         mask = mask / n
-        mask = mask.unsqueeze(-1)
+        mask = mask.unsqueeze(-2)
 
-        reduce_dims = list(range(inp.ndim - 1))
+        reduce_dims = list(range(inp.ndim - 2)) + [inp.ndim - 1]
         if not self.track_running_stats:
             mean = (mask * inp).sum(reduce_dims)
             var = (mask * inp**2).sum(reduce_dims) - mean**2
