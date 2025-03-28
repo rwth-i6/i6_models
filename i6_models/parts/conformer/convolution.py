@@ -5,10 +5,12 @@ __all__ = [
     "ConformerConvolutionV1Config",
     "ConformerConvolutionV2",
     "ConformerConvolutionV2Config",
+    "ConformerConvolutionV3",
 ]
 
 from dataclasses import dataclass
 from copy import deepcopy
+from inspect import signature
 from typing import Callable, Union, Optional, Literal
 
 import torch
@@ -141,6 +143,44 @@ class ConformerConvolutionV2(ConformerConvolutionV1):
         tensor = self.depthwise_conv(tensor)
 
         tensor = self.norm(tensor)
+        tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
+
+        tensor = self.activation(tensor)
+        tensor = self.pointwise_conv2(tensor)
+
+        tensor = self.dropout(tensor)
+
+        return tensor
+
+
+class ConformerConvolutionV3(ConformerConvolutionV2):
+    """
+    Augments ConformerConvolutionV3 with support for masked batch normalization.
+    """
+
+    def __init__(self, model_cfg: ConformerConvolutionV2Config):
+        """
+        :param model_cfg: model configuration for this module
+        """
+        super().__init__(model_cfg)
+
+        self.pass_mask_to_norm = len(signature(self.norm.forward).parameters) > 1
+
+    def forward(self, tensor: torch.Tensor, tensor_mask: torch.Tensor) -> torch.Tensor:
+        """
+        :param tensor: input tensor of shape [B,T,F]
+        :param tensor_mask: sequence mask for data inside input, shape [B,T]
+        :return: torch.Tensor of shape [B,T,F]
+        """
+        tensor = self.layer_norm(tensor)
+        tensor = self.pointwise_conv1(tensor)  # [B,T,2F]
+        tensor = nn.functional.glu(tensor, dim=-1)  # [B,T,F]
+
+        # conv layers expect shape [B,F,T] so we have to transpose here
+        tensor = tensor.transpose(1, 2)  # [B,F,T]
+        tensor = self.depthwise_conv(tensor)
+
+        tensor = self.norm(tensor, tensor_mask) if self.pass_mask_to_norm else self.norm(tensor)
         tensor = tensor.transpose(1, 2)  # transpose back to [B,T,F]
 
         tensor = self.activation(tensor)
