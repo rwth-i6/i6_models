@@ -22,12 +22,9 @@ def _lengths_to_mask(lengths: Tensor, max_len=None, dtype=None) -> Tensor:
 
 class MaskedBatchNorm1dV1(nn.BatchNorm1d):
     """
-    Masked version of the 1D Batch normalization.
+    1D Batch normalization that supports ignoring the padding during statistics collection.
 
-    Receives a N-dim tensor of sequence lengths per batch element
-    along with the regular input for masking.
-
-    Same construction arguments as pytorch's BatchNorm1d.
+    Same construction arguments as pytorch's `nn.BatchNorm1d`.
     """
 
     def __init__(
@@ -53,11 +50,11 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
 
     def forward(self, inp: Tensor, lengths_or_mask: Tensor):
         """
-        Applies batch norm to `inp`.
+        Applies batch norm to `inp`, masking away the padding given by `lengths_or_mask`.
 
-        :param inp: data to normalize, shape (B..., F, T)
-        :param lengths_or_mask: seq length tensor if shape (B...,),
-            or mask tensor if the shape is (B..., T).
+        :param inp: data to normalize, shape [B...,F,T]
+        :param lengths_or_mask: seq length tensor if shape [B...,],
+            or mask tensor if the shape is [B...,T].
         """
 
         self._check_input_dim(inp)
