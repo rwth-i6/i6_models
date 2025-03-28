@@ -91,7 +91,7 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
         reduce_dims = list(range(inp.ndim - 2)) + [inp.ndim - 1]
         if not self.track_running_stats:
             mean = (mask * inp).sum(reduce_dims)
-            var = (mask * inp**2).sum(reduce_dims) - mean**2
+            var = ((mask * inp**2).sum(reduce_dims) - mean**2) * n / (n - 1)
         elif self.training and n > 1:
             mean = (mask * inp).sum(reduce_dims)
             # Var(X) = E[X^2] - E[X]^2
@@ -101,8 +101,9 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
                 self.running_mean = (
                     exponential_average_factor * mean + (1 - exponential_average_factor) * self.running_mean
                 )
+                # torch updates running statistics with unbiased var
                 self.running_var = (
-                    exponential_average_factor * var + (1 - exponential_average_factor) * self.running_var
+                    exponential_average_factor * var * n / (n - 1) + (1 - exponential_average_factor) * self.running_var
                 )
         else:
             mean = self.running_mean
