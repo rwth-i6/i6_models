@@ -1,0 +1,113 @@
+__all__ = ["MaskedBatchNorm1dV1"]
+
+from typing import Optional
+
+import torch
+from torch import nn, Tensor
+
+
+def _lengths_to_mask(lengths: Tensor, max_len=None, dtype=None) -> Tensor:
+    """
+    Converts a "lengths" tensor to its binary mask representation.
+    """
+    assert len(lengths.shape) == 1, "Length shape should be 1 dimensional."
+    max_len = max_len or lengths.max().item()
+    mask = torch.arange(max_len, device=lengths.device, dtype=lengths.dtype).expand(
+        len(lengths), max_len
+    ) < lengths.unsqueeze(1)
+    if dtype is not None:
+        mask = mask.to(dtype=dtype, device=lengths.device)
+    return mask
+
+
+class MaskedBatchNorm1dV1(nn.BatchNorm1d):
+    """
+    Masked version of the 1D Batch normalization.
+
+    Receives a N-dim tensor of sequence lengths per batch element
+    along with the regular input for masking.
+
+    Same construction arguments as pytorch's BatchNorm1d.
+    """
+
+    def __init__(
+        self,
+        num_features: int,
+        *,
+        eps: float = 1e-5,
+        momentum: float = 0.1,
+        affine: bool = True,
+        track_running_stats: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ):
+        super().__init__(
+            num_features,
+            eps=eps,
+            momentum=momentum,
+            affine=affine,
+            track_running_stats=track_running_stats,
+            device=device,
+            dtype=dtype,
+        )
+
+    def forward(self, inp: Tensor, lengths_or_mask: Tensor):
+        """
+        Applies batch norm to `inp`.
+
+        :param input: data to normalize, shape (B..., T, F)
+        :param lengths_or_mask: seq length tensor if shape (B...,),
+            or mask tensor if the shape is (B..., T).
+        """
+
+        self._check_input_dim(inp)
+
+        exponential_average_factor = 0.0
+        if self.training and self.track_running_stats and self.num_batches_tracked is not None:
+            self.num_batches_tracked += 1
+            if self.momentum is None:  # use cumulative moving average
+                exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+            else:  # use exponential moving average
+                exponential_average_factor = self.momentum
+
+        assert inp.ndim - 3 < lengths_or_mask.ndim < inp.ndim
+        if lengths_or_mask.ndim == inp.ndim - 1:
+            mask = lengths_or_mask.to(dtype=torch.float, device=inp.device)
+        elif lengths_or_mask.ndim == inp.ndim - 2:
+            mask = _lengths_to_mask(lengths_or_mask, max_len=inp.shape[-2], dtype=inp.dtype)
+        else:
+            raise ValueError(
+                f"length tensor shape mismatch {lengths_or_mask.shape} wrt. input tensor shape {inp.shape}"
+            )
+        assert mask.ndim == 2
+
+        # we use the mask to calculate the mean
+        n = mask.sum()
+        mask = mask / n
+        mask = mask.unsqueeze(-1)
+
+        reduce_dims = list(range(inp.ndim - 1))
+        if not self.track_running_stats:
+            mean = (mask * inp).sum(reduce_dims)
+            var = (mask * inp**2).sum(reduce_dims) - mean**2
+        elif self.training and n > 1:
+            mean = (mask * inp).sum(reduce_dims)
+            # Var(X) = E[X^2] - E[X]^2
+            var = (mask * inp**2).sum(reduce_dims) - mean**2
+
+            with torch.no_grad():
+                self.running_mean = (
+                    exponential_average_factor * mean + (1 - exponential_average_factor) * self.running_mean
+                )
+                self.running_var = (
+                    exponential_average_factor * var + (1 - exponential_average_factor) * self.running_var
+                )
+        else:
+            mean = self.running_mean
+            var = self.running_var
+
+        inp = (inp - mean) / (torch.sqrt(var + self.eps))
+        if self.affine:
+            inp = inp * self.weight + self.bias
+
+        return inp
