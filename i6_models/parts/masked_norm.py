@@ -55,7 +55,7 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
         """
         Applies batch norm to `inp`.
 
-        :param input: data to normalize, shape (B..., T, F)
+        :param inp: data to normalize, shape (B..., T, F)
         :param lengths_or_mask: seq length tensor if shape (B...,),
             or mask tensor if the shape is (B..., T).
         """
