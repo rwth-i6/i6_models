@@ -75,7 +75,7 @@ def make_attn_mask(features: Tensor, features_lens: Tensor, additional_dims: Seq
         for e.g. attention heads.
     :return: additive attention mask of shape (B..., T) with additional dims unsqueezed in
     """
-    len_mask = torch.arange(features.shape[-2], device=features.device) < features_lens.unsqueeze(-1)  # B... L
+    len_mask = torch.arange(features.shape[-2], device=features_lens.device) < features_lens.unsqueeze(-1)  # B... L
     len_mask_for_attn = torch.where(len_mask, 0.0, float("-inf"))  # B... L
     for dim in additional_dims:
         len_mask_for_attn = len_mask_for_attn.unsqueeze(dim)
