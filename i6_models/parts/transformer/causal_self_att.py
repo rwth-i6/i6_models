@@ -128,14 +128,22 @@ class CausalSelfAttentionV1(nn.Module, ModuleWithState[CausalSelfAttentionV1Stat
         x = self.norm(x)  # B... T F
         qkv = self.qkv(x)  # B... T ~3HE
         q, k, v = torch.tensor_split(qkv, (self.key_dim_total, 2 * self.key_dim_total), dim=-1)  # B... T HE/HEv
-        new_state, k, v, _x_lens_accum = self._step_state(state, k, v, x_lens)  # k, v: B T HE/HEv, x_lens: B...
+        new_state, k, v, x_lens_accum = self._step_state(state, k, v, x_lens)  # k, v: B T HE/HEv, x_lens: B...
 
         q = torch.unflatten(q, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H T E
-        k = torch.unflatten(k, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H T E
-        v = torch.unflatten(v, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H T Ev
+        k = torch.unflatten(k, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L E
+        v = torch.unflatten(v, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L Ev
 
-        causal_mask = nn.Transformer.generate_square_subsequent_mask(k.shape[-2], device=k.device)  # T T
-        kv_mask = make_kv_attn_mask(x, x_lens)  # B... 1 (heads) 1 (q) T (k/v)
+        causal_mask = nn.Transformer.generate_square_subsequent_mask(k.shape[-2], device=k.device)  # T L
+
+        # If we are stepping the decoder we need just the subset of causal mask for the current step.
+        t_dim = q.shape[-2]
+        l_dim = k.shape[-2]
+        if l_dim > t_dim:
+            assert t_dim == 1, f"stepping decoder, but got query time dim {t_dim} (should be 1)"
+            causal_mask = causal_mask[l_dim - 1, :]  # B... 1 (heads) 1 (q) L (k/v)
+
+        kv_mask = make_kv_attn_mask(k, x_lens_accum)  # B... 1 (heads) 1 (q) L (k/v)
 
         att_out = F.scaled_dot_product_attention(
             q,
