@@ -148,7 +148,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         """:return: initial decoder state"""
         return {
             "block_state": [block.get_initial_state() for block in self.module_list],
-            "pos": 0,
+            "pos": torch.tensor(0, dtype=torch.int32),
         }
 
     def transform_encoder_output(
@@ -184,9 +184,8 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
             - `s = get_initial_state()`.
         """
         x = self.input_embedding(labels) * self.input_embedding_scale
-        assert state["pos"] == 0, "not implemented for pos > 0"
         sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
-            torch.arange(labels.shape[-1], device=labels.device), self.model_dim
+            torch.arange(labels.shape[-1], device=labels.device) + state["pos"], self.model_dim
         )
         x = x + sinus_pe.unsqueeze(0)
         x = self.input_dropout(x)
@@ -199,7 +198,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         new_state: TransformerDecoderV1State = {
             **state,
             "block_state": new_block_states,
-            "pos": state["pos"] + labels_lens,
+            "pos": state["pos"] + labels_lens.max(),
         }
 
         output = self.out_norm(output)
