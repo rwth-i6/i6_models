@@ -103,6 +103,10 @@ class CausalSelfAttentionV1(nn.Module, ModuleWithState[CausalSelfAttentionV1Stat
         if k_accum.numel() == 0 and v_accum.numel() == 0 and lens_accum.numel() == 0:  # initial state
             pass
         elif k.shape[-2] == 1:  # single time step -> accum
+            # expand potential beam dimensions to widening beam
+            k_accum = k_accum.expand(*k.shape[:-2], *k_accum.shape[-2:])
+            v_accum = v_accum.expand(*v.shape[:-2], *v_accum.shape[-2:])
+            lens_accum = lens_accum.expand(*lens.shape)
             k = torch.cat([k_accum, k], dim=-2)  # B... T F
             v = torch.cat([v_accum, v], dim=-2)  # B... T F
             lens = torch.stack([lens_accum, lens], dim=-1).sum(dim=-1)  # B...
