@@ -103,7 +103,7 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
         if not self.track_running_stats:
             mean = (mask * inp).sum(reduce_dims)
             var = ((mask * inp**2).sum(reduce_dims) - mean**2) * n / (n - 1)
-        elif self.training and n > 1:
+        elif self.training:
             mean = (mask * inp).sum(reduce_dims)
             # Var(X) = E[X^2] - E[X]^2
             var = (mask * inp**2).sum(reduce_dims) - mean**2
