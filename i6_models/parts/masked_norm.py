@@ -6,15 +6,14 @@ import torch
 from torch import nn, Tensor
 
 
-def _lengths_to_mask(lengths: Tensor, max_len=None, dtype=None) -> Tensor:
+def _lengths_to_mask(lengths: Tensor, max_len: Optional[int] = None, dtype=None) -> Tensor:
     """
     Converts a "lengths" tensor to its binary mask representation.
     """
-    assert len(lengths.shape) == 1, "Length shape should be 1 dimensional."
     max_len = max_len or lengths.max().item()
     mask = torch.arange(max_len, device=lengths.device, dtype=lengths.dtype).expand(
         len(lengths), max_len
-    ) < lengths.unsqueeze(1)
+    ) < lengths.unsqueeze(-1)
     if dtype is not None:
         mask = mask.to(dtype=dtype, device=lengths.device)
     return mask
