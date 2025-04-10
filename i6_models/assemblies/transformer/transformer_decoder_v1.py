@@ -136,7 +136,9 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         self.input_dropout = nn.Dropout(cfg.input_dropout)
         self.input_embedding = nn.Embedding(cfg.num_output, cfg.block_cfg.ff_cfg.input_dim)
         self.input_embedding_scale = (
-            cfg.input_embedding_scale if cfg.input_embedding_scale is not None else cfg.block_cfg.ff_cfg.input_dim**0.5
+            cfg.input_embedding_scale
+            if cfg.input_embedding_scale is not None
+            else cfg.block_cfg.ff_cfg.input_dim**0.5
         )
         self.module_list = torch.nn.ModuleList(
             [TransformerDecoderBlockV1(cfg.block_cfg) for _ in range(cfg.num_blocks)]
