@@ -26,13 +26,28 @@ class ModuleWithState(Protocol, Generic[State]):
         raise NotImplementedError
 
     @abstractmethod
-    def transform_encoder_output(self, enc_out: Tensor, enc_out_len: Tensor, state: State) -> State:
-        """Given the initial state, updates it with output from the encoder."""
+    def transform_encoder_output(self, enc_out: Tensor, enc_out_mask: Tensor, state: State) -> State:
+        """
+        Given the initial state, updates it with output from the encoder.
+
+        :param enc_out: encoder output, shape (B..., T, F)
+        :param enc_out_mask: boolean encoder output mask, shape (B..., T),
+            positions inside the sequence are `True`, outside are `False`.
+        :param state: initial module state obtained from `get_initial_state()`
+        :return: updated state
+        """
         raise NotImplementedError
 
     @abstractmethod
     def forward(self, labels: Tensor, labels_len: Tensor, state: State) -> Tuple[Tensor, State]:
-        """Given model state and previous output, computes new output and new state"""
+        """
+        Given model state and previous output, computes new output and new state.
+
+        :param labels: previous output, shape (B..., T, F)
+        :param labels_len: lengths of the labels, shape (B...,)
+        :param state: recurrent module state
+        :return: module output and new recurrent state
+        """
         raise NotImplementedError
 
 
@@ -54,7 +69,7 @@ class DummyState(nn.Module, ModuleWithState[None]):
     def get_initial_state(self):
         return None
 
-    def transform_encoder_output(self, enc_out, enc_out_len, state):
+    def transform_encoder_output(self, enc_out, enc_out_mask, state):
         return state
 
     def forward(self, labels: Tensor, labels_len: Tensor, state: State) -> Tuple[Tensor, State]:

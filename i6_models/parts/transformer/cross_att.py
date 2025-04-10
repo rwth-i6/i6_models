@@ -1,8 +1,4 @@
-__all__ = [
-    "CrossAttentionV1Config",
-    "CrossAttentionV1State",
-    "CrossAttentionV1",
-]
+__all__ = ["CrossAttentionV1Config", "CrossAttentionV1State", "CrossAttentionV1"]
 
 from dataclasses import dataclass
 from typing import Literal, Optional, Tuple, TypedDict
@@ -18,6 +14,21 @@ from i6_models.parts.transformer.util import ModuleWithState
 
 @dataclass
 class CrossAttentionV1Config(ModelConfiguration):
+    """
+    Attributes:
+        att_dropout: dropout applied to attention weights
+        att_dropout_broadcast_axes: On which axes attention weight dropout is broadcast.
+            Currently the implementation does not support broadcasting.
+        dropout: dropout applied to the output of the attention module
+        dropout_broadcast_axes: On which axes output dropout is broadcast.
+        encoder_dim: dimension of the encoder output
+        model_dim: dimension of the decoder model
+        key_dim_total: total dimension of the key, across all heads
+        value_dim_total: total dimension of the value, across all heads
+        num_heads: number of attention heads
+        with_bias: whether to use bias in the linear layers
+    """
+
     att_dropout: float
     att_dropout_broadcast_axes: Optional[Literal["B", "T", "BT"]]
     dropout: float
@@ -45,6 +56,8 @@ class CrossAttentionV1Config(ModelConfiguration):
 
 
 class CrossAttentionV1State(TypedDict):
+    """Recurrent state of the cross attention module."""
+
     k: Tensor
     """pre-computed key for the entire encoder output"""
     v: Tensor
@@ -54,6 +67,8 @@ class CrossAttentionV1State(TypedDict):
 
 
 class CrossAttentionV1(nn.Module, ModuleWithState[CrossAttentionV1State]):
+    """Standard cross attention."""
+
     def __init__(self, cfg: CrossAttentionV1Config):
         super().__init__()
 
@@ -96,6 +111,8 @@ class CrossAttentionV1(nn.Module, ModuleWithState[CrossAttentionV1State]):
         Apply cross attention.
 
         :param x: input of shape (B..., T, F)
+        :param x_lens: unused
+        :param state: recurrent state of the cross attention module
         """
 
         x = self.norm(x)

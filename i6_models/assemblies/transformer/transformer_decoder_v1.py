@@ -38,9 +38,12 @@ class TransformerDecoderBlockV1Config(ModelConfiguration):
         ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
         mhsa_cfg: Configuration for CausalSelfAttentionV1
         cross_cfg: Configuration for CrossAttentionV1
-        modules: List of modules to use for ConformerBlockV2,
-            "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
-        scales: List of scales to apply to the module outputs before the residual connection
+        modules: List of modules to use for ConformerBlockV2:
+            - "ff" for feed forward module
+            - "mhcsa" for multi-head causal self attention module
+            - "conv" for conv module
+        scales: List of scales to apply to the module outputs before the residual connection.
+            Must have the same length as `modules`.
     """
 
     ff_cfg: ConformerPositionwiseFeedForwardV2Config
@@ -57,10 +60,14 @@ class TransformerDecoderBlockV1Config(ModelConfiguration):
 
 
 class TransformerDecoderBlockV1State(TypedDict):
+    """Recurrent state of a transformer block."""
+
     module_states: List[Union[CrossAttentionV1State, CausalSelfAttentionV1State]]
 
 
 class TransformerDecoderBlockV1(nn.Module, ModuleWithState[TransformerDecoderBlockV1State]):
+    """A transformer block."""
+
     def __init__(self, cfg: TransformerDecoderBlockV1Config):
         super().__init__()
 
@@ -108,8 +115,11 @@ class TransformerDecoderBlockV1(nn.Module, ModuleWithState[TransformerDecoderBlo
 class TransformerDecoderV1Config(ModelConfiguration):
     """
     Attributes:
-        block_cfg: Configuration for TransformerDecoderV1
-        num_layers: Number of conformer layers in the decoder
+        block_cfg: Configuration for TransformerDecoderV1.
+        input_dropout: Dropout applied to the input embedding.
+        input_embedding_scale: Scale applied to the input embedding.
+        num_blocks: Number of transformer blocks in the decoder.
+        num_output: Number of output labels/vocab dim.
     """
 
     block_cfg: TransformerDecoderBlockV1Config
@@ -120,11 +130,19 @@ class TransformerDecoderV1Config(ModelConfiguration):
 
 
 class TransformerDecoderV1State(TypedDict):
+    """Recurrent state of the transformer decoder."""
+
     block_state: List[TransformerDecoderBlockV1State]
     pos: Tensor
 
 
 class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]):
+    """
+    A standard transformer decoder with causal MHSA and cross attention.
+
+    Can be driven seq-wise during training or stepwise for inference.
+    """
+
     def __init__(self, cfg: TransformerDecoderV1Config):
         """
         :param cfg: configuration with subunits for transformer blocks
@@ -177,7 +195,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         self, labels: Tensor, labels_lens: Tensor, state: TransformerDecoderV1State
     ) -> Tuple[Tensor, TransformerDecoderV1State]:
         """
-        Forwards the decoder.
+        Forwards the decoder one or multiple timesteps.
 
         :param labels: existing history, shape (B..., T)
         :param labels_lens: lengths of the labels in labels, shape (B...,)

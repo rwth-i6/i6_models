@@ -1,8 +1,4 @@
-__all__ = [
-    "CausalSelfAttentionV1Config",
-    "CausalSelfAttentionV1State",
-    "CausalSelfAttentionV1",
-]
+__all__ = ["CausalSelfAttentionV1Config", "CausalSelfAttentionV1State", "CausalSelfAttentionV1"]
 
 from dataclasses import dataclass
 from typing import Literal, Optional, Tuple, TypedDict
@@ -20,9 +16,16 @@ from i6_models.parts.transformer.util import ModuleWithState, make_kv_attn_mask
 class CausalSelfAttentionV1Config(ModelConfiguration):
     """
     Attributes:
-        model_dim:
-        num_heads:
-        att_dropout:
+        att_dropout: dropout applied to attention weights
+        att_dropout_broadcast_axes: On which axes attention weight dropout is broadcast.
+            Currently the implementation does not support broadcasting.
+        dropout: dropout applied to the output of the attention module
+        dropout_broadcast_axes: On which axes output dropout is broadcast.
+        model_dim: dimension of the model
+        key_dim_total: total dimension of the key, across all heads
+        value_dim_total: total dimension of the value, across all heads
+        num_heads: number of attention heads
+        with_bias: whether to use bias in the linear layers
     """
 
     att_dropout: float
@@ -49,6 +52,8 @@ class CausalSelfAttentionV1Config(ModelConfiguration):
 
 
 class CausalSelfAttentionV1State(TypedDict):
+    """Recurrent state of the causal self attention module."""
+
     k_accum: Tensor
     """key accumulated over time axis"""
     v_accum: Tensor
