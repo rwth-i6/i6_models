@@ -118,8 +118,11 @@ class TransformerDecoderV1Config(ModelConfiguration):
         block_cfg: Configuration for TransformerDecoderV1.
         input_dropout: Dropout applied to the input embedding.
         input_embedding_scale: Scale applied to the input embedding.
+            Set to `None` to apply a (tuned) default.
         num_blocks: Number of transformer blocks in the decoder.
         num_output: Number of output labels/vocab dim.
+        logits_bias: Whether to add a bias to the output logits.
+            Usually False is a good choice.
     """
 
     block_cfg: TransformerDecoderBlockV1Config
@@ -127,6 +130,7 @@ class TransformerDecoderV1Config(ModelConfiguration):
     input_embedding_scale: Optional[float]
     num_blocks: int
     num_output: int
+    logits_bias: bool
 
 
 class TransformerDecoderV1State(TypedDict):
@@ -152,17 +156,15 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         self.model_dim = cfg.block_cfg.ff_cfg.input_dim
 
         self.input_dropout = nn.Dropout(cfg.input_dropout)
-        self.input_embedding = nn.Embedding(cfg.num_output, cfg.block_cfg.ff_cfg.input_dim)
+        self.input_embedding = nn.Embedding(cfg.num_output, self.model_dim)
         self.input_embedding_scale = (
-            cfg.input_embedding_scale
-            if cfg.input_embedding_scale is not None
-            else cfg.block_cfg.ff_cfg.input_dim**0.5
+            cfg.input_embedding_scale if cfg.input_embedding_scale is not None else self.model_dim**0.5
         )
         self.module_list = torch.nn.ModuleList(
             [TransformerDecoderBlockV1(cfg.block_cfg) for _ in range(cfg.num_blocks)]
         )
-        self.out_norm = nn.LayerNorm(cfg.block_cfg.ff_cfg.input_dim)
-        self.out_logits = nn.Linear(cfg.block_cfg.ff_cfg.input_dim, cfg.num_output)
+        self.out_norm = nn.LayerNorm(self.model_dim)
+        self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
 
     def get_initial_state(self) -> TransformerDecoderV1State:
         """:return: initial decoder state"""
