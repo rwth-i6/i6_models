@@ -91,11 +91,11 @@ class TransformerDecoderBlockV1(nn.Module, ModuleWithState[TransformerDecoderBlo
     def transform_encoder_output(
         self,
         encoder_output: Tensor,
-        encoder_output_mask: Tensor,
+        encoder_output_lens: Tensor,
         state: TransformerDecoderBlockV1State,
     ) -> TransformerDecoderBlockV1State:
         new_module_state = [
-            module.transform_encoder_output(encoder_output, encoder_output_mask, module_state)
+            module.transform_encoder_output(encoder_output, encoder_output_lens, module_state)
             for module, module_state in zip(self.module_list, state["module_states"])
         ]
         return {**state, "module_states": new_module_state}
@@ -174,19 +174,18 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
     def transform_encoder_output(
         self,
         encoder_output: Tensor,
-        encoder_output_mask: Tensor,
+        encoder_output_lens: Tensor,
         state: TransformerDecoderV1State,
     ) -> TransformerDecoderV1State:
         """
         Process the given encoder output into input for the decoding process.
 
-        :param encoder_output: encoder output tensor, (B, T, F)
-        :param encoder_output_mask: boolean mask of valid encoder output positions,
-            `True` inside valid positions, `False` outside.
+        :param encoder_output: encoder output tensor, (B..., T, F)
+        :param encoder_output_lens: length of seqs inside encoder_output, (B...,).
         :param state: initial decoder state obtained by calling `get_initial_state()`.
         """
         new_block_state = [
-            block.transform_encoder_output(encoder_output, encoder_output_mask, block_state)
+            block.transform_encoder_output(encoder_output, encoder_output_lens, block_state)
             for block, block_state in zip(self.module_list, state["block_state"])
         ]
         return {**state, "block_state": new_block_state}

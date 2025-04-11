@@ -92,7 +92,7 @@ class CausalSelfAttentionV1(nn.Module, ModuleWithState[CausalSelfAttentionV1Stat
     def transform_encoder_output(
         self,
         encoder_output: Tensor,
-        encoder_output_mask: Tensor,
+        encoder_output_lens: Tensor,
         state: CausalSelfAttentionV1State,
     ) -> CausalSelfAttentionV1State:
         return state

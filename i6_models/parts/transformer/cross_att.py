@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from i6_models.config import ModelConfiguration
 from i6_models.parts.dropout import BroadcastDropout
-from i6_models.parts.transformer.util import ModuleWithState
+from i6_models.parts.transformer.util import ModuleWithState, make_kv_attn_mask
 
 
 @dataclass
@@ -93,13 +93,13 @@ class CrossAttentionV1(nn.Module, ModuleWithState[CrossAttentionV1State]):
     def transform_encoder_output(
         self,
         encoder_output: Tensor,
-        encoder_output_mask: Tensor,
+        encoder_output_lens: Tensor,
         state: CrossAttentionV1State,
     ) -> CrossAttentionV1State:
         kv = self.kv(encoder_output)  # B... T 2E
         k, v = torch.tensor_split(kv, (self.key_dim_total,), dim=-1)  # B... T E
 
-        mask = torch.where(encoder_output_mask, 0.0, float("-inf")).unsqueeze(-2).unsqueeze(-2)  # B... 1 1 T
+        mask = make_kv_attn_mask(encoder_output, encoder_output_lens)  # B... 1 1 T
 
         k = torch.unflatten(k, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L E
         v = torch.unflatten(v, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L E
