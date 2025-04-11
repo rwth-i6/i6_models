@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 __all__ = [
+    "CausalSelfAttentionV1Config",
+    "CausalSelfAttentionV1",
+    "ConformerPositionwiseFeedForwardV2Config",
+    "ConformerPositionwiseFeedForwardV2",
+    "CrossAttentionV1Config",
+    "CrossAttentionV1",
     "TransformerDecoderBlockV1Config",
+    "TransformerDecoderBlockV1State",
     "TransformerDecoderBlockV1",
     "TransformerDecoderV1Config",
+    "TransformerDecoderV1State",
     "TransformerDecoderV1",
 ]
 
