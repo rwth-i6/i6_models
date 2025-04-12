@@ -131,6 +131,7 @@ class TransformerDecoderV1Config(ModelConfiguration):
         num_output: Number of output labels/vocab dim.
         logits_bias: Whether to add a bias to the output logits.
             Usually False is a good choice.
+        share_embedding: Whether to share the input and output embedding.
     """
 
     block_cfg: TransformerDecoderBlockV1Config
@@ -139,6 +140,7 @@ class TransformerDecoderV1Config(ModelConfiguration):
     num_blocks: int
     num_output: int
     logits_bias: bool
+    share_embedding: bool
 
 
 class TransformerDecoderV1State(TypedDict):
@@ -173,6 +175,9 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         )
         self.out_norm = nn.LayerNorm(self.model_dim)
         self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
+        if cfg.share_embedding:
+            assert not cfg.logits_bias
+            self.out_logits.weight = self.input_embedding.weight
 
     def get_initial_state(self) -> TransformerDecoderV1State:
         """:return: initial decoder state"""
