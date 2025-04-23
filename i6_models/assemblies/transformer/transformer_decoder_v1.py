@@ -17,6 +17,7 @@ __all__ = [
 
 import torch
 from torch import nn, Tensor
+import torch.nn.functional as F
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, TypedDict, Union
@@ -174,10 +175,12 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
             [TransformerDecoderBlockV1(cfg.block_cfg) for _ in range(cfg.num_blocks)]
         )
         self.out_norm = nn.LayerNorm(self.model_dim)
-        self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
+        self.share_embedding = cfg.share_embedding
         if cfg.share_embedding:
-            assert not cfg.logits_bias
-            self.out_logits.weight = self.input_embedding.weight
+            assert not cfg.logits_bias, "Cannot use logits bias with shared embedding"
+            nn.init.xavier_uniform_(self.input_embedding.weight)  # bad convergence with default init
+        else:
+            self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
 
     def get_initial_state(self) -> TransformerDecoderV1State:
         """:return: initial decoder state"""
@@ -236,5 +239,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         }
 
         output = self.out_norm(output)
-        output_logits = self.out_logits(output)
+        output_logits = (
+            F.linear(output, self.input_embedding.weight, None) if self.share_embedding else self.out_logits(output)
+        )
         return output_logits, new_state
