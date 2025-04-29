@@ -200,7 +200,7 @@ class RasrFsaBuilderV2(RasrFsaBuilder):
     """
 
     def build_batch(self, seq_tags: Iterable[str]) -> WeightedFsaV2:
-        fsas = map(self.build_single, seq_tags)
+        fsas = list(map(self.build_single, seq_tags))
 
         num_states = [f[0] for f in fsas]
         num_edges = [f[1] for f in fsas]
