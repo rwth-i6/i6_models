@@ -42,6 +42,51 @@ class WeightedFsa(NamedTuple):
         return WeightedFsa._make(tensor.to(device) for tensor in self)
 
 
+class WeightedFsaV2(NamedTuple):
+    """
+    Convenience class that represents an FSA for the fbw2 loss from i6_native_ops. It supports scaling the weights of
+    the FSA by simple left-multiplication and moving the tensors to a different device.
+    It can be passed to :func:`i6_native_ops.fbw2.fbw2_loss`.
+
+    :param num_states: the number of states per sequence (shape: [N])
+    :param num_edges: the number of edges per sequence (shape: [N])
+    :param edges: a [3, E] tensor of edges with number of edges E and where each column is an edge
+        consisting of from-state, to-state and emission idx
+    :param weights: a [E,] tensor of weights for each edge scaled by the tdp_scale
+    :param start_end_states: a [N, 2] tensor of start and end states for each of the N sequences
+    """
+
+    num_states: torch.IntTensor
+    num_edges: torch.IntTensor
+    edges: torch.IntTensor
+    weights: torch.FloatTensor
+    start_end_states: torch.IntTensor
+
+    def __mul__(self, scale: float) -> WeightedFsa:
+        """Multiply the weights, i.e. the forth element, with a scale."""
+        return WeightedFsa(
+            self.num_states,
+            self.num_edges,
+            self.edges,
+            self.weights * scale,
+            self.start_end_states,
+        )
+
+    def to(self, device: Union[str, torch.device]) -> WeightedFsa:
+        """
+        Move the tensors that can be on device to a given device.
+        Some Tensors (num_states/num_edges) are expected to be in CPU memory.
+        """
+
+        return WeightedFsaV2(
+            self.num_states.to("cpu"),
+            self.num_edges.to("cpu"),
+            self.edges.to(device),
+            self.weights.to(device),
+            self.start_end_states.to(device),
+        )
+
+
 class RasrFsaBuilder:
     """
     Builder class that wraps around the librasr.AllophoneStateFsaBuilder,
@@ -141,6 +186,40 @@ class RasrFsaBuilder:
             all_edges,
             all_weights,
             start_end_states,
+        )
+
+        if self.tdp_scale != 1.0:
+            out_fsa *= self.tdp_scale
+
+        return out_fsa
+
+
+class RasrFsaBuilderV2(RasrFsaBuilder):
+    """
+    An update of the RasrFsaBuilder that is compatible with the fbw2 op from i6_native_ops.
+    """
+
+    def build_batch(self, seq_tags: Iterable[str]) -> WeightedFsaV2:
+        fsas = map(self.build_single, seq_tags)
+
+        num_states = [f[0] for f in fsas]
+        num_edges = [f[1] for f in fsas]
+        start_states = np.cumsum([0] + num_states)[:-1]
+        end_states = np.cumsum(num_states) - 1
+        weights = np.concatenate(tuple(f[3] for f in fsas))
+
+        edges = []
+        for idx, f in enumerate(fsas):
+            f_edges = f[2].reshape(3, -1).copy()
+            f_edges[:2, :] += start_states[idx]
+            edges.append(f_edges)
+
+        out_fsa = WeightedFsaV2(
+            torch.IntTensor(num_states).to(torch.uint32),
+            torch.IntTensor(num_edges).to(torch.uint32),
+            torch.IntTensor(np.concatenate(edges, axis=1)).contiguous(),
+            torch.Tensor(weights),
+            torch.IntTensor(np.array([start_states, end_states])),
         )
 
         if self.tdp_scale != 1.0:
