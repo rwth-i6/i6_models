@@ -26,7 +26,10 @@ class LogUniformSampler(nn.Module):
 
         # approximately zipf distribution
         ws = torch.arange(self.num_classes, dtype=torch.get_default_dtype(), device=device)
-        self._distribution = (torch.log1p(ws + 1) - torch.log1p(ws)) / torch.log1p(torch.tensor(self.num_classes))
+        self._distribution = torch.log1p(ws + 1) - torch.log1p(ws) / torch.log1p(torch.tensor(self.num_classes))
+        import math
+        test = [math.log1p(w+1) - math.log1p(w) / math.log1p(10) for w in range(self.num_classes)]
+        assert self._distribution == test
         self._distribution.clamp_(min=distribution_clamp_min)
         self._distribution /= self._distribution.sum()
 
