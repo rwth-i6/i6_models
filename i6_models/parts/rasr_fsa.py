@@ -62,9 +62,9 @@ class WeightedFsaV2(NamedTuple):
     weights: torch.FloatTensor
     start_end_states: torch.IntTensor
 
-    def __mul__(self, scale: float) -> WeightedFsa:
+    def __mul__(self, scale: float) -> WeightedFsaV2:
         """Multiply the weights, i.e. the forth element, with a scale."""
-        return WeightedFsa(
+        return WeightedFsaV2(
             self.num_states,
             self.num_edges,
             self.edges,
@@ -72,7 +72,7 @@ class WeightedFsaV2(NamedTuple):
             self.start_end_states,
         )
 
-    def to(self, device: Union[str, torch.device]) -> WeightedFsa:
+    def to(self, device: Union[str, torch.device]) -> WeightedFsaV2:
         """
         Move the tensors that can be on device to a given device.
         Some Tensors (num_states/num_edges) are expected to be in CPU memory.
