@@ -45,7 +45,7 @@ class RandomMask(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         ndim_batch, ndim_time, _ = tensor.size()
 
-        mask = torch.zeros((ndim_batch, ndim_time), dtype=torch.bool)
+        mask = torch.ones((ndim_batch, ndim_time), dtype=torch.bool)
 
         mask_idcs = []
         for i in range(ndim_batch):
@@ -67,7 +67,7 @@ class RandomMask(nn.Module):
             mask_idc = np.random.choice(seq_len - min_len, num_mask, replace=False)
 
             for j in mask_idc:
-                mask[i, j : j + self.mask_length] = True
+                mask[i, j : j + self.mask_length] = False
 
         tensor[mask] = self.mask_emb.to(tensor.device)
 
