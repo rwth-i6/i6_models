@@ -1,3 +1,4 @@
 typeguard
 torch
 librosa
+ruff==0.9.8
