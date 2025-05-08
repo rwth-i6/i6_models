@@ -16,7 +16,6 @@ from i6_models.primitives.feature_extraction import *
 
 
 def test_logmel_librosa_compatibility():
-
     audio = np.asarray(np.random.random((50000)), dtype=np.float32)
     librosa_mel = melspectrogram(
         y=audio,
