@@ -15,5 +15,5 @@ jobs:
       with:
         python-version: 3.8
         cache: 'pip'
-    - run: pip install ruff==0.9.8
+    - run: pip install ruff==0.11.8
     - run: ruff format --diff
