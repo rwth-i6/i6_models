@@ -53,7 +53,6 @@ def test_ConformerPositionwiseFeedForwardV1():
 
 def test_ConformerMHSAV1():
     def get_output_shape(input_shape, cfg, **kwargs):
-
         input = torch.randn(input_shape)
         output = ConformerMHSAV1(cfg)(input, **kwargs)
 

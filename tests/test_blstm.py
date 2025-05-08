@@ -51,9 +51,7 @@ def test_blstm_onnx_export():
                 None,
                 {
                     "data": dummy_data[(1, 2), :20, :].numpy(),
-                    "data_len": dummy_data_len[
-                        (1, 2),
-                    ].numpy(),
+                    "data_len": dummy_data_len[(1, 2),].numpy(),
                 },
             )[0]
         )
