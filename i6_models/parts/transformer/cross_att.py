@@ -96,13 +96,16 @@ class CrossAttentionV1(nn.Module, ModuleWithState[CrossAttentionV1State]):
         encoder_output_lens: Tensor,
         state: CrossAttentionV1State,
     ) -> CrossAttentionV1State:
+        """Transform encoder output to key and value for cross attention."""
+
+        # E: attention key/value dim
         kv = self.kv(encoder_output)  # B... T 2E
         k, v = torch.tensor_split(kv, (self.key_dim_total,), dim=-1)  # B... T E
 
         mask = make_kv_attn_mask(encoder_output, encoder_output_lens)  # B... 1 1 T
 
-        k = torch.unflatten(k, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L E
-        v = torch.unflatten(v, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L E
+        k = torch.unflatten(k, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H T E
+        v = torch.unflatten(v, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H T E
 
         return {**state, "k": k, "v": v, "mask": mask}
 
@@ -115,8 +118,11 @@ class CrossAttentionV1(nn.Module, ModuleWithState[CrossAttentionV1State]):
         :param state: recurrent state of the cross attention module
         """
 
+        # Ev: attention value dim
+        # L: length of query (i.e. length of token sequence)
+
         x = self.norm(x)
-        q = self.q(x)  # B... T Ev
+        q = self.q(x)  # B... L Ev
         q = torch.unflatten(q, -1, (self.num_heads, -1)).transpose(-3, -2)  # B... H L Ev
 
         att_out = F.scaled_dot_product_attention(
