@@ -110,9 +110,9 @@ class Mixup(torch.nn.Module):
         :param sequence_mask: [B, T]
         :return tensor as [B, T, F]
         """
-        assert (
-            input.size()[-1] == self.feature_dim
-        ), "the given feature dimension does not match input feature dimension"
+        assert input.size()[-1] == self.feature_dim, (
+            "the given feature dimension does not match input feature dimension"
+        )
         input_ = self._maybe_apply_mixup(input, sequence_mask)
         self._append_to_buffer(input, sequence_mask)
         return input_
