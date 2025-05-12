@@ -28,6 +28,7 @@ from i6_models.parts.conformer import (
     ConformerPositionwiseFeedForwardV2,
     ConformerPositionwiseFeedForwardV2Config,
 )
+from i6_models.parts.dropout import BroadcastDropout
 from i6_models.parts.transformer import (
     CausalSelfAttentionV1,
     CausalSelfAttentionV1Config,
@@ -166,7 +167,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
 
         self.model_dim = cfg.block_cfg.ff_cfg.input_dim
 
-        self.input_dropout = nn.Dropout(cfg.input_dropout)
+        self.input_dropout = BroadcastDropout(cfg.input_dropout)
         self.input_embedding = nn.Embedding(cfg.num_output, self.model_dim)
         self.input_embedding_scale = (
             cfg.input_embedding_scale if cfg.input_embedding_scale is not None else self.model_dim**0.5
