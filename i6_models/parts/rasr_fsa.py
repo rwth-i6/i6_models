@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["RasrFsaBuilder", "WeightedFsa", "RasrFsaBuilder2", "WeightedFsa2"]
+__all__ = ["RasrFsaBuilder", "WeightedFsa", "RasrFsaBuilderV2", "WeightedFsaV2"]
 
 from functools import reduce
 from typing import Iterable, NamedTuple, Tuple, Union
