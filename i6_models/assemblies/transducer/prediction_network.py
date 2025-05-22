@@ -13,7 +13,6 @@ from torch import nn
 
 from i6_models.config import ModelConfiguration
 from i6_models.parts.ffnn import FeedForwardBlockV1Config, FeedForwardBlockV1
-from i6_models.parts.lstm import LstmBlockV1Config, LstmBlockV1
 
 
 @dataclass
@@ -87,14 +86,13 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
         """
         Reduces the context embedding using a weighted sum based on position vectors.
         """
-        B, _, H, E = emb.shape
-        emb_expanded = emb.unsqueeze(3)  # [B, 1, H, 1, E]
-        pos_expanded = self.position_vectors.unsqueeze(0).unsqueeze(0)
+        emb_expanded = emb.unsqueeze(3)  # [B, S, H, 1, E]
+        pos_expanded = self.position_vectors.unsqueeze(0).unsqueeze(0)  # [1, 1, H, K, E]
         alpha = (emb_expanded * pos_expanded).sum(
             dim=-1, keepdim=True
-        )  # [B, 1, H, K, 1]
-        weighted = alpha * emb_expanded  # [B, 1, H, K, E]
-        reduced = weighted.sum(dim=2).sum(dim=2)  # [B, 1, E]
+        )  # [B, S, H, K, 1]
+        weighted = alpha * emb_expanded  # [B, S, H, K, E]
+        reduced = weighted.sum(dim=2).sum(dim=2)  # [B, S, E]
         reduced *= 1.0 / (self.cfg.num_reduction_heads * self.cfg.context_history_size)
         return reduced
 

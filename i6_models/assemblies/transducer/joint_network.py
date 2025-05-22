@@ -34,7 +34,7 @@ class TransducerJointNetworkV1(nn.Module):
 
     def forward(
         self,
-        source_encodings: torch.Tensor,  # [B, T, E]
+        source_encodings: torch.Tensor,  # [1, T, E]
         target_encodings: torch.Tensor,  # [B, S, P]
     ) -> torch.Tensor:  # [B, T, S, F]
         """
@@ -81,7 +81,7 @@ class TransducerJointNetworkV1(nn.Module):
         target_lengths: torch.Tensor,  # [B]
     ) -> torch.Tensor:  # [B, T, S+1, F]
         """
-        Forward pass for fullsum training.  Returns output with shape [B, T, S+1, F].
+        Forward pass for fullsum training. Returns output with shape [B, T, S+1, F].
         """
         batch_outputs = []
         max_target_length = target_encodings.size(1)  # S+1
