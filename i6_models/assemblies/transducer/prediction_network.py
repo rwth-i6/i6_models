@@ -29,12 +29,12 @@ class EmbeddingTransducerPredictionNetworkV1Config(ModelConfiguration):
     """
 
     num_outputs: int
-    blank_id: int = 0
-    context_history_size: int = 1
-    embedding_dim: int = 256
-    embedding_dropout: float = 0.1
-    reduce_embedding: bool = False
-    num_reduction_heads: Optional[int] = None
+    blank_id: int
+    context_history_size: int
+    embedding_dim: int
+    embedding_dropout: float
+    reduce_embedding: bool
+    num_reduction_heads: Optional[int]
 
     def __post__init__(self):
         super().__post_init__()
@@ -207,7 +207,7 @@ class FfnnTransducerPredictionNetworkV1(EmbeddingTransducerPredictionNetworkV1):
         super().__init__(EmbeddingTransducerPredictionNetworkV1Config.from_child(cfg))
         cfg.ffnn_cfg.input_dim = self.output_dim
         self.ffnn = FeedForwardBlockV1(cfg.ffnn_cfg)
-        self.output_dim = cfg.ffnn_cfg.output_dim
+        self.output_dim = self.ffnn.output_dim
 
     def forward(
         self,
@@ -231,6 +231,6 @@ class FfnnTransducerPredictionNetworkV1(EmbeddingTransducerPredictionNetworkV1):
         targets: torch.Tensor,  # [B, T]
         target_lengths: torch.Tensor,  # [B]
     ) -> Tuple[torch.Tensor, torch.Tensor]:  # [B, T, P], [B]
-        embed, _ = super().forward_fullsum(targets, target_lengths)
+        embed, _ = super().forward_viterbi(targets, target_lengths)
         output = self.ffnn(embed)
         return output, target_lengths

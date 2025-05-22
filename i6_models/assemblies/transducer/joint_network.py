@@ -30,6 +30,7 @@ class TransducerJointNetworkV1(nn.Module):
     ) -> None:
         super().__init__()
         self.ffnn = FeedForwardBlockV1(cfg.ffnn_cfg)
+        self.output_dim = self.ffnn.output_dim
 
     def forward(
         self,
@@ -40,7 +41,7 @@ class TransducerJointNetworkV1(nn.Module):
         Forward pass for recognition. Assume T = 1 and S = 1
         """
         source_encodings = source_encodings.unsqueeze(2).expand(
-            -1, -1, target_encodings.size(1), -1
+            target_encodings.size(0), -1, target_encodings.size(1), -1
         )  # [B, T, S, E]
         target_encodings = target_encodings.unsqueeze(1).expand(
             -1, source_encodings.size(1), -1, -1
@@ -70,7 +71,7 @@ class TransducerJointNetworkV1(nn.Module):
         output = self.ffnn(joint_network_inputs)  # [B, T, F]
         if not self.training:
             output = torch.log_softmax(output, dim=-1)  # [B, T, F]
-        return output
+        return output, source_lengths, target_lengths
 
     def forward_fullsum(
         self,
@@ -83,26 +84,24 @@ class TransducerJointNetworkV1(nn.Module):
         Forward pass for fullsum training.  Returns output with shape [B, T, S+1, F].
         """
         batch_outputs = []
-        for b in range(source_encodings.size(0)):
-            valid_source = source_encodings[b, : source_lengths[b], :]  # [T_b, E]
-            valid_target = target_encodings[b, : target_lengths[b] + 1, :]  # [S_b+1, P]
+        max_target_length = target_encodings.size(1)  # S+1
+        max_source_length = source_encodings.size(1)  # T
 
-            expanded_source = valid_source.unsqueeze(1).expand(
-                -1, int(target_lengths[b].item()) + 1, -1
-            )  # [T_b, S_b+1, E]
-            expanded_target = valid_target.unsqueeze(0).expand(
-                int(source_lengths[b].item()), -1, -1
-            )  # [T_b, S_b+1, P]
-            combination = torch.cat(
-                [expanded_source, expanded_target], dim=-1
-            )  # [T_b, S_b+1, E + P]
-            output = self.ffnn(combination)  # [T_b, S_b+1, F]
-            batch_outputs.append(output)
-        # Pad the outputs to a common shape, if necessary.  This is crucial for
-        # handling variable sequence lengths within a batch.  The padding
-        # ensures that the final output tensor has a consistent shape.
-        padded_outputs = torch.nn.utils.rnn.pad_sequence(
-            batch_outputs, batch_first=True, padding_value=0.0
-        )  # [B, max_T, max_S+1, F]
+        # Expand source_encodings
+        expanded_source = source_encodings.unsqueeze(2).expand(
+            -1, -1, max_target_length, -1
+        )  # [B, T, S+1, E]
 
-        return padded_outputs
+        # Expand target_encodings
+        expanded_target = target_encodings.unsqueeze(1).expand(
+            -1, max_source_length, -1, -1
+        )  # [B, T, S+1, P]
+
+        # Concatenate
+        combination = torch.cat(
+            [expanded_source, expanded_target], dim=-1
+        )  # [B, T, S+1, E + P]
+
+        # Pass through FFNN
+        output = self.ffnn(combination)  # [B, T, S+1, F]
+        return output, source_lengths, target_lengths
