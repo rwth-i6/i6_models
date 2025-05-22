@@ -46,9 +46,7 @@ class FeedForwardLayerV1(nn.Module):
 
     def __init__(self, cfg: FeedForwardLayerV1Config):
         super().__init__()
-        self.linear_ff = nn.Linear(
-            in_features=cfg.input_dim, out_features=cfg.output_dim, bias=True
-        )
+        self.linear_ff = nn.Linear(in_features=cfg.input_dim, out_features=cfg.output_dim, bias=True)
         self.activation = cfg.activation
         self.dropout = nn.Dropout(cfg.dropout)
 
@@ -76,19 +74,20 @@ class FeedForwardBlockV1Config:
         layer_sizes: List of hidden layer sizes.  The length of this list
                      determines the number of layers.
         dropout: Dropout probability.
-        activation: Activation function applied after each linear layer.
+        layer_activations: List of activation function applied after each linear layer.
+                           None represents no activation.
+                           Must have the same length as layer_sizes.
         use_layer_norm: Whether to use Layer Normalization.
     """
 
     input_dim: int
     layer_sizes: List[int]
     dropout: float
-    layer_activations: List[
-        Optional[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]
-    ]
+    layer_activations: List[Optional[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]]
     use_layer_norm: bool = True
 
     def __post_init__(self):
+        super().__post_init__()
         assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
         assert len(self.layer_sizes) > 0, "layer_sizes must not be empty"
         assert len(self.layer_sizes) == len(self.layer_activations)
