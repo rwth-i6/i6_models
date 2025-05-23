@@ -103,11 +103,13 @@ class LogUniformSamplerWithoutReplacement(nn.Module):
         :return: [num_samples]
         """
         # return self._cat_sampler.draw(torch.Size([num_samples]))
-        return torch.multinomial(
+        x = torch.multinomial(
             self._distribution,
             num_samples,
             replacement=False,
         )
+        print(num_samples, x.unique().shape)
+        return x
 
     def log_prob(self, indices: torch.Tensor) -> torch.Tensor:
         """
