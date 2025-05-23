@@ -38,17 +38,13 @@ class TransducerJointNetworkV1(nn.Module):
         target_encodings: torch.Tensor,  # [B, S, P]
     ) -> torch.Tensor:  # [B, T, S, F]
         """
-        Forward pass for recognition. Assume T = 1 and S = 1
+        Forward pass for recognition.
         """
         source_encodings = source_encodings.unsqueeze(2).expand(
             target_encodings.size(0), -1, target_encodings.size(1), -1
         )  # [B, T, S, E]
-        target_encodings = target_encodings.unsqueeze(1).expand(
-            -1, source_encodings.size(1), -1, -1
-        )  # [B, T, S, P]
-        joint_network_inputs = torch.cat(
-            [source_encodings, target_encodings], dim=-1
-        )  # [B, T, S, E + P]
+        target_encodings = target_encodings.unsqueeze(1).expand(-1, source_encodings.size(1), -1, -1)  # [B, T, S, P]
+        joint_network_inputs = torch.cat([source_encodings, target_encodings], dim=-1)  # [B, T, S, E + P]
         output = self.ffnn(joint_network_inputs)  # [B, T, S, F]
 
         if not self.training:
@@ -65,9 +61,7 @@ class TransducerJointNetworkV1(nn.Module):
         """
         Forward pass for Viterbi training.
         """
-        joint_network_inputs = torch.cat(
-            [source_encodings, target_encodings], dim=-1
-        )  # [B, T, E + P]
+        joint_network_inputs = torch.cat([source_encodings, target_encodings], dim=-1)  # [B, T, E + P]
         output = self.ffnn(joint_network_inputs)  # [B, T, F]
         if not self.training:
             output = torch.log_softmax(output, dim=-1)  # [B, T, F]
@@ -88,19 +82,13 @@ class TransducerJointNetworkV1(nn.Module):
         max_source_length = source_encodings.size(1)  # T
 
         # Expand source_encodings
-        expanded_source = source_encodings.unsqueeze(2).expand(
-            -1, -1, max_target_length, -1
-        )  # [B, T, S+1, E]
+        expanded_source = source_encodings.unsqueeze(2).expand(-1, -1, max_target_length, -1)  # [B, T, S+1, E]
 
         # Expand target_encodings
-        expanded_target = target_encodings.unsqueeze(1).expand(
-            -1, max_source_length, -1, -1
-        )  # [B, T, S+1, P]
+        expanded_target = target_encodings.unsqueeze(1).expand(-1, max_source_length, -1, -1)  # [B, T, S+1, P]
 
         # Concatenate
-        combination = torch.cat(
-            [expanded_source, expanded_target], dim=-1
-        )  # [B, T, S+1, E + P]
+        combination = torch.cat([expanded_source, expanded_target], dim=-1)  # [B, T, S+1, E + P]
 
         # Pass through FFNN
         output = self.ffnn(combination)  # [B, T, S+1, F]

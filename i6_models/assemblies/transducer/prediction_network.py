@@ -88,9 +88,7 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
         """
         emb_expanded = emb.unsqueeze(3)  # [B, S, H, 1, E]
         pos_expanded = self.position_vectors.unsqueeze(0).unsqueeze(0)  # [1, 1, H, K, E]
-        alpha = (emb_expanded * pos_expanded).sum(
-            dim=-1, keepdim=True
-        )  # [B, S, H, K, 1]
+        alpha = (emb_expanded * pos_expanded).sum(dim=-1, keepdim=True)  # [B, S, H, K, 1]
         weighted = alpha * emb_expanded  # [B, S, H, K, E]
         reduced = weighted.sum(dim=2).sum(dim=2)  # [B, S, E]
         reduced *= 1.0 / (self.cfg.num_reduction_heads * self.cfg.context_history_size)
@@ -101,9 +99,7 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
         Processes the input history through the embedding layer and optional reduction.
         """
         if len(history.shape) == 2:  # reshape if input shape [B, H]
-            history = history.view(
-                *history.shape[:-1], 1, history.shape[-1]
-            )  # [B, 1, H]
+            history = history.view(*history.shape[:-1], 1, history.shape[-1])  # [B, 1, H]
         embed = self.embedding(history)  # [B, S, H, E]
         embed = self.embed_dropout(embed)
         if self.reduce_embedding:
@@ -139,9 +135,7 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
         extended_targets = torch.cat([non_context_padding, targets], dim=1)  # [B, S+H]
         history = torch.stack(
             [
-                extended_targets[
-                    :, self.cfg.context_history_size - 1 - i : (-i if i != 0 else None)
-                ]
+                extended_targets[:, self.cfg.context_history_size - 1 - i : (-i if i != 0 else None)]
                 for i in reversed(range(self.cfg.context_history_size))
             ],
             dim=-1,
@@ -175,9 +169,7 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
             history[:, t, :] = recent_labels
             current_labels = targets[:, t]
             non_blank_positions = current_labels != self.blank_id
-            recent_labels[non_blank_positions, 1:] = recent_labels[
-                non_blank_positions, :-1
-            ]
+            recent_labels[non_blank_positions, 1:] = recent_labels[non_blank_positions, :-1]
             recent_labels[non_blank_positions, 0] = current_labels[non_blank_positions]
         embed = self._forward_embedding(history)
 
@@ -185,9 +177,7 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
 
 
 @dataclass
-class FfnnTransducerPredictionNetworkV1Config(
-    EmbeddingTransducerPredictionNetworkV1Config
-):
+class FfnnTransducerPredictionNetworkV1Config(EmbeddingTransducerPredictionNetworkV1Config):
     """
     Attributes:
         ffnn_cfg: Configuration for FFNN prediction network
