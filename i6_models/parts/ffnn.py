@@ -65,7 +65,7 @@ class FeedForwardLayerV1(nn.Module):
 
 
 @dataclass
-class FeedForwardBlockV1Config:
+class FeedForwardBlockV1Config(ModelConfiguration):
     """
     Configuration for the FeedForwardBlockV1 module.
 
@@ -105,13 +105,13 @@ class FeedForwardBlockV1(nn.Module):
         prev_size = cfg.input_dim
 
         for i, layer_size in enumerate(cfg.layer_sizes):
-            network_layers.append(nn.Dropout(cfg.dropout))
             network_layers.append(nn.Linear(prev_size, layer_size))
             prev_size = layer_size
             if cfg.use_layer_norm:
                 network_layers.append(nn.LayerNorm(prev_size))
             if cfg.layer_activations[i] is not None:
                 network_layers.append(cfg.layer_activations[i])
+            network_layers.append(nn.Dropout(cfg.dropout))
 
         self.output_dim = cfg.layer_sizes[-1]
         self.network = nn.Sequential(*network_layers)
