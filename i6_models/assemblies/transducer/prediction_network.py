@@ -22,7 +22,6 @@ class EmbeddingTransducerPredictionNetworkV1Config(ModelConfiguration):
     blank_id: Index of the blank token.
     context_history_size: Number of previous output tokens to consider as context
     embedding_dim: Dimension of the embedding layer.
-    embedding_dropout: Dropout probability for the embedding layer.
     reduce_embedding: Whether to use a reduction mechanism for the context embedding.
     num_reduction_heads: Number of reduction heads if reduce_embedding is True.
     """
@@ -31,7 +30,6 @@ class EmbeddingTransducerPredictionNetworkV1Config(ModelConfiguration):
     blank_id: int
     context_history_size: int
     embedding_dim: int
-    embedding_dropout: float
     reduce_embedding: bool
     num_reduction_heads: Optional[int]
 
@@ -46,7 +44,6 @@ class EmbeddingTransducerPredictionNetworkV1Config(ModelConfiguration):
             child_instance.blank_id,
             child_instance.context_history_size,
             child_instance.embedding_dim,
-            child_instance.embedding_dropout,
             child_instance.reduce_embedding,
             child_instance.num_reduction_heads,
         )
@@ -63,7 +60,6 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
             embedding_dim=self.cfg.embedding_dim,
             padding_idx=self.blank_id,
         )
-        self.embed_dropout = nn.Dropout(self.cfg.embedding_dropout)
         self.output_dim = (
             self.cfg.embedding_dim * self.cfg.context_history_size
             if not self.cfg.reduce_embedding
@@ -101,7 +97,6 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
         if len(history.shape) == 2:  # reshape if input shape [B, H]
             history = history.view(*history.shape[:-1], 1, history.shape[-1])  # [B, 1, H]
         embed = self.embedding(history)  # [B, S, H, E]
-        embed = self.embed_dropout(embed)
         if self.reduce_embedding:
             embed = self._reduce_embedding(embed)  # [B, S, E]
         else:
