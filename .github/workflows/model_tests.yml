@@ -22,7 +22,8 @@ jobs:
           pip install pytest
           pip install -r requirements.txt
           # Older Numpy 1 requires those older versions. (https://github.com/rwth-i6/i6_models/issues/78)
-          pip install numpy==1.23.5 ctc-segmentation==1.6.6 pyworld==0.3.4
+          pip install numpy==1.23.5
+          pip install ctc-segmentation==1.6.6 pyworld==0.3.4
           pip install -r requirements_dev.txt
       - name: Test Models
         run: |
