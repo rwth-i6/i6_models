@@ -78,7 +78,6 @@ class ConformerMHSARelPosV1(nn.Module):
     """
 
     def __init__(self, cfg: ConformerMHSARelPosV1Config):
-
         super().__init__()
 
         self.layernorm = nn.LayerNorm(cfg.input_dim)
@@ -177,9 +176,7 @@ class ConformerMHSARelPosV1(nn.Module):
             rel_pos_embeddings = self._sinusoidal_pe(
                 torch.arange(time_dim_size - 1, -time_dim_size, -1, device=input_tensor.device, dtype=torch.float32),
                 self.pos_emb_dim,
-            ).view(
-                1, 2 * time_dim_size - 1, self.pos_emb_dim
-            )  # [1, T+T'-1, pos_emb_dim]
+            ).view(1, 2 * time_dim_size - 1, self.pos_emb_dim)  # [1, T+T'-1, pos_emb_dim]
 
         # dropout relative positional embeddings
         rel_pos_embeddings = self.pos_emb_dropout(
