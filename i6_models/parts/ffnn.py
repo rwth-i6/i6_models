@@ -1,8 +1,13 @@
-__all__ = ["FeedForwardConfig", "FeedForwardModel"]
+__all__ = [
+    "FeedForwardLayerV1Config",
+    "FeedForwardLayerV1",
+    "FeedForwardBlockV1Config",
+    "FeedForwardBlockV1",
+]
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, List
 
 import torch
 from torch import nn
@@ -57,3 +62,65 @@ class FeedForwardLayerV1(nn.Module):
         tensor = self.activation(tensor)  # [B,T,F]
         tensor = self.dropout(tensor)  # [B,T,F]
         return tensor, sequence_mask
+
+
+@dataclass
+class FeedForwardBlockV1Config(ModelConfiguration):
+    """
+    Configuration for the FeedForwardBlockV1 module.
+
+    Attributes:
+        input_dim: Input feature dimension.
+        layer_sizes: List of hidden layer sizes.  The length of this list
+                     determines the number of layers.
+        dropout: Dropout probability.
+        layer_activations: List of activation function applied after each linear layer.
+                           None represents no activation.
+                           Must have the same length as layer_sizes.
+        use_layer_norm: Whether to use Layer Normalization.
+    """
+
+    input_dim: int
+    layer_sizes: List[int]
+    dropout: float
+    layer_activations: List[Optional[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]]
+    use_layer_norm: bool = True
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
+        assert len(self.layer_sizes) > 0, "layer_sizes must not be empty"
+        assert len(self.layer_sizes) == len(self.layer_activations)
+
+
+class FeedForwardBlockV1(nn.Module):
+    """
+    A multi-layer feed-forward network block with optional Layer Normalization.
+    """
+
+    def __init__(self, cfg: FeedForwardBlockV1Config):
+        super().__init__()
+        self.cfg = cfg
+        network_layers: List[nn.Module] = []
+        prev_size = cfg.input_dim
+
+        for i, layer_size in enumerate(cfg.layer_sizes):
+            network_layers.append(nn.Linear(prev_size, layer_size))
+            prev_size = layer_size
+            if cfg.use_layer_norm:
+                network_layers.append(nn.LayerNorm(prev_size))
+            if cfg.layer_activations[i] is not None:
+                network_layers.append(cfg.layer_activations[i])
+            network_layers.append(nn.Dropout(cfg.dropout))
+
+        self.output_dim = cfg.layer_sizes[-1]
+        self.network = nn.Sequential(*network_layers)
+
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass through the feed-forward block.
+
+        :param tensor: Input tensor of shape [B, T, F], where F is input_dim.
+        :return: Output tensor of shape [B, T, output_dim].
+        """
+        return self.network(tensor)
