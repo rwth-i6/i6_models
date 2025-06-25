@@ -78,9 +78,9 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
             else:  # use exponential moving average
                 exponential_average_factor = self.momentum
 
-        assert (
-            inp.ndim - 3 < lengths_or_mask.ndim < inp.ndim
-        ), f"mask ndim ({lengths_or_mask.ndim}) should be between {inp.ndim - 3} and {inp.ndim}"
+        assert inp.ndim - 3 < lengths_or_mask.ndim < inp.ndim, (
+            f"mask ndim ({lengths_or_mask.ndim}) should be between {inp.ndim - 3} and {inp.ndim}"
+        )
         if lengths_or_mask.ndim == inp.ndim - 1:
             mask = lengths_or_mask.to(dtype=torch.float, device=inp.device)
         elif lengths_or_mask.ndim == inp.ndim - 2:
