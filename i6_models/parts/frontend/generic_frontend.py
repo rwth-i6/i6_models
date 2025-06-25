@@ -61,12 +61,12 @@ class GenericFrontendV1Config(ModelConfiguration):
         num_pools = 0 if self.pool_kernel_sizes is None else len(self.pool_kernel_sizes)
         num_activations = 0 if self.activations is None else len(self.activations)
 
-        assert num_convs == self.layer_ordering.count(
-            FrontendLayerType.Conv2d
-        ), "Number of convolution layers mismatch!"
-        assert num_activations == self.layer_ordering.count(
-            FrontendLayerType.Activation
-        ), "Number of activation layers mismatch!"
+        assert num_convs == self.layer_ordering.count(FrontendLayerType.Conv2d), (
+            "Number of convolution layers mismatch!"
+        )
+        assert num_activations == self.layer_ordering.count(FrontendLayerType.Activation), (
+            "Number of activation layers mismatch!"
+        )
         assert num_pools == self.layer_ordering.count(FrontendLayerType.Pool2d), "Number of pooling layers mismatch!"
 
         if self.conv_strides is not None:
@@ -74,9 +74,9 @@ class GenericFrontendV1Config(ModelConfiguration):
         if self.conv_paddings is not None:
             assert len(self.conv_paddings) == num_convs, "Please specify padding for each convolution layer!"
         if num_convs != 0:
-            assert (
-                len(self.conv_out_dims) == num_convs
-            ), "Please specify the number of channels for each convolution layer!"
+            assert len(self.conv_out_dims) == num_convs, (
+                "Please specify the number of channels for each convolution layer!"
+            )
 
         if self.pool_strides is not None:
             assert len(self.pool_strides) == num_pools, "Please specify stride for each pooling layer!"

@@ -57,8 +57,7 @@ class RandomMask(nn.Module):
 
             num_mask = int(
                 # add a random number for probabilistic rounding
-                self.mask_percentage * seq_len / float(self.mask_length)
-                + np.random.rand()
+                self.mask_percentage * seq_len / float(self.mask_length) + np.random.rand()
             )
 
             min_len = self.mask_length
