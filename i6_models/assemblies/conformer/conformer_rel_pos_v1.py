@@ -14,8 +14,8 @@ from typing import List
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
-    ConformerConvolutionV2,
     ConformerConvolutionV2Config,
+    ConformerConvolutionV3,
     ConformerMHSARelPosV1,
     ConformerMHSARelPosV1Config,
     ConformerPositionwiseFeedForwardV2,
@@ -70,7 +70,7 @@ class ConformerRelPosBlockV1(nn.Module):
             elif module_name == "mhsa":
                 modules.append(ConformerMHSARelPosV1(cfg=cfg.mhsa_cfg))
             elif module_name == "conv":
-                modules.append(ConformerConvolutionV2(model_cfg=cfg.conv_cfg))
+                modules.append(ConformerConvolutionV3(model_cfg=cfg.conv_cfg))
             else:
                 raise NotImplementedError
 
@@ -85,7 +85,7 @@ class ConformerRelPosBlockV1(nn.Module):
         :return: torch.Tensor of shape [B, T, F]
         """
         for scale, module in zip(self.scales, self.module_list):
-            if isinstance(module, ConformerMHSARelPosV1):
+            if isinstance(module, (ConformerMHSARelPosV1, ConformerConvolutionV3)):
                 x = scale * module(x, sequence_mask) + x
             else:
                 x = scale * module(x) + x
