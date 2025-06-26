@@ -1,4 +1,4 @@
-__all__ = ["FeedForwardConfig", "FeedForwardModel"]
+__all__ = ["FeedForwardLayerV1Config", "FeedForwardLayerV1"]
 
 from dataclasses import dataclass
 from functools import partial
