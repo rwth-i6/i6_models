@@ -120,7 +120,7 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
             mean = self.running_mean
             var = self.running_var
 
-        inp = (inp - mean[None, :, None]) / (torch.sqrt(var[None, :, None] + self.eps))
+        inp = (inp - mean[None, :, None]) * torch.rsqrt(var[None, :, None] + self.eps)
         if self.affine:
             inp = inp * self.weight[None, :, None] + self.bias[None, :, None]
 
