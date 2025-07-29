@@ -102,3 +102,18 @@ class LstmEncoderV1(nn.Module):
         out = self.lstm_dropout(out)
 
         return out, seq_len
+
+    def forward_with_state(
+        self,
+        x: torch.Tensor,
+        seq_len: torch.Tensor,
+        lstm_h: Optional[torch.Tensor] = None,
+        lstm_c: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        embed = self.embedding(x)
+        embed = self.embed_dropout(embed)
+
+        out, lstm_h, lstm_c = self.lstm_block.forward_with_state(embed, seq_len, lstm_h=lstm_h, lstm_c=lstm_c)
+        out = self.lstm_dropout(out)
+
+        return out, lstm_h, lstm_c
