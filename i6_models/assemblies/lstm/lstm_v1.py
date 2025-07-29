@@ -97,6 +97,7 @@ class LstmEncoderV1(nn.Module):
         """
         embed = self.embedding(x)
         embed = self.embed_dropout(embed)
+
         out, _ = self.lstm_block(embed, seq_len)
         out = self.lstm_dropout(out)
 
