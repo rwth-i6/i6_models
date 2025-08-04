@@ -28,9 +28,11 @@ from i6_models.parts.dynamic_adaptable_conformer import (
 class ConformerBlockV1Config(ModelConfiguration):
     """
     Attributes:
-        ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
+        ff1_cfg: Configuration for the 1st ConformerPositionwiseFeedForwardV1
+        ff2_cfg: Configuration for the 2nd ConformerPositionwiseFeedForwardV1
         mhsa_cfg: Configuration for ConformerMHSAV1
         conv_cfg: Configuration for ConformerConvolutionV1
+        adjust_dropout: whether adjust the dropout based on hidden dimension
         modules: List of modules to use for ConformerBlockV1,
             "ff" for feed forward module, "mhsa" for multi-head self attention module, "conv" for conv module
         scales: List of scales to apply to the module outputs before the residual connection

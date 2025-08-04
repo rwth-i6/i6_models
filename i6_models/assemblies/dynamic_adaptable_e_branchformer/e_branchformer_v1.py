@@ -34,10 +34,12 @@ EPSILON = np.finfo(np.float32).tiny
 class EbranchformerBlockV1Config(ModelConfiguration):
     """
     Attributes:
-        ff_cfg: Configuration for PositionwiseFeedForwardV1 module
+        ff1_cfg: Configuration for the 1st ConformerPositionwiseFeedForwardV1
+        ff2_cfg: Configuration for the 2nd ConformerPositionwiseFeedForwardV1
         mhsa_cfg: Configuration for MHSAV1 module
         cgmlp_cfg: Configuration for ConvolutionalGatingMLPV1 module
         merger_cfg: Configuration for MergerV1 module
+        adjust_dropout: whether adjust the dropout based on hidden dimension
     """
 
     ff1_cfg: ConformerPositionwiseFeedForwardV1Config
