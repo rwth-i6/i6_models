@@ -9,7 +9,7 @@ import torch
 
 from i6_models.config import ModelConfiguration
 from i6_models.parts.dropout import BroadcastDropout
-from i6_models.parts.transformer.util import ModuleWithState, make_kv_attn_mask
+from i6_models.parts.decoder.util import ModuleWithState, make_kv_attn_mask
 
 
 @dataclass

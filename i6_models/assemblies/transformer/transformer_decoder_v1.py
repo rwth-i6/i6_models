@@ -29,7 +29,7 @@ from i6_models.parts.conformer import (
     ConformerPositionwiseFeedForwardV2Config,
 )
 from i6_models.parts.dropout import BroadcastDropout
-from i6_models.parts.transformer import (
+from i6_models.parts.decoder import (
     CausalSelfAttentionV1,
     CausalSelfAttentionV1Config,
     CausalSelfAttentionV1State,
