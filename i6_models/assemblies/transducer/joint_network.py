@@ -40,12 +40,8 @@ class TransducerJointNetworkV1(nn.Module):
         """
         Forward pass for recognition.
         """
-        source_encodings = source_encodings.unsqueeze(2).expand(
-            target_encodings.size(0), -1, target_encodings.size(1), -1
-        )  # [B, T, S, E]
-        target_encodings = target_encodings.unsqueeze(1).expand(-1, source_encodings.size(1), -1, -1)  # [B, T, S, P]
-        joint_network_inputs = torch.cat([source_encodings, target_encodings], dim=-1)  # [B, T, S, E + P]
-        output = self.ffnn(joint_network_inputs)  # [B, T, S, F]
+        combined_encodings = source_encodings.unsqueeze(2) + target_encodings.unsqueeze(1)
+        output = self.ffnn(combined_encodings)  # [B, T, S, F]
 
         if not self.training:
             output = torch.log_softmax(output, dim=-1)  # [B, T, S, F]
