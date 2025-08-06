@@ -73,7 +73,7 @@ class FeedForwardBlockV1Config(ModelConfiguration):
         input_dim: Input feature dimension.
         layer_sizes: List of hidden layer sizes.  The length of this list
                      determines the number of layers.
-        dropout: Dropout probability.
+        dropouts: Dropout probability for each layer.
         layer_activations: List of activation function applied after each linear layer.
                            None represents no activation.
                            Must have the same length as layer_sizes.
@@ -82,15 +82,16 @@ class FeedForwardBlockV1Config(ModelConfiguration):
 
     input_dim: int
     layer_sizes: List[int]
-    dropout: float
+    dropouts: List[float]
     layer_activations: List[Optional[Union[nn.Module, Callable[[torch.Tensor], torch.Tensor]]]]
     use_layer_norm: bool = True
 
     def __post_init__(self):
         super().__post_init__()
-        assert 0.0 <= self.dropout <= 1.0, "Dropout value must be a probability"
+        assert all(0.0 <= dropout <= 1.0 for dropout in self.dropouts), "Dropout values must be probabilities"
         assert len(self.layer_sizes) > 0, "layer_sizes must not be empty"
         assert len(self.layer_sizes) == len(self.layer_activations)
+        assert len(self.layer_sizes) == len(self.dropouts)
 
 
 class FeedForwardBlockV1(nn.Module):
@@ -105,13 +106,13 @@ class FeedForwardBlockV1(nn.Module):
         prev_size = cfg.input_dim
 
         for i, layer_size in enumerate(cfg.layer_sizes):
-            network_layers.append(nn.Linear(prev_size, layer_size))
-            prev_size = layer_size
             if cfg.use_layer_norm:
                 network_layers.append(nn.LayerNorm(prev_size))
+            network_layers.append(nn.Linear(prev_size, layer_size))
+            prev_size = layer_size
             if cfg.layer_activations[i] is not None:
                 network_layers.append(cfg.layer_activations[i])
-            network_layers.append(nn.Dropout(cfg.dropout))
+            network_layers.append(nn.Dropout(cfg.dropouts[i]))
 
         self.output_dim = cfg.layer_sizes[-1]
         self.network = nn.Sequential(*network_layers)
