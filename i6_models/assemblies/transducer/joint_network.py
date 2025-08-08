@@ -17,10 +17,11 @@ class TransducerJointNetworkV1Config(ModelConfiguration):
 
     Attributes:
         ffnn_cfg: Configuration for the internal feed-forward network.
-        num_layers: Number of FFNN prediction network layer
+        joint_normalization: whether use normalized joint gradient for fullsum
     """
 
     ffnn_cfg: FeedForwardBlockV1Config
+    joint_normalization: bool
 
 
 class TransducerJointNetworkV1(nn.Module):
@@ -30,6 +31,7 @@ class TransducerJointNetworkV1(nn.Module):
     ) -> None:
         super().__init__()
         self.ffnn = FeedForwardBlockV1(cfg.ffnn_cfg)
+        self.joint_normalization = cfg.joint_normalization
         self.output_dim = self.ffnn.output_dim
 
     def forward(
@@ -73,19 +75,19 @@ class TransducerJointNetworkV1(nn.Module):
         """
         Forward pass for fullsum training. Returns output with shape [B, T, S+1, F].
         """
-        batch_outputs = []
-        max_target_length = target_encodings.size(1)  # S+1
-        max_source_length = source_encodings.size(1)  # T
+        
+        # additive combination
+        combined_encodings = source_encodings.unsqueeze(2) + target_encodings.unsqueeze(1)
 
-        # Expand source_encodings
-        expanded_source = source_encodings.unsqueeze(2).expand(-1, -1, max_target_length, -1)  # [B, T, S+1, E]
+        if self.joint_normalization:
+            source_lengths_safe = torch.clamp(source_lengths, min=1).float()
+            target_lengths_safe = torch.clamp(target_lengths, min=1).float()
+            scale_enc  = (1.0 / target_lengths_safe).view(-1, 1, 1).to(source_encodings.device)
+            scale_pred = (1.0 / source_lengths_safe).view(-1, 1, 1).to(target_encodings.device)
 
-        # Expand target_encodings
-        expanded_target = target_encodings.unsqueeze(1).expand(-1, max_source_length, -1, -1)  # [B, T, S+1, P]
-
-        # Concatenate
-        combination = torch.cat([expanded_source, expanded_target], dim=-1)  # [B, T, S+1, E + P]
+            source_encodings.register_hook (lambda g, s=scale_enc : g * s)
+            target_encodings.register_hook(lambda g, s=scale_pred: g * s) 
 
         # Pass through FFNN
-        output = self.ffnn(combination)  # [B, T, S+1, F]
+        output = self.ffnn(combined_encodings)  # [B, T, S+1, F]
         return output, source_lengths, target_lengths
