@@ -26,39 +26,6 @@ class MaskedBatchNorm1dV1(nn.BatchNorm1d):
     Same construction arguments as pytorch's `nn.BatchNorm1d`.
     """
 
-    def __init__(
-        self,
-        num_features: int,
-        *,
-        eps: float = 1e-5,
-        momentum: Optional[float] = 0.1,
-        affine: bool = True,
-        track_running_stats: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
-    ):
-        """
-        :param num_features: feature dimension of the input.
-        :param eps: value added to the denominator for numerical stability.
-        :param momentum: Momentum for updating the running mean/variance statistics.
-            If set to none will use a cumulative average across all batches.
-        :param affine: whether to learn an affine transformation.
-        :param track_running_stats: whether to track running mean/variance statistics or
-            whether to just use single batch-based mean/variance.
-        :param device:
-        :param dtype:
-        """
-
-        super().__init__(
-            num_features,
-            eps=eps,
-            momentum=momentum,
-            affine=affine,
-            track_running_stats=track_running_stats,
-            device=device,
-            dtype=dtype,
-        )
-
     def forward(self, inp: Tensor, lengths_or_mask: Tensor):
         """
         Applies batch norm to `inp`, masking away the padding given by `lengths_or_mask`.
