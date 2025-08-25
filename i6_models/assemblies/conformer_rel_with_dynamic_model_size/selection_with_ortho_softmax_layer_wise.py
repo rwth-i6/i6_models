@@ -146,7 +146,7 @@ class ConformerRelPosEncoderV1Config(ModelConfiguration):
 
     # nested configurations
     frontend: ModuleFactoryV1
-    block_cfg: ConformerBlockConfig
+    block_cfg: ConformerRelPosBlockV1Config
     pct_params_set: List[float]
     layer_dropout_kwargs: Dict[str, float]
     softmax_kwargs: Dict[str, str | float]
@@ -171,7 +171,7 @@ class ConformerRelPosEncoderV1(nn.Module):
         self.pct_params_set = sorted(cfg.pct_params_set)
         self.max_pct = max(cfg.pct_params_set)
         self.min_pct = min(cfg.pct_params_set)
-        self.module_list = torch.nn.ModuleList([ConformerBlock(cfg.block_cfg) for _ in range(cfg.num_layers)])
+        self.module_list = torch.nn.ModuleList([ConformerRelPosBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
         self.softmax_kwargs = cfg.softmax_kwargs
         self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros((cfg.num_layers * 4, cfg.num_layers * 4))))
