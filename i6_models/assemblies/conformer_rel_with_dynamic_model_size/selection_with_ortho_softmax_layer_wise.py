@@ -467,4 +467,4 @@ class ConformerRelPosEncoderV1(nn.Module):
                     hard_prune=True,
                 )
 
-        return outputs, softmax_constraint, sequence_mask
+        return outputs, sequence_mask, softmax_constraint
