@@ -174,7 +174,7 @@ class ConformerRelPosEncoderV1(nn.Module):
         self.module_list = torch.nn.ModuleList([ConformerRelPosBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
         self.layer_dropout_kwargs = cfg.layer_dropout_kwargs
         self.softmax_kwargs = cfg.softmax_kwargs
-        self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros((cfg.num_layers * 4, cfg.num_layers * 4))))
+        self.layer_gates = torch.nn.Parameter(torch.FloatTensor(torch.zeros((cfg.num_layers * 5, cfg.num_layers * 5))))
         self.layer_gates.data.normal_(EPSILON, 0.00)
         self.register_parameter(
             "selected_mod_indices",
@@ -252,8 +252,8 @@ class ConformerRelPosEncoderV1(nn.Module):
                 # largest model
                 for i in range(len(self.module_list)):
                     if_layer_drop = []
-                    for j in range(4):
-                        if 4 * i + j not in selected_layer_indices:
+                    for j in range(5):
+                        if 5 * i + j not in selected_layer_indices:
                             if_layer_drop.append(True)
                         else:
                             if_layer_drop.append(False)
@@ -261,7 +261,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                     outputs[-1] = self.module_list[i](
                         outputs[-1],
                         sequence_mask,
-                        layer_gates=torch.tensor([1, 1, 1, 1]),
+                        layer_gates=torch.tensor([1, 1, 1, 1, 1]),
                         if_layer_drop=if_layer_drop,
                     )
 
@@ -270,8 +270,8 @@ class ConformerRelPosEncoderV1(nn.Module):
                     outputs[0] = self.module_list[i](
                         outputs[0],
                         sequence_mask,
-                        layer_gates=layer_weights[4 * i : 4 * i + 4],
-                        if_layer_drop=torch.tensor([False] * 4),
+                        layer_gates=layer_weights[5 * i : 5 * i + 5],
+                        if_layer_drop=torch.tensor([False] * 5),
                     )
 
                 if global_train_step % 200 == 0:
@@ -315,8 +315,8 @@ class ConformerRelPosEncoderV1(nn.Module):
                 # largest model
                 for i in range(len(self.module_list)):
                     if_layer_drop = []
-                    for j in range(4):
-                        if 4 * i + j not in smallest_model_indices:
+                    for j in range(5):
+                        if 5 * i + j not in smallest_model_indices:
                             if_layer_drop.append(True)
                         else:
                             if_layer_drop.append(False)
@@ -324,7 +324,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                     outputs[-1] = self.module_list[i](
                         outputs[-1],
                         sequence_mask,
-                        layer_gates=torch.tensor([1, 1, 1, 1]),
+                        layer_gates=torch.tensor([1, 1, 1, 1, 1]),
                         if_layer_drop=if_layer_drop,
                         hard_prune=True,
                     )
@@ -332,8 +332,8 @@ class ConformerRelPosEncoderV1(nn.Module):
                 # smallest model
                 for i in range(len(self.module_list)):
                     layer_gates = []
-                    for j in range(4):
-                        if 4 * i + j not in smallest_model_indices:
+                    for j in range(5):
+                        if 5 * i + j not in smallest_model_indices:
                             layer_gates.append(0)
                         else:
                             layer_gates.append(1)
@@ -341,7 +341,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                         outputs[0],
                         sequence_mask,
                         layer_gates=torch.tensor(layer_gates),
-                        if_layer_drop=torch.tensor([False] * 4),
+                        if_layer_drop=torch.tensor([False] * 5),
                         hard_prune=True,
                     )
 
@@ -353,8 +353,8 @@ class ConformerRelPosEncoderV1(nn.Module):
 
                     for i in range(len(self.module_list)):
                         layer_gates = []
-                        for j in range(4):
-                            if 4 * i + j not in medium_layers_indices:
+                        for j in range(5):
+                            if 5 * i + j not in medium_layers_indices:
                                 layer_gates.append(0)
                             else:
                                 layer_gates.append(1)
@@ -362,7 +362,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                             outputs[self.random_idx],
                             sequence_mask,
                             layer_gates=torch.tensor(layer_gates),
-                            if_layer_drop=torch.tensor([False] * 4),
+                            if_layer_drop=torch.tensor([False] * 5),
                             hard_prune=True,
                         )
 
@@ -376,8 +376,8 @@ class ConformerRelPosEncoderV1(nn.Module):
 
             for i in range(len(self.module_list)):
                 layer_gates = []
-                for j in range(4):
-                    if 4 * i + j in selected_mod_indices:
+                for j in range(5):
+                    if 5 * i + j in selected_mod_indices:
                         layer_gates.append(1)
                     else:
                         layer_gates.append(0)
@@ -386,7 +386,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                     outputs[idx],
                     sequence_mask,
                     layer_gates=layer_gates,
-                    if_layer_drop=torch.tensor([False] * 4),
+                    if_layer_drop=torch.tensor([False] * 5),
                     hard_prune=True,
                 )
 
