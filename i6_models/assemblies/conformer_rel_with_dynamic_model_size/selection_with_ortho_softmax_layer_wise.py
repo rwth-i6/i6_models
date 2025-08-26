@@ -290,12 +290,15 @@ class ConformerRelPosEncoderV1(nn.Module):
 
                 # largest model
                 for i in range(len(self.module_list)):
-                    if_layer_drop = []
-                    for j in range(5):
-                        if 5 * i + j not in selected_layer_indices:
-                            if_layer_drop.append(True)
-                        else:
-                            if_layer_drop.append(False)
+                    if self.layer_dropout_kwargs["layer_dropout_stage_1"] == 0:
+                        if_layer_drop = [False]*5
+                    else:
+                        if_layer_drop = []
+                        for j in range(5):
+                            if 5 * i + j not in selected_layer_indices:
+                                if_layer_drop.append(True)
+                            else:
+                                if_layer_drop.append(False)
 
                     outputs[-1] = self.module_list[i](
                         outputs[-1],
