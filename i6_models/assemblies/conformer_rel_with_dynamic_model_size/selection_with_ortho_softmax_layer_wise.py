@@ -201,6 +201,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                 requires_grad=False,
             ),
         )
+        self.selected_mod_indices[-1][:] = torch.tensor(list(range(len(self.layer_gates))))
 
         self.random_idx = -1
         self.recog_param_pct = 1
@@ -329,11 +330,7 @@ class ConformerRelPosEncoderV1(nn.Module):
                 if global_train_step == stage_1_global_steps:
                     for i in range(len(self.pct_params_set)):
                         p = self.pct_params_set[i]
-                        if p == self.pct_params_set[-1]:
-                            self.selected_mod_indices[-1][:] = torch.tensor(
-                                list(range(len(self.layer_gates)))
-                            )
-                        else:
+                        if p != self.pct_params_set[-1]:
                             gumbel_softmax = torch.nn.functional.softmax(
                                 self.layer_gates / tau, dim=1
                             )
