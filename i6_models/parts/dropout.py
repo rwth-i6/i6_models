@@ -33,17 +33,29 @@ class BroadcastDropout(nn.Module):
         """
         if self.dropout_broadcast_axes is None:
             tensor = torch.nn.functional.dropout(tensor, p=self.p, training=self.training)
-        elif self.dropout_broadcast_axes == "T":  # [B, T, F] -> [B, F, T] -> [B, T, F]
+        elif self.dropout_broadcast_axes == "T":  # [B..., T, F] -> [B..., F, T] -> [B..., T, F]
             # torch.nn.functional.dropout1d expects a 3D tensor and broadcasts in the last dimension.
-            tensor = torch.nn.functional.dropout1d(tensor.transpose(1, 2), p=self.p, training=self.training).transpose(
-                1, 2
+            tensor = torch.nn.functional.dropout1d(
+                tensor.transpose(-1, -2), p=self.p, training=self.training
+            ).transpose(-1, -2)
+        elif self.dropout_broadcast_axes == "B":  # [B..., T, F] -> [T, F, prod(B...)] -> [B..., T, F]
+            batch_dim_sizes = tensor.shape[:-2]
+            time_dim_size = tensor.shape[-2]
+            feature_dim_size = tensor.shape[-1]
+
+            tensor = (
+                torch.nn.functional.dropout1d(
+                    tensor.reshape(-1, time_dim_size, feature_dim_size).permute(1, 2, 0),
+                    p=self.p,
+                    training=self.training,
+                )
+                .permute(2, 0, 1)
+                .reshape(*batch_dim_sizes, time_dim_size, feature_dim_size)
             )
-        elif self.dropout_broadcast_axes == "B":  # [B, T, F] -> [T, F, B] -> [B, T, F]
-            tensor = torch.nn.functional.dropout1d(tensor.permute(1, 2, 0), p=self.p, training=self.training).permute(
-                2, 0, 1
-            )
-        elif self.dropout_broadcast_axes == "BT":  # [B, T, F] -> [B*T, F] -> [F, B*T] -> [B*T, F] -> [B, T, F]
-            batch_dim_size = tensor.shape[0]
+        elif (
+            self.dropout_broadcast_axes == "BT"
+        ):  # [B..., T, F] -> [prod(B...)*T, F] -> [F, prod(B...)*T] -> [prod(B...)*T, F] -> [B..., T, F]
+            batch_dim_sizes = tensor.shape[:-2]
             feature_dim_size = tensor.shape[-1]
 
             tensor = (
@@ -51,7 +63,7 @@ class BroadcastDropout(nn.Module):
                     tensor.reshape(-1, feature_dim_size).transpose(0, 1), p=self.p, training=self.training
                 )
                 .transpose(0, 1)
-                .reshape(batch_dim_size, -1, feature_dim_size)
+                .reshape(*batch_dim_sizes, -1, feature_dim_size)
             )
 
         return tensor
