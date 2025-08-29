@@ -65,6 +65,14 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
         self.d_k = cfg.input_dim // cfg.num_att_heads
         self.h = cfg.num_att_heads
 
+        self.learnable_pos_emb = cfg.learnable_pos_emb
+        self.rel_pos_clip = cfg.rel_pos_clip
+        assert not self.learnable_pos_emb or self.rel_pos_clip
+
+        self.pos_emb_dim = self.embed_dim_per_head
+        if self.learnable_pos_emb:
+            self.rel_pos_embeddings = torch.nn.parameter.Parameter(torch.empty(self.rel_pos_clip * 2 + 1, self.pos_emb_dim))
+
         self.bit_prec_dot = cfg.bit_prec_dot
         self.bit_prec_Av = cfg.bit_prec_A_v
         self.weight_quant_dtype = cfg.weight_quant_dtype
@@ -217,6 +225,25 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
         query = key = value = tensor
 
         n_batch = query.size(0)
+        time_dim_size = query.size(1)
+
+        if self.learnable_pos_emb:
+            pos_seq_q = torch.arange(time_dim_size, device=input_tensor.device)
+            pos_seq_k = torch.arange(time_dim_size, device=input_tensor.device)
+
+            distance_mat = pos_seq_k[None, :] - pos_seq_q[:, None]
+            distance_mat_clipped = torch.clamp(distance_mat, -self.rel_pos_clip, self.rel_pos_clip)
+
+            final_mat = distance_mat_clipped + self.rel_pos_clip
+
+            rel_pos_embeddings = self.rel_pos_embeddings[final_mat]  # [T, T', pos_emb_dim]
+        else:
+            rel_pos_embeddings = self._sinusoidal_pe(
+                torch.arange(time_dim_size - 1, -time_dim_size, -1, device=input_tensor.device, dtype=torch.float32),
+                self.pos_emb_dim,
+            ).view(1, 2 * time_dim_size - 1, self.pos_emb_dim)  # [1, T+T'-1, pos_emb_dim]
+
+        
         if head_gates is None:
             q = F.linear(query, self.linear_q_weight_quantizer(self.linear_q_weight), self.linear_q_bias).view(n_batch, -1, self.h, self.d_k)
             k = F.linear(key, self.linear_k_weight_quantizer(self.linear_k_weight), self.linear_k_bias).view(n_batch, -1, self.h, self.d_k)
@@ -263,27 +290,29 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
         k = k.transpose(1, 2)  # (batch, head, time2, d_k)
         v = v.transpose(1, 2)  # (batch, head, time2, d_k)
 
-        if self.bit_prec_dot < 16:
-            q = self.q_quantizer(q)
-            k = self.k_quantizer(k)
+        q = self.q_quantizer(q)
+        k = self.k_quantizer(k)
 
-        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)
+        scores = torch.einsum("bihf, bjhf -> bhij", q, k)
+        rel_pos_embeddings = torch.einsum(
+            "bihf, ijhf -> bhij", q, rel_pos_embeddings
+        )  # [B, #heads, T, T'] or [B, #heads, T, T+T'+1]
+        scores = scores + rel_pos_embeddings
+        scores = scores * (math.sqrt(1.0 / float(self.d_k)))  # [B, #heads, T, T']
 
         n_batch = value.size(0)
         if att_mask is not None:
             att_mask = att_mask.unsqueeze(1).eq(0)  # (batch, 1, *, time2)
             min_value = torch.finfo(scores.dtype).min
             scores = scores.masked_fill(att_mask, min_value)
-
             self.attn = torch.softmax(scores, dim=-1).masked_fill(att_mask, 0.0)  # (batch, head, time1, time2)
         else:
             self.attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
 
-        # p_attn = torch.nn.functional.dropout(self.attn, p=self.dropout, training=self.training)
+        self.attn = torch.nn.functional.dropout(self.attn, p=self.dropout, training=self.training)
 
-        if self.bit_prec_Av < 16:
-            alpha = self.a_quantizer(alpha)
-            value = self.v_quantizer(value)
+        alpha = self.a_quantizer(alpha)
+        value = self.v_quantizer(value)
 
         x = torch.matmul(self.attn, value)  # (batch, head, time1, d_k)
 
@@ -317,3 +346,19 @@ class ConformerMHSAWithGateV1(torch.nn.Module):
 
         return out_tensor
     
+    @staticmethod
+    def _sinusoidal_pe(pos_seq: torch.Tensor, embed_dim: int):
+        """
+        :param pos_seq: 1-D position sequence for which to compute embeddings
+        :param embed_dim: embedding dimension
+        """
+        inv_freq = 1 / (10000 ** (torch.arange(0.0, embed_dim, 2.0, device=pos_seq.device) / embed_dim))
+
+        sinusoid_input = torch.outer(pos_seq, inv_freq)
+
+        pos_emb = torch.zeros(pos_seq.shape[0], embed_dim, device=pos_seq.device)
+
+        pos_emb[:, 0::2] = sinusoid_input.sin()
+        pos_emb[:, 1::2] = sinusoid_input.cos()
+
+        return pos_emb

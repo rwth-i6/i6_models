@@ -1,3 +1,3 @@
 from .feedforward import *
-from .convolution_decompose import *
+from .convolution import *
 from .mhsa import *
