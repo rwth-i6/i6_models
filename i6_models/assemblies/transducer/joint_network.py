@@ -17,11 +17,9 @@ class TransducerJointNetworkV1Config(ModelConfiguration):
 
     Attributes:
         ffnn_cfg: Configuration for the internal feed-forward network.
-        joint_normalization: whether use normalized joint gradient for fullsum
     """
 
     ffnn_cfg: FeedForwardBlockV1Config
-    joint_normalization: bool
 
 
 class TransducerJointNetworkV1(nn.Module):
@@ -31,7 +29,6 @@ class TransducerJointNetworkV1(nn.Module):
     ) -> None:
         super().__init__()
         self.ffnn = FeedForwardBlockV1(cfg.ffnn_cfg)
-        self.joint_normalization = cfg.joint_normalization
         self.output_dim = self.ffnn.output_dim
 
     def forward(
@@ -59,8 +56,8 @@ class TransducerJointNetworkV1(nn.Module):
         """
         Forward pass for Viterbi training.
         """
-        joint_network_inputs = torch.cat([source_encodings, target_encodings], dim=-1)  # [B, T, E + P]
-        output = self.ffnn(joint_network_inputs)  # [B, T, F]
+        combined_encodings = source_encodings + target_encodings
+        output = self.ffnn(combined_encodings)  # [B, T, F]
         if not self.training:
             output = torch.log_softmax(output, dim=-1)  # [B, T, F]
         return output, source_lengths, target_lengths
@@ -78,15 +75,6 @@ class TransducerJointNetworkV1(nn.Module):
         
         # additive combination
         combined_encodings = source_encodings.unsqueeze(2) + target_encodings.unsqueeze(1)
-
-        if self.joint_normalization:
-            source_lengths_safe = torch.clamp(source_lengths, min=1).float()
-            target_lengths_safe = torch.clamp(target_lengths, min=1).float()
-            scale_enc  = (1.0 / target_lengths_safe).view(-1, 1, 1).to(source_encodings.device)
-            scale_pred = (1.0 / source_lengths_safe).view(-1, 1, 1).to(target_encodings.device)
-
-            source_encodings.register_hook (lambda g, s=scale_enc : g * s)
-            target_encodings.register_hook(lambda g, s=scale_pred: g * s) 
 
         # Pass through FFNN
         output = self.ffnn(combined_encodings)  # [B, T, S+1, F]
