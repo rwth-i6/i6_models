@@ -199,7 +199,7 @@ class PCAProjectionQuantizer(nn.Module):
     Replace the fixed random linear projection in RandomProjectionQuantizer with PCA components
     """
 
-    def __init__(self, input_dim, codebook_dim, codebook_num_vars, use_pca_projection=True):
+    def __init__(self, input_dim: int, codebook_dim: int, codebook_num_vars: int, use_pca_projection: bool = True):
         """
         :param input_dim: number of feature dimension of input
         :param codebook_dim: number of dimension for vocab in the codebook
@@ -225,10 +225,15 @@ class PCAProjectionQuantizer(nn.Module):
         self,
         x: torch.tensor,
         sequence_mask: torch.tensor,
-        normalise_after_pca: bool = False,
         pca_update_steps: int = None,
         global_train_step: int = None,
     ) -> torch.tensor:
+        """
+        :param x: the input tensor
+        :param sequence_mask: the sequence padding mask
+        :param pca_update_steps: the maximal number of training steps that we update the PCA
+        :param global_train_step: the current training step
+        """
         if global_train_step is not None and self.use_pca_projection:
             if (pca_update_steps is None) or (pca_update_steps is not None and global_train_step < pca_update_steps):
                 self.pca.partial_fit(x[sequence_mask])
@@ -236,8 +241,7 @@ class PCAProjectionQuantizer(nn.Module):
 
         if self.use_pca_projection and pca_update_steps > 0:
             x = x @ self.pca_components.T
-            if normalise_after_pca:
-                x = F.normalize(x, dim=-1)
+            x = F.normalize(x, dim=-1)
         else:
             x = F.normalize(x @ self.p, dim=-1)
 
