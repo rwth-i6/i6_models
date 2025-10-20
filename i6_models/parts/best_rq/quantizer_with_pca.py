@@ -234,8 +234,8 @@ class PCAProjectionQuantizer(nn.Module):
 
     def forward(
         self,
-        x: torch.tensor,
-        sequence_mask: torch.tensor,
+        x: torch.Tensor,
+        sequence_mask: torch.Tensor,
         pca_update_steps: Optional[int] = None,
         global_train_step: Optional[int] = None,
     ) -> torch.tensor:
