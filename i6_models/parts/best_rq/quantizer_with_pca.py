@@ -224,8 +224,8 @@ class PCAProjectionQuantizer(nn.Module):
         self,
         x: torch.tensor,
         sequence_mask: torch.tensor,
-        pca_update_steps: int = None,
-        global_train_step: int = None,
+        pca_update_steps: Optional[int] = None,
+        global_train_step: Optional[int] = None,
     ) -> torch.tensor:
         """
         :param x: the input tensor
