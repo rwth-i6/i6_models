@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.linalg import vector_norm
 
 __all__ = [
+    "IncrementalPCA",
     "PCAProjectionQuantizer",
 ]
 
