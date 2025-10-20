@@ -26,7 +26,7 @@ class IncrementalPCA(nn.Module):
         whiten: bool = False,
         copy: bool = True,
         batch_size: Optional[int] = None,
-        device: Optional[Literal["cpu", "cuda"]] = None,
+        device: Optional[torch.device] = None,
     ):
         """
         :param n_components: Number of components to keep. If `None`, it's set to the minimum of the number of samples
@@ -36,14 +36,14 @@ class IncrementalPCA(nn.Module):
         :param copy: If False, input data will be overwritten. Defaults to True.
         :param batch_size: The number of samples to use for each batch. If `None`, it's inferred from the data and set to
                            `5 * n_features`. Defaults to None.
-        :param device: cpu or cuda, if set to None, then it use the x.device from the first input data x
+        :param device: if set to None, then it use the x.device from the first input data x
         """
         self.n_components = n_components
         self.whiten = whiten
         self.copy = copy
         self.batch_size = batch_size
         if device is not None:
-            self.device = torch.device(device)
+            self.device = device
 
         # Initialize attributes to avoid errors during the first call to partial_fit
         self.mean = None  # Will be initialized properly in partial_fit based on data dimensions
