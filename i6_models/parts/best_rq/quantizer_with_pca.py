@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,7 +18,14 @@ class IncrementalPCA(nn.Module):
     based on the principal components learned during the fitting process.
     """
 
-    def __init__(self, n_components: Optional[int] = None, *, whiten: bool = False, copy: bool = True, batch_size: Optional[int] = None):
+    def __init__(
+        self,
+        n_components: Optional[int] = None,
+        *,
+        whiten: bool = False,
+        copy: bool = True,
+        batch_size: Optional[int] = None,
+    ):
         """
         :param n_components: Number of components to keep. If `None`, it's set to the minimum of the number of samples
                              and features. Defaults to None.
@@ -38,23 +46,27 @@ class IncrementalPCA(nn.Module):
         self.var = None  # Will be initialized properly in partial_fit based on data dimensions
         self.n_samples_seen = 0
 
-    def _validate_data(self, x, dtype=torch.float32, copy=True):
+    def _validate_data(self, x: torch.Tensor, dtype=torch.float32, copy: bool = True):
         """
         Validates and converts the input data `x` to the appropriate tensor format.
 
         This method ensures that the input data is in the form of a PyTorch tensor and resides on the correct device (CPU or GPU).
         It also provides an option to create a copy of the tensor, which is useful when the input data should not be overwritten.
         """
-        if not isinstance(x, torch.Tensor):
-            x = torch.tensor(x, dtype=dtype).to(self.device)
-        elif x.device == torch.device("cpu"):
-            x = x.to(self.device)
+
+        x = torch.tensor(x, dtype=dtype).to(self.device)
+
         if copy:
             x = x.clone()
         return x
 
     @staticmethod
-    def _incremental_mean_and_var(x, last_mean, last_variance, last_sample_count):
+    def _incremental_mean_and_var(
+        x: torch.Tensor,
+        last_mean: Optional[torch.tensor],
+        last_variance: Optional[torch.tensor],
+        last_sample_count: int,
+    ):
         """
         Computes the incremental mean and variance for the data `x`.
 
@@ -89,7 +101,7 @@ class IncrementalPCA(nn.Module):
         return updated_mean, updated_variance, updated_sample_count
 
     @staticmethod
-    def _svd_flip(u, v, u_based_decision=True):
+    def _svd_flip(u: torch.Tensor, v: torch.Tensor, u_based_decision: bool = True):
         """
         Adjusts the signs of the singular vectors from the SVD decomposition for deterministic output.
         This method ensures that the output remains consistent across different runs.
@@ -109,7 +121,7 @@ class IncrementalPCA(nn.Module):
         v *= signs[:, None]
         return u, v
 
-    def fit(self, x, check_input=True):
+    def fit(self, x: torch.Tensor, check_input: bool = True):
         """
         Fits the model with data `X` using minibatches of size `batch_size`.
 
@@ -131,7 +143,7 @@ class IncrementalPCA(nn.Module):
 
         return self
 
-    def partial_fit(self, x, check_input=True):
+    def partial_fit(self, x: torch.Tensor, check_input: bool = True):
         """
         Incrementally fits the model with batch data `X`.
 
@@ -209,7 +221,7 @@ class PCAProjectionQuantizer(nn.Module):
 
         self.input_dim = input_dim
 
-        self.pca = IncrementalPCAonGPU(n_components=codebook_dim)
+        self.pca = IncrementalPCA(n_components=codebook_dim)
         self.register_buffer("pca_components", torch.empty((codebook_dim, input_dim)))
 
         # projection matrix use Xavier initialization
