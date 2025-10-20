@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -26,6 +26,7 @@ class IncrementalPCA(nn.Module):
         whiten: bool = False,
         copy: bool = True,
         batch_size: Optional[int] = None,
+        device: Optional[Literal["cpu", "cuda"]] = None,
     ):
         """
         :param n_components: Number of components to keep. If `None`, it's set to the minimum of the number of samples
@@ -35,12 +36,14 @@ class IncrementalPCA(nn.Module):
         :param copy: If False, input data will be overwritten. Defaults to True.
         :param batch_size: The number of samples to use for each batch. If `None`, it's inferred from the data and set to
                            `5 * n_features`. Defaults to None.
+        :param device: cpu or gpu, if set to None, then it use the x.device from the first input data x
         """
         self.n_components = n_components
         self.whiten = whiten
         self.copy = copy
         self.batch_size = batch_size
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device is not None:
+            self.device = torch.device(device)
 
         # Initialize attributes to avoid errors during the first call to partial_fit
         self.mean = None  # Will be initialized properly in partial_fit based on data dimensions
@@ -129,6 +132,9 @@ class IncrementalPCA(nn.Module):
         :param X: The input data tensor with shape (n_samples, n_features).
         :returnn: IncrementalPCAGPU: The fitted IPCA model.
         """
+        if self.device is None:
+            self.device = x.device
+
         if check_input:
             x = self._validate_data(x)
         n_samples, n_features = x.shape
@@ -152,6 +158,9 @@ class IncrementalPCA(nn.Module):
         :param check_input: If True, validates the input. Defaults to True.
         :return: IncrementalPCAGPU: The updated IPCA model after processing the batch.
         """
+        if self.device is None:
+            self.device = x.device
+
         first_pass = not hasattr(self, "components_")
 
         if check_input:
@@ -189,12 +198,12 @@ class IncrementalPCA(nn.Module):
 
         u, s, v_t = torch.linalg.svd(x, full_matrices=False)
         u, v_t = self._svd_flip(u, v_t, u_based_decision=False)
-        explained_variance = S**2 / (n_total_samples.item() - 1)
-        explained_variance_ratio = S**2 / torch.sum(col_var * n_total_samples.item())
+        explained_variance = s**2 / (n_total_samples.item() - 1)
+        explained_variance_ratio = s**2 / torch.sum(col_var * n_total_samples.item())
 
         self.n_samples_seen = n_total_samples.item()
-        self.components_ = Vt[: self.n_components]
-        self.singular_values_ = S[: self.n_components]
+        self.components_ = v_t[: self.n_components]
+        self.singular_values_ = s[: self.n_components]
         self.mean = col_mean
         self.var = col_var
         self.explained_variance_ = explained_variance[: self.n_components]
