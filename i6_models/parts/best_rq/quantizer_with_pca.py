@@ -17,7 +17,7 @@ class IncrementalPCA(nn.Module):
     based on the principal components learned during the fitting process.
     """
 
-    def __init__(self, n_components=None, *, whiten=False, copy=True, batch_size=None):
+    def __init__(self, n_components: Optional[int] = None, *, whiten: bool = False, copy: bool = True, batch_size: Optional[int] = None):
         """
         :param n_components: Number of components to keep. If `None`, it's set to the minimum of the number of samples
                              and features. Defaults to None.
