@@ -42,8 +42,7 @@ class IncrementalPCA(nn.Module):
         self.whiten = whiten
         self.copy = copy
         self.batch_size = batch_size
-        if device is not None:
-            self.device = device
+        self.device = device
 
         # Initialize attributes to avoid errors during the first call to partial_fit
         self.mean = None  # Will be initialized properly in partial_fit based on data dimensions
