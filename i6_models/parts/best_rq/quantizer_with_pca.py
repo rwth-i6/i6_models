@@ -47,7 +47,7 @@ class IncrementalPCAonGPU:
         """
         if not isinstance(x, torch.Tensor):
             x = torch.tensor(x, dtype=dtype).to(self.device)
-        if x.device == torch.device("cpu"):
+        elif x.device == torch.device("cpu"):
             x = x.to(self.device)
         if copy:
             x = x.clone()
