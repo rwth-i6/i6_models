@@ -36,7 +36,7 @@ class IncrementalPCA(nn.Module):
         :param copy: If False, input data will be overwritten. Defaults to True.
         :param batch_size: The number of samples to use for each batch. If `None`, it's inferred from the data and set to
                            `5 * n_features`. Defaults to None.
-        :param device: cpu or gpu, if set to None, then it use the x.device from the first input data x
+        :param device: cpu or cuda, if set to None, then it use the x.device from the first input data x
         """
         self.n_components = n_components
         self.whiten = whiten
