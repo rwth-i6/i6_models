@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 
-class IncrementalPCAonGPU:
+class IncrementalPCA(nn.Module):
     """
     An implementation of Incremental Principal Components Analysis (IPCA) that leverages PyTorch for GPU acceleration.
     The code is taken from https://github.com/dnhkng/PCAonGPU/blob/main/gpu_pca/pca_module.py.
