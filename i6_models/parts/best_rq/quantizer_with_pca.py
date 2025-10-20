@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.linalg import vector_norm
-from i6_experiments.users.jxu.experiments.pretrain.pytorch_networks.pca_module import IncrementalPCAonGPU
 
 __all__ = [
     "PCAProjectionQuantizer",
