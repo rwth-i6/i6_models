@@ -1,4 +1,4 @@
-__all__ = ["LogUniformSampler", "LogUniformWithoutReplacementSampler"]
+__all__ = ["LogUniformSampler"]
 
 
 import torch
@@ -8,21 +8,28 @@ from typing import Optional
 
 class LogUniformSampler(nn.Module):
     def __init__(
-        self, num_classes: int, *, distribution_clamp_min: float = 1e-10, device: Optional[torch.device] = None
+        self,
+        num_classes: int,
+        *,
+        with_replacement: bool = False,
+        distribution_clamp_min: float = 1e-10,
+        device: Optional[torch.device] = None,
     ):
         """
-        Samples from a log uniform distribution from classes. Sampling is performed with replacement, i.e. sampled
-        indices can appear more than once in sampled set. This can be implemented with
-        `torch.distributions.multinomial.Multinomial` or `torch.multinomial`.
+        Samples from a log uniform distribution from classes. This assumes that the vocabulary is sorted according to
+        word count descending.
 
         :param num_classes: number of classes from which the distribution is sampled. The class indices are sorted in
             descending order according to their frequency.
+        :param with_replacement: wether to sample with replacement or not.
+        :param distribution_clamp_min: minimum probability mass.
         :param device: device on which the distribution is sampled.
         """
         super().__init__()
 
         # assumes count-sorted vocabulary, descending
         self.num_classes = num_classes
+        self.with_replacement = with_replacement
 
         # approximately zipf distribution
         ws = torch.arange(self.num_classes, dtype=torch.get_default_dtype(), device=device)
@@ -30,8 +37,6 @@ class LogUniformSampler(nn.Module):
         self._distribution.clamp_(min=distribution_clamp_min)
         self._distribution /= self._distribution.sum()
 
-        self._cat_sampler = torch.distributions.categorical.Categorical(probs=self._distribution)
-
     def sample(self, num_samples: int) -> torch.Tensor:
         """
         Returns a random tensor in the size of [num_samples].
@@ -39,41 +44,7 @@ class LogUniformSampler(nn.Module):
         :param num_samples: number of samples.
         :return: [num_samples]
         """
-        return self._cat_sampler.sample(torch.Size([num_samples]))
-
-    def log_prob(self, indices: torch.Tensor) -> torch.Tensor:
-        """
-        Return log-probability of the given indices in the size of [B x T]
-
-        :param indices: the ground truth target labels as indices.
-        :return: [B x T]
-        """
-        return self._cat_sampler.log_prob(indices)
-
-
-class LogUniformWithoutReplacementSampler(LogUniformSampler):
-    def __init__(
-        self, num_classes: int, *, distribution_clamp_min: float = 1e-10, device: Optional[torch.device] = None
-    ):
-        """
-        Samples classes from a log uniform distribution, which is approximates zipf's distribution.
-        Sampling is performed without replacement, i.e. no duplicate classes are sampled.
-
-        :param distribution_clamp_min: minimum probability mass for each class
-        :param num_classes: number of classes to sample from the distribution. The class indices are sorted in
-            descending order according to their frequency.
-        :param device: device on which the distribution is sampled.
-        """
-        super().__init__(num_classes, distribution_clamp_min=distribution_clamp_min, device=device)
-
-    def sample(self, num_samples: int) -> torch.Tensor:
-        """
-        Returns a random tensor in the size of [num_samples].
-
-        :param num_samples: number of samples.
-        :return: [num_samples]
-        """
-        return torch.multinomial(self._distribution, num_samples, replacement=False)
+        return torch.multinomial(self._distribution, num_samples, replacement=self.with_replacement)
 
     def log_prob(self, indices: torch.Tensor) -> torch.Tensor:
         """
