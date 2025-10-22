@@ -11,7 +11,7 @@ class LogUniformSampler(nn.Module):
         self,
         num_classes: int,
         *,
-        with_replacement: bool = False,
+        with_replacement: bool = True,
         distribution_clamp_min: float = 1e-10,
         device: Optional[torch.device] = None,
     ):
