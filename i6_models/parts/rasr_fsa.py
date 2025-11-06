@@ -228,9 +228,9 @@ class RasrFsaBuilderV2(RasrFsaBuilder):
         return out_fsa
 
 
-class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
+class RasrFsaBuilderByOrthography(RasrFsaBuilderV2):
     """
-    FSA builder whose only purpose is to build FSAs by orthography.
+    FSA builder whose only purpose is to build FSAs by the orthography it receives.
     """
 
     def build_single(self, orth: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
@@ -246,3 +246,14 @@ class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
             * float weight array of shape [E,]
         """
         return self.builder.build_by_orthography(orth)
+
+    def build_batch(self, orths: Iterable[str]) -> WeightedFsaV2:
+        """
+        Equivalent to the superclass implementation, but the parameter is named `orths` instead of `seq_tags`.
+
+        :param orths: Sequence of orthographies to be converted into a single FSA.
+        :return: FSA that represents
+        """
+        # When running `super().build_batch()`, the superclass internally calls `self.build_single()`,
+        # which correctly calls the function from the child class.
+        return super().build_batch(orths)
