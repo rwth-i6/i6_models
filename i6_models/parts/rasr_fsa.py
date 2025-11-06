@@ -245,5 +245,4 @@ class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
                 consisting of from-state, to-state and the emission idx
             * float weight array of shape [E,]
         """
-        raw_fsa = self.builder.build_by_orthography(orth)
-        return raw_fsa
+        return self.builder.build_by_orthography(orth)
