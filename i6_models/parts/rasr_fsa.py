@@ -226,3 +226,35 @@ class RasrFsaBuilderV2(RasrFsaBuilder):
             out_fsa *= self.tdp_scale
 
         return out_fsa
+
+
+class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
+    """
+    FSA builder whose only purpose is to build FSAs by orthography.
+    Since the segment name to orth map is not needed, the corpus doesn't have to be loaded.
+
+    Any call to `self.builder.build_by_segment_name` or `self.builder.get_orthography_by_segment_name`
+    with an object of this class will fail.
+    """
+
+    def __init__(self, config_path: str, tdp_scale: float = 1.0):
+        import librasr
+
+        self.config_path = config_path
+        config = librasr.Configuration()
+        config.set_from_file(self.config_path)
+        self.builder = librasr.AllophoneStateFsaBuilder(config, loadSegmentToOrthMap=False)
+        self.tdp_scale = tdp_scale
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state["builder"]
+        return state
+
+    def __setstate__(self, state):
+        import librasr
+
+        self.__dict__.update(state)
+        config = librasr.Configuration()
+        config.set_from_file(self.config_path)
+        self.builder = librasr.AllophoneStateFsaBuilder(config, loadSegmentToOrthMap=False)
