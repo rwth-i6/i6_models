@@ -246,11 +246,6 @@ class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
         self.builder = librasr.AllophoneStateFsaBuilder(config, loadSegmentToOrthMap=False)
         self.tdp_scale = tdp_scale
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state["builder"]
-        return state
-
     def __setstate__(self, state):
         import librasr
 
@@ -258,3 +253,18 @@ class RasrFsaBuilderByOrth(RasrFsaBuilderV2):
         config = librasr.Configuration()
         config.set_from_file(self.config_path)
         self.builder = librasr.AllophoneStateFsaBuilder(config, loadSegmentToOrthMap=False)
+
+    def build_single(self, orth: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
+        """
+        Build the FSA for the given sequence tag in the corpus.
+
+        :param seq_tag: Segment orthography.
+        :return: FSA as a tuple containing
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
+        """
+        raw_fsa = self.builder.build_by_orthography(orth)
+        return raw_fsa
