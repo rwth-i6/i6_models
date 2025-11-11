@@ -347,3 +347,22 @@ class RasrFsaBuilderV2(RasrFsaBatchBuilder):
         raw_fsa = self.builder.build_by_segment_name(single_identifier)
         return raw_fsa
 
+
+class RasrFsaBuilderByOrthography(RasrFsaBatchBuilder):
+    """
+    Builds an FSA by orthography. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
+    """
+
+    def build_single(self, single_identifier: str) -> FsaTuple:
+        """
+        Build the FSA for the given orthography in the corpus.
+
+        :param single_identifier: Segment orthography.
+        :return: FSA as a tuple containing
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
+        """
+        return self.builder.build_by_orthography(single_identifier)
