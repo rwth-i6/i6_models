@@ -2,8 +2,9 @@ from __future__ import annotations
 
 __all__ = ["RasrFsaBuilder", "WeightedFsa", "RasrFsaBuilderV2", "WeightedFsaV2"]
 
+from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Iterable, NamedTuple, Tuple, Union
+from typing import Any, Iterable, NamedTuple, Union
 
 import numpy as np
 import torch
@@ -208,13 +209,89 @@ class RasrFsaBuilder:
         return out_fsa
 
 
-class RasrFsaBuilderV2(RasrFsaBuilder):
+class RasrFsaBatchBuilder(ABC):
     """
-    An update of the RasrFsaBuilder that is compatible with the fbw2 op from i6_native_ops.
+    Abstract base class for building an FSA, compatible with the `fbw2` op from `i6_native_ops`.
+
+    The user must overwrite the :funcref:`build_single` method.
+
+    The TDP scale must be explicitly called when running :funcref:`build_single`.
+    For that, :funcref:`apply_tdp_scale` can be used.
     """
 
-    def build_batch(self, seq_tags: Iterable[str]) -> WeightedFsaV2:
-        fsas = list(map(self.build_single, seq_tags))
+    def __init__(self, config_path: str, tdp_scale: float = 1.0):
+        """
+        :param config_path: Path to the RASR config for the FSA builder.
+        :param tdp_scale: Transition penalty to apply for each edge of the resulting FSA.
+            Applied in the :funcref:`build_batch` method.
+        """
+        import librasr
+
+        self.config_path = config_path
+        config = librasr.Configuration()
+        config.set_from_file(self.config_path)
+        self.builder = librasr.AllophoneStateFsaBuilder(config)
+        self.tdp_scale = tdp_scale
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state["builder"]
+        return state
+
+    def __setstate__(self, state):
+        import librasr
+
+        self.__dict__.update(state)
+        config = librasr.Configuration()
+        config.set_from_file(self.config_path)
+        self.builder = librasr.AllophoneStateFsaBuilder(config)
+
+    def apply_tdp_scale(self, fsa: FsaTuple, tdp_scale: float) -> FsaTuple:
+        """
+        Applies the TDP scale given as parameter to an FSA represented as a tuple.
+
+        :param fsa: FSA as a tuple containing
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
+        :param tdp_scale: TDP scale by which the weights must be multiplied.
+        :return: FSA with scaled weights corresponding to :paramref:`tdp_scale`.
+        """
+        return (fsa[0], fsa[1], fsa[2], fsa[3] * tdp_scale)
+
+    @abstractmethod
+    def build_single(self, single_identifier: Any) -> FsaTuple:
+        """
+        Builds a single FSA. The user must overwrite this function.
+
+        Note: the user must take care of applying the TDP scale.
+        For that, :funcref:`apply_tdp_scale` can be used.
+
+        :param single_identifier: Identifier of the sequence for which an FSA must be built.
+        :return: FSA as a tuple corresponding to the sequence identified by :paramref:`single_identifier`.
+            The returned value contains the following fields in order:
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
+        """
+        ...
+
+    def join_fsas(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
+        """
+        Joins a set of FSAs represented as tuples into a single :classref:`WeightedFsaV2` object.
+
+        :param fsas: Tuples to be concatenated, represented as tuples with the following fields:
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
+        :return: Single FSA object corresponding to the joined FSAs passed as parameter.
+        """
 
         num_states = [f[0] for f in fsas]
         num_edges = [f[1] for f in fsas]
@@ -236,15 +313,19 @@ class RasrFsaBuilderV2(RasrFsaBuilder):
             torch.IntTensor(np.array([start_states, end_states])),
         )
 
-        if self.tdp_scale != 1.0:
-            out_fsa *= self.tdp_scale
-
         return out_fsa
 
+    def build_batch(self, multiple_identifiers: Iterable[Any]) -> WeightedFsaV2:
+        """
+        Builds and joins several FSAs into a batch.
 
-class RasrFsaBuilderByOrthography(RasrFsaBuilderV2):
-    """
-    FSA builder whose only purpose is to build FSAs by the orthography it receives.
+        :param multiple_identifiers: Sequence of identifiers for which to build the batched FSA.
+        :return: Single FSA object corresponding to the batched FSAs passed as parameter.
+        """
+        fsas = list(map(self.build_single, multiple_identifiers))
+
+        return self.join_fsas(fsas)
+
     """
 
     def build_single(self, orth: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
