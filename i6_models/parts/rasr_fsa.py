@@ -248,7 +248,7 @@ class RasrFsaBatchBuilder(ABC):
 
     def apply_tdp_scale(self, fsa: FsaTuple, tdp_scale: float) -> FsaTuple:
         """
-        Applies the TDP scale given as parameter to an FSA represented as a tuple.
+        Scales the weights of an FSA represented as a tuple by the TDP scale provided.
 
         :param fsa: FSA as a tuple containing
             * number of states S
@@ -259,7 +259,11 @@ class RasrFsaBatchBuilder(ABC):
         :param tdp_scale: TDP scale by which the weights must be multiplied.
         :return: FSA with scaled weights corresponding to :paramref:`tdp_scale`.
         """
-        return (fsa[0], fsa[1], fsa[2], fsa[3] * tdp_scale)
+        if tdp_scale == 1.0:
+            # No scaling.
+            return fsa
+        else:
+            return (fsa[0], fsa[1], fsa[2], fsa[3] * tdp_scale)
 
     @abstractmethod
     def build_single(self, single_identifier: Any) -> FsaTuple:
@@ -322,7 +326,7 @@ class RasrFsaBatchBuilder(ABC):
         :param multiple_identifiers: Sequence of identifiers for which to build the batched FSA.
         :return: Single FSA object corresponding to the batched FSAs passed as parameter.
         """
-        fsas = list(map(self.build_single, multiple_identifiers))
+        fsas: list[FsaTuple] = list(map(self.build_single, multiple_identifiers))
 
         return self.join_fsas(fsas)
 
@@ -332,7 +336,7 @@ class RasrFsaBuilderV2(RasrFsaBatchBuilder):
     Builds an FSA by sequence tag. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
 
-    def build_single(self, single_identifier: str) -> WeightedFsaV2:
+    def build_single(self, single_identifier: str) -> FsaTuple:
         """
         Build the FSA for the given sequence tag in the corpus.
 
@@ -345,7 +349,8 @@ class RasrFsaBuilderV2(RasrFsaBatchBuilder):
             * float weight array of shape [E,]
         """
         raw_fsa = self.builder.build_by_segment_name(single_identifier)
-        return raw_fsa
+
+        return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
 
 
 class RasrFsaBuilderByOrthography(RasrFsaBatchBuilder):
@@ -365,4 +370,6 @@ class RasrFsaBuilderByOrthography(RasrFsaBatchBuilder):
                 consisting of from-state, to-state and the emission idx
             * float weight array of shape [E,]
         """
-        return self.builder.build_by_orthography(single_identifier)
+        raw_fsa = self.builder.build_by_orthography(single_identifier)
+
+        return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
