@@ -326,13 +326,17 @@ class RasrFsaBatchBuilder(ABC):
 
         return self.join_fsas(fsas)
 
+
+class RasrFsaBuilderV2(RasrFsaBatchBuilder):
+    """
+    Builds an FSA by sequence tag. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
 
-    def build_single(self, orth: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
+    def build_single(self, single_identifier: str) -> WeightedFsaV2:
         """
         Build the FSA for the given sequence tag in the corpus.
 
-        :param seq_tag: Segment orthography.
+        :param single_identifier: sequence tag
         :return: FSA as a tuple containing
             * number of states S
             * number of edges E
@@ -340,15 +344,6 @@ class RasrFsaBatchBuilder(ABC):
                 consisting of from-state, to-state and the emission idx
             * float weight array of shape [E,]
         """
-        return self.builder.build_by_orthography(orth)
+        raw_fsa = self.builder.build_by_segment_name(single_identifier)
+        return raw_fsa
 
-    def build_batch(self, orths: Iterable[str]) -> WeightedFsaV2:
-        """
-        Equivalent to the superclass implementation, but the parameter is named `orths` instead of `seq_tags`.
-
-        :param orths: Sequence of orthographies to be converted into a single FSA.
-        :return: FSA that represents
-        """
-        # When running `super().build_batch()`, the superclass internally calls `self.build_single()`,
-        # which correctly calls the function from the child class.
-        return super().build_batch(orths)
