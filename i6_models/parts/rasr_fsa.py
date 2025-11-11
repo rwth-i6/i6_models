@@ -9,6 +9,20 @@ import numpy as np
 import torch
 
 
+FsaTuple = tuple[int, int, np.ndarray, np.ndarray]
+"""
+FSA as a tuple containing
+* number of states S
+* number of edges E
+* integer edge array of shape [E, 3] where each row is an edge
+    consisting of from-state, to-state and the emission idx
+* float weight array of shape [E,]
+
+This format is how RASR outputs FSAs when retrieving an FSA by orthography/sequence tag:
+https://github.com/rwth-i6/rasr/blob/2bf347fb70f1298950a4adbda39197242f78a619/src/Python/AllophoneStateFsaBuilder.cc#L60
+"""
+
+
 class WeightedFsa(NamedTuple):
     """
     Convenience class that represents an FSA. It supports scaling the weights of the
@@ -124,7 +138,7 @@ class RasrFsaBuilder:
         config.set_from_file(self.config_path)
         self.builder = librasr.AllophoneStateFsaBuilder(config)
 
-    def build_single(self, seq_tag: str) -> Tuple[int, int, np.ndarray, np.ndarray]:
+    def build_single(self, seq_tag: str) -> FsaTuple:
         """
         Build the FSA for the given sequence tag in the corpus.
 
