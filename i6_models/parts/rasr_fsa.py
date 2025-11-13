@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2", "RasrFsaBuilderByOrthography"]
+__all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2", "RasrAllophoneFsaBuilderByOrthography"]
 
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -209,14 +209,19 @@ class RasrFsaBuilder:
         return out_fsa
 
 
-class _RasrFsaBatchBuilder(ABC):
+class _RasrAllophoneFsaBatchBuilder(ABC):
     """
-    Abstract base class for building an FSA, compatible with the `fbw2` op from `i6_native_ops`.
+    Abstract base class for building an FSA.
+    Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
+
+    The implementation is compatible with the `fbw2` op from `i6_native_ops`.
 
     The user must overwrite the :funcref:`build_single` method.
 
     The TDP scale must be explicitly called when running :funcref:`build_single`.
     For that, :funcref:`apply_tdp_scale` can be used.
+
+    Using any subclass requires a working installation of the python package `librasr`.
     """
 
     def __init__(self, config_path: str, *, tdp_scale: float = 1.0):
@@ -331,9 +336,13 @@ class _RasrFsaBatchBuilder(ABC):
         return self.join_fsas(fsas)
 
 
-class RasrFsaBuilderV2(_RasrFsaBatchBuilder):
+class RasrFsaBuilderV2(_RasrAllophoneFsaBatchBuilder):
     """
-    Builds an FSA by sequence tag. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
+    Builds an FSA given a sequence tag.
+    The orthography will be pulled from the corpus provided in the configuration file.
+    Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
+
+    The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
 
     def build_single(self, single_identifier: str) -> FsaTuple:
@@ -353,9 +362,12 @@ class RasrFsaBuilderV2(_RasrFsaBatchBuilder):
         return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
 
 
-class RasrFsaBuilderByOrthography(_RasrFsaBatchBuilder):
+class RasrAllophoneFsaBuilderByOrthography(_RasrAllophoneFsaBatchBuilder):
     """
-    Builds an FSA by orthography. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
+    Builds an FSA given an orthography.
+    Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
+
+    The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
 
     def build_single(self, single_identifier: str) -> FsaTuple:
