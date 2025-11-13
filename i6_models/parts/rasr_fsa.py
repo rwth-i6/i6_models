@@ -307,7 +307,7 @@ class _RasrFsaBuilderFbw2(_AbstractRasrFsaBuilder):
     Using any subclass requires a working installation of the python package `librasr`.
     """
 
-    def build_batched_fsas(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
+    def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
         """
         Joins a set of FSAs represented as tuples into a single :classref:`WeightedFsaV2` object.
 
