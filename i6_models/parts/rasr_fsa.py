@@ -219,7 +219,7 @@ class _RasrFsaBatchBuilder(ABC):
     For that, :funcref:`apply_tdp_scale` can be used.
     """
 
-    def __init__(self, config_path: str, tdp_scale: float = 1.0):
+    def __init__(self, config_path: str, *, tdp_scale: float = 1.0):
         """
         :param config_path: Path to the RASR config for the FSA builder.
         :param tdp_scale: Transition penalty to apply for each edge of the resulting FSA.
