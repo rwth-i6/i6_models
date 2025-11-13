@@ -231,7 +231,16 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         raw_fsa = self.builder.build_by_segment_name(seq_tag)
         return raw_fsa
 
-    def build_batch(self, seq_tags: Iterable[str]) -> WeightedFsa:
+    def _append_fsa(self, a, b):
+        edges = torch.from_numpy(np.int32(b[2])).reshape((3, b[1]))
+        return (
+            a[0] + [b[0]],  # num states
+            a[1] + [b[1]],  # num edges
+            torch.hstack([a[2], edges]),  # edges
+            torch.cat([a[3], torch.from_numpy(b[3])]),  # weights
+        )
+
+    def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> WeightedFsa:
         """
         Build and concatenate the FSAs for a batch of sequence tags
         and reformat as an input to `i6_native_ops.fbw.fbw_loss`.
@@ -241,23 +250,17 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         the batch.
         Additionally we apply an optional scale to the weights.
 
-        :param seq_tags: an iterable object of sequence tags
+        :param fsas: Sequence of FSAs as a tuple containing:
+            * number of states S
+            * number of edges E
+            * integer edge array of shape [E, 3] where each row is an edge
+                consisting of from-state, to-state and the emission idx
+            * float weight array of shape [E,]
         :return: a concatenated FSA
         """
-
-        def append_fsa(a, b):
-            edges = torch.from_numpy(np.int32(b[2])).reshape((3, b[1]))
-            return (
-                a[0] + [b[0]],  # num states
-                a[1] + [b[1]],  # num edges
-                torch.hstack([a[2], edges]),  # edges
-                torch.cat([a[3], torch.from_numpy(b[3])]),  # weights
-            )
-
-        # concatenate all FSAs in the batch into a single one where state ids are not yet unique
-        fsas = map(self.build_single, seq_tags)
+            
         empty_fsa = ([], [], torch.empty((3, 0), dtype=torch.int32), torch.empty((0,)))
-        num_states, num_edges, all_edges, all_weights = reduce(append_fsa, fsas, empty_fsa)
+        num_states, num_edges, all_edges, all_weights = reduce(self._append_fsa, fsas, empty_fsa)
         num_edges = torch.tensor(num_edges, dtype=torch.int32)
         num_states = torch.tensor(num_states, dtype=torch.int32)
 
