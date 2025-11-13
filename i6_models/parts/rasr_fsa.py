@@ -289,7 +289,7 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         return out_fsa
 
 
-class _RasrAllophoneFsaBatchBuilder(ABC):
+class _RasrAllophoneFsaBuilderFbw2(_AbstractRasrFsaBuilder):
     """
     Abstract base class for building an FSA.
     Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
@@ -299,81 +299,16 @@ class _RasrAllophoneFsaBatchBuilder(ABC):
     The user must overwrite the :funcref:`build_single` method.
 
     The TDP scale must be explicitly called when running :funcref:`build_single`.
-    For that, :funcref:`apply_tdp_scale` can be used.
+    For that, :funcref:`apply_tdp_scale_to_fsa_tuple` can be used.
 
     Using any subclass requires a working installation of the python package `librasr`.
     """
 
-    def __init__(self, config_path: str, *, tdp_scale: float = 1.0):
-        """
-        :param config_path: Path to the RASR config for the FSA builder.
-        :param tdp_scale: Transition penalty to apply for each edge of the resulting FSA.
-            Applied in the :funcref:`build_batch` method.
-        """
-        import librasr
-
-        self.config_path = config_path
-        config = librasr.Configuration()
-        config.set_from_file(self.config_path)
-        self.builder = librasr.AllophoneStateFsaBuilder(config)
-        self.tdp_scale = tdp_scale
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state["builder"]
-        return state
-
-    def __setstate__(self, state):
-        import librasr
-
-        self.__dict__.update(state)
-        config = librasr.Configuration()
-        config.set_from_file(self.config_path)
-        self.builder = librasr.AllophoneStateFsaBuilder(config)
-
-    def apply_tdp_scale(self, fsa: FsaTuple, tdp_scale: float) -> FsaTuple:
-        """
-        Scales the weights of an FSA represented as a tuple by the TDP scale provided.
-
-        :param fsa: FSA as a tuple containing
-            * number of states S
-            * number of edges E
-            * integer edge array of shape [E, 3] where each row is an edge
-                consisting of from-state, to-state and the emission idx
-            * float weight array of shape [E,]
-        :param tdp_scale: TDP scale by which the weights must be multiplied.
-        :return: FSA with scaled weights corresponding to :paramref:`tdp_scale`.
-        """
-        if tdp_scale == 1.0:
-            # No scaling.
-            return fsa
-        else:
-            return (fsa[0], fsa[1], fsa[2], fsa[3] * tdp_scale)
-
-    @abstractmethod
-    def build_single(self, single_identifier: Any) -> FsaTuple:
-        """
-        Builds a single FSA. The user must overwrite this function.
-
-        Note: the user must take care of applying the TDP scale.
-        For that, :funcref:`apply_tdp_scale` can be used.
-
-        :param single_identifier: Identifier of the sequence for which an FSA must be built.
-        :return: FSA as a tuple corresponding to the sequence identified by :paramref:`single_identifier`.
-            The returned value contains the following fields in order:
-            * number of states S
-            * number of edges E
-            * integer edge array of shape [E, 3] where each row is an edge
-                consisting of from-state, to-state and the emission idx
-            * float weight array of shape [E,]
-        """
-        ...
-
-    def join_fsas(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
+    def build_batched_fsas(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
         """
         Joins a set of FSAs represented as tuples into a single :classref:`WeightedFsaV2` object.
 
-        :param fsas: Tuples to be concatenated, represented as tuples with the following fields:
+        :param fsas: FSAs to be concatenated, represented as tuples with the following fields:
             * number of states S
             * number of edges E
             * integer edge array of shape [E, 3] where each row is an edge
@@ -404,19 +339,7 @@ class _RasrAllophoneFsaBatchBuilder(ABC):
 
         return out_fsa
 
-    def build_batch(self, multiple_identifiers: Iterable[Any]) -> WeightedFsaV2:
-        """
-        Builds and joins several FSAs into a batch.
 
-        :param multiple_identifiers: Sequence of identifiers for which to build the batched FSA.
-        :return: Single FSA object corresponding to the batched FSAs passed as parameter.
-        """
-        fsas: list[FsaTuple] = list(map(self.build_single, multiple_identifiers))
-
-        return self.join_fsas(fsas)
-
-
-class RasrFsaBuilderV2(_RasrAllophoneFsaBatchBuilder):
     """
     Builds an FSA given a sequence tag.
     The orthography will be pulled from the corpus provided in the configuration file.
