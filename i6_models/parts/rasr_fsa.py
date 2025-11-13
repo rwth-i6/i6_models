@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-__all__ = ["RasrFsaBuilder", "WeightedFsa", "RasrFsaBuilderV2", "WeightedFsaV2"]
+__all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2", "RasrFsaBuilderByOrthography"]
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Any, Iterable, NamedTuple, Union
+from typing import Any, Iterable, NamedTuple, Tuple, Union
 
 import numpy as np
 import torch
 
 
-FsaTuple = tuple[int, int, np.ndarray, np.ndarray]
+FsaTuple = Tuple[int, int, np.ndarray, np.ndarray]
 """
 FSA as a tuple containing
 * number of states S
@@ -209,7 +209,7 @@ class RasrFsaBuilder:
         return out_fsa
 
 
-class RasrFsaBatchBuilder(ABC):
+class _RasrFsaBatchBuilder(ABC):
     """
     Abstract base class for building an FSA, compatible with the `fbw2` op from `i6_native_ops`.
 
@@ -331,7 +331,7 @@ class RasrFsaBatchBuilder(ABC):
         return self.join_fsas(fsas)
 
 
-class RasrFsaBuilderV2(RasrFsaBatchBuilder):
+class RasrFsaBuilderV2(_RasrFsaBatchBuilder):
     """
     Builds an FSA by sequence tag. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
@@ -353,7 +353,7 @@ class RasrFsaBuilderV2(RasrFsaBatchBuilder):
         return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
 
 
-class RasrFsaBuilderByOrthography(RasrFsaBatchBuilder):
+class RasrFsaBuilderByOrthography(_RasrFsaBatchBuilder):
     """
     Builds an FSA by orthography. The implementation is compatible with the `fbw2` op from `i6_native_ops`.
     """
