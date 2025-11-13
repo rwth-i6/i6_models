@@ -340,6 +340,7 @@ class _RasrAllophoneFsaBuilderFbw2(_AbstractRasrFsaBuilder):
         return out_fsa
 
 
+class RasrFsaBuilderV2(_RasrAllophoneFsaBuilderFbw2):
     """
     Builds an FSA given a sequence tag.
     The orthography will be pulled from the corpus provided in the configuration file.
@@ -362,10 +363,10 @@ class _RasrAllophoneFsaBuilderFbw2(_AbstractRasrFsaBuilder):
         """
         raw_fsa = self.builder.build_by_segment_name(single_identifier)
 
-        return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
+        return self.apply_tdp_scale_to_fsa_tuple(raw_fsa, self.tdp_scale)
 
 
-class RasrAllophoneFsaBuilderByOrthography(_RasrAllophoneFsaBatchBuilder):
+class RasrAllophoneFsaBuilderByOrthography(_RasrAllophoneFsaBuilderFbw2):
     """
     Builds an FSA given an orthography.
     Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
@@ -387,4 +388,4 @@ class RasrAllophoneFsaBuilderByOrthography(_RasrAllophoneFsaBatchBuilder):
         """
         raw_fsa = self.builder.build_by_orthography(single_identifier)
 
-        return self.apply_tdp_scale(raw_fsa, self.tdp_scale)
+        return self.apply_tdp_scale_to_fsa_tuple(raw_fsa, self.tdp_scale)
