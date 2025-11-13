@@ -261,7 +261,7 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
             * float weight array of shape [E,]
         :return: a concatenated FSA
         """
-            
+
         empty_fsa = ([], [], torch.empty((3, 0), dtype=torch.int32), torch.empty((0,)))
         num_states, num_edges, all_edges, all_weights = reduce(self._append_fsa, fsas, empty_fsa)
         num_edges = torch.tensor(num_edges, dtype=torch.int32)
