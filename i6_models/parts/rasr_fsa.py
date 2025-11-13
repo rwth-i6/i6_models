@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2", "RasrAllophoneFsaBuilderByOrthography"]
+__all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2", "RasrFsaBuilderByOrthography"]
 
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -292,7 +292,7 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         return out_fsa
 
 
-class _RasrAllophoneFsaBuilderFbw2(_AbstractRasrFsaBuilder):
+class _RasrFsaBuilderFbw2(_AbstractRasrFsaBuilder):
     """
     Abstract base class for building an FSA.
     Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
@@ -343,7 +343,7 @@ class _RasrAllophoneFsaBuilderFbw2(_AbstractRasrFsaBuilder):
         return out_fsa
 
 
-class RasrFsaBuilderV2(_RasrAllophoneFsaBuilderFbw2):
+class RasrFsaBuilderV2(_RasrFsaBuilderFbw2):
     """
     Builds an FSA given a sequence tag.
     The orthography will be pulled from the corpus provided in the configuration file.
@@ -369,7 +369,7 @@ class RasrFsaBuilderV2(_RasrAllophoneFsaBuilderFbw2):
         return self.apply_tdp_scale_to_fsa_tuple(raw_fsa, self.tdp_scale)
 
 
-class RasrAllophoneFsaBuilderByOrthography(_RasrAllophoneFsaBuilderFbw2):
+class RasrFsaBuilderByOrthography(_RasrFsaBuilderFbw2):
     """
     Builds an FSA given an orthography.
     Internally uses allophones to model the FSA by means of `librasr.AllophoneStateFsaBuilder`.
