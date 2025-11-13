@@ -4,10 +4,13 @@ __all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2",
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import Any, Iterable, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Tuple, Union
 
 import numpy as np
 import torch
+
+if TYPE_CHECKING:
+    import librasr
 
 
 FsaTuple = Tuple[int, int, np.ndarray, np.ndarray]
