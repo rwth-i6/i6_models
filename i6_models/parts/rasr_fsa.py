@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Tuple, Union
 import numpy as np
 import torch
 
+
 if TYPE_CHECKING:
     import librasr
 
@@ -117,13 +118,6 @@ class _AbstractRasrFsaBuilder(ABC):
     This is necessary for pickling as the C++ class `librasr.AllophoneStateFsaBuilder` is not picklable.
     """
 
-    def get_builder(self, config_path: str) -> "librasr.AllophoneStateFsaBuilder":
-        import librasr
-
-        config = librasr.Configuration()
-        config.set_from_file(config_path)
-        return librasr.AllophoneStateFsaBuilder(config)
-
     def __init__(self, config_path: str, tdp_scale: float = 1.0):
         """
         :param config_path: Path to the RASR FSA exporter config. The FSA builder will be created from here.
@@ -132,6 +126,13 @@ class _AbstractRasrFsaBuilder(ABC):
         self.config_path = config_path
         self.builder = self.get_builder(config_path=self.config_path)
         self.tdp_scale = tdp_scale
+
+    def get_builder(self, config_path: str) -> librasr.AllophoneStateFsaBuilder:
+        import librasr
+
+        config = librasr.Configuration()
+        config.set_from_file(config_path)
+        return librasr.AllophoneStateFsaBuilder(config)
 
     def __getstate__(self):
         state = self.__dict__.copy()
