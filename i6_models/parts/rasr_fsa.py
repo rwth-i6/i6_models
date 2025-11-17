@@ -4,7 +4,7 @@ __all__ = ["WeightedFsa", "WeightedFsaV2", "RasrFsaBuilder", "RasrFsaBuilderV2",
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import torch
@@ -104,6 +104,28 @@ class WeightedFsaV2(NamedTuple):
             self.weights.to(device),
             self.start_end_states.to(device),
         )
+
+
+AppendedFsa = Tuple[List[int], List[int], torch.Tensor, torch.Tensor]
+"""Data structure used for FSA appending (see function below)."""
+
+
+def _append_fsa(original_fsa: AppendedFsa, fsa_to_append: FsaTuple) -> AppendedFsa:
+    """
+    Appends an FSA :paramref:`fsa_to_append` at the end of another FSA :paramref:`original_fsa`.
+
+    :param original_fsa: Original FSA.
+    :param fsa_to_append: FSA to concatenate to :paramref:`original_fsa`.
+    :return: FSA with the number of states/edges, the edges, and the weights of :paramref:`fsa_to_append`
+        appended at the end of :paramref:`original_fsa`.
+    """
+    edges = torch.from_numpy(np.int32(fsa_to_append[2])).reshape((3, fsa_to_append[1]))
+    return (
+        original_fsa[0] + [fsa_to_append[0]],  # num states
+        original_fsa[1] + [fsa_to_append[1]],  # num edges
+        torch.hstack([original_fsa[2], edges]),  # edges
+        torch.cat([original_fsa[3], torch.from_numpy(fsa_to_append[3])]),  # weights
+    )
 
 
 class _AbstractRasrFsaBuilder(ABC):
@@ -235,15 +257,6 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         raw_fsa = self.builder.build_by_segment_name(seq_tag)
         return raw_fsa
 
-    def _append_fsa(self, a, b):
-        edges = torch.from_numpy(np.int32(b[2])).reshape((3, b[1]))
-        return (
-            a[0] + [b[0]],  # num states
-            a[1] + [b[1]],  # num edges
-            torch.hstack([a[2], edges]),  # edges
-            torch.cat([a[3], torch.from_numpy(b[3])]),  # weights
-        )
-
     def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> WeightedFsa:
         """
         Build and concatenate the FSAs for a batch of sequence tags
@@ -264,7 +277,7 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         """
 
         empty_fsa = ([], [], torch.empty((3, 0), dtype=torch.int32), torch.empty((0,)))
-        num_states, num_edges, all_edges, all_weights = reduce(self._append_fsa, fsas, empty_fsa)
+        num_states, num_edges, all_edges, all_weights = reduce(_append_fsa, fsas, empty_fsa)
         num_edges = torch.tensor(num_edges, dtype=torch.int32)
         num_states = torch.tensor(num_states, dtype=torch.int32)
 
