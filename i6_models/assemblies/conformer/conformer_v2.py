@@ -142,7 +142,9 @@ class ConformerEncoderV2(nn.Module):
         if return_layers is None:
             return_layers = [len(self.module_list) - 1]
 
-        if not isinstance(self.frontend, nn.Identity):
+        if isinstance(self.frontend, nn.Identity):
+            x = data_tensor
+        else:
             x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
 
         outputs = []
