@@ -10,7 +10,7 @@ __all__ = [
 import torch
 from torch import nn
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
@@ -105,7 +105,7 @@ class ConformerRelPosEncoderV1Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    frontend: ModuleFactoryV1
+    frontend: Optional[ModuleFactoryV1]
     block_cfg: ConformerRelPosBlockV1Config
 
 
@@ -122,5 +122,8 @@ class ConformerRelPosEncoderV1(ConformerEncoderV2):
         """
         super().__init__(cfg)
 
-        self.frontend = cfg.frontend()
+        if cfg.frontend is not None:
+            self.frontend = cfg.frontend()
+        else:
+            self.frontend = nn.Identity()
         self.module_list = torch.nn.ModuleList([ConformerRelPosBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
