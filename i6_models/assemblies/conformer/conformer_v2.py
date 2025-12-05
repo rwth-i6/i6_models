@@ -72,7 +72,8 @@ class ConformerBlockV2(nn.Module):
         self.scales = cfg.scales
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor,
+                attention_bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         :param x: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 0 defines positions within the sequence and 1 outside, shape: [B, T]
@@ -80,7 +81,7 @@ class ConformerBlockV2(nn.Module):
         """
         for scale, module in zip(self.scales, self.module_list):
             if isinstance(module, ConformerMHSAV1):
-                x = scale * module(x, sequence_mask) + x
+                x = scale * module(x, sequence_mask, attention_bias=attention_bias) + x
             else:
                 x = scale * module(x) + x
 
@@ -124,7 +125,8 @@ class ConformerEncoderV2(nn.Module):
         self.module_list = torch.nn.ModuleList([ConformerBlockV2(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(
-        self, data_tensor: torch.Tensor, /, sequence_mask: torch.Tensor, return_layers: Optional[List[int]] = None
+        self, data_tensor: torch.Tensor, /, sequence_mask: torch.Tensor, return_layers: Optional[List[int]] = None,
+        attention_bias: Optional[torch.Tensor] = None
     ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """
         :param data_tensor: input tensor of shape [B, T', F]
@@ -153,7 +155,8 @@ class ConformerEncoderV2(nn.Module):
         )
 
         for i in range(max(return_layers) + 1):
-            x = self.module_list[i](x, sequence_mask)  # [B, T, F']
+            # pass bias to all blocks in this encoder
+            x = self.module_list[i](x, sequence_mask, attention_bias=attention_bias)  # [B, T, F']
             if i in return_layers:
                 outputs.append(x)
 

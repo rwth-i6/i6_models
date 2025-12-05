@@ -136,7 +136,8 @@ class ConformerMHSARelPosV1(nn.Module):
             nn.init.xavier_uniform_(self.pos_bias_u)
             nn.init.xavier_uniform_(self.pos_bias_v)
 
-    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor,
+                attention_bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
 
@@ -208,6 +209,9 @@ class ConformerMHSARelPosV1(nn.Module):
 
         attn = attn_ac + attn_bd + mask  # [B, #heads, T, T']
         attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
+
+        if attention_bias is not None:
+            attn_scaled = attn_scaled + attention_bias
 
         # softmax and dropout
         attn_output_weights = self.att_weights_dropout(F.softmax(attn_scaled, dim=-1))  # [B, #heads, T, T']
