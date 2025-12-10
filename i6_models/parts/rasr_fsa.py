@@ -334,9 +334,10 @@ class _RasrFsaBuilderFbw2(_AbstractRasrFsaBuilder):
         :return: Single FSA object corresponding to the joined FSAs passed as parameter.
         """
 
+        fsas = list(fsas)  # ensure we can iterate multiple times over this iterable
         num_states = [f[0] for f in fsas]
         num_edges = [f[1] for f in fsas]
-        start_states = np.cumsum([0] + num_states)[:-1]
+        start_states = np.cumsum(np.array([0] + num_states, dtype=np.uint32))[:-1]
         end_states = np.cumsum(num_states) - 1
         weights = np.concatenate(tuple(f[3] for f in fsas))
 
