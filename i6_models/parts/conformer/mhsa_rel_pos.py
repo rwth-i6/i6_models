@@ -143,6 +143,7 @@ class ConformerMHSARelPosV1(nn.Module):
 
         :param input_tensor: Input to the self attention of shape (B, T, F)
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside
+        :param attention_bias: Shape [B, 1, T, T] or [B, 1, 1, T] to bias the attention score matrix
         """
         output_tensor = self.layernorm(input_tensor)  # [B, T, F]
 
@@ -208,11 +209,18 @@ class ConformerMHSARelPosV1(nn.Module):
             attn_bd = self._rel_shift_bhij(attn_bd, k_len=time_dim_size)  # [B, #heads, T, T']
 
         attn = attn_ac + attn_bd + mask  # [B, #heads, T, T']
-        attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
 
         if attention_bias is not None:
-            attn_scaled = attn_scaled + attention_bias
+            if attention_bias.ndim == 4 and attention_bias.shape[-1] == self.embed_dim_per_head:
+                # [B, T, 1, D] for learnable embedding
+                # bias score = Q*B^T
+                attn_bias_score = torch.einsum("bihd, bjhd -> bhij", q_with_bias_v, attention_bias)
+                attn = attn + attn_bias_score  
+            else:
+                attn = attn + attention_bias
 
+        attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
+        
         # softmax and dropout
         attn_output_weights = self.att_weights_dropout(F.softmax(attn_scaled, dim=-1))  # [B, #heads, T, T']
 
