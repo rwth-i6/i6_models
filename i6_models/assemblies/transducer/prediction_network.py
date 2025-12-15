@@ -33,9 +33,9 @@ class EmbeddingTransducerPredictionNetworkV1Config(ModelConfiguration):
     reduce_embedding: bool
     num_reduction_heads: Optional[int]
 
-    def __post__init__(self):
+    def __post_init__(self):
         super().__post_init__()
-        assert (num_reduction_heads is not None) == reduce_embedding
+        assert (self.num_reduction_heads is not None) == self.reduce_embedding
 
     @classmethod
     def from_child(cls, child_instance):
@@ -164,8 +164,8 @@ class EmbeddingTransducerPredictionNetworkV1(nn.Module):
             history[:, t, :] = recent_labels
             current_labels = targets[:, t]
             non_blank_positions = current_labels != self.blank_id
-            recent_labels[non_blank_positions, 1:] = recent_labels[non_blank_positions, :-1]
-            recent_labels[non_blank_positions, 0] = current_labels[non_blank_positions]
+            recent_labels[non_blank_positions, :-1] = recent_labels[non_blank_positions, 1:]
+            recent_labels[non_blank_positions, -1] = current_labels[non_blank_positions]
         embed = self._forward_embedding(history)
 
         return embed, target_lengths
