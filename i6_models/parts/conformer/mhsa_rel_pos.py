@@ -173,10 +173,16 @@ class ConformerMHSARelPosV1(nn.Module):
 
             rel_pos_embeddings = self.rel_pos_embeddings[final_mat]  # [T, T', pos_emb_dim]
         else:
-            rel_pos_embeddings = self._sinusoidal_pe(
-                torch.arange(time_dim_size - 1, -time_dim_size, -1, device=input_tensor.device, dtype=torch.float32),
-                self.pos_emb_dim,
-            ).view(1, 2 * time_dim_size - 1, self.pos_emb_dim)  # [1, T+T'-1, pos_emb_dim]
+            rel_pos_embeddings = (
+                self._sinusoidal_pe(
+                    torch.arange(
+                        time_dim_size - 1, -time_dim_size, -1, device=input_tensor.device, dtype=torch.float32
+                    ),
+                    self.pos_emb_dim,
+                )
+                .to(input_tensor.dtype)
+                .view(1, 2 * time_dim_size - 1, self.pos_emb_dim)
+            )  # [1, T+T'-1, pos_emb_dim]
 
         # dropout relative positional embeddings
         rel_pos_embeddings = self.pos_emb_dropout(
@@ -197,7 +203,9 @@ class ConformerMHSARelPosV1(nn.Module):
 
         # attention matrix b and d
         attn_bd = torch.einsum(
-            "bihf, ijhf -> bhij", q_with_bias_v, rel_pos_embeddings
+            "bihf, ijhf -> bhij",
+            q_with_bias_v,
+            rel_pos_embeddings.to(device=q_with_bias_v.device, dtype=q_with_bias_v.dtype),
         )  # [B, #heads, T, T'] or [B, #heads, T, T+T'+1]
         if not self.learnable_pos_emb:
             attn_bd = self._rel_shift_bhij(attn_bd, k_len=time_dim_size)  # [B, #heads, T, T']
