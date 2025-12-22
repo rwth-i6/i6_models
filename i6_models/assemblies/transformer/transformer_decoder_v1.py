@@ -47,7 +47,8 @@ class TransformerDecoderBlockV1Config(ModelConfiguration):
     Attributes:
         ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
         mhsa_cfg: Configuration for CausalSelfAttentionV1
-        cross_cfg: Configuration for CrossAttentionV1
+        cross_cfg: Configuration for CrossAttentionV1.
+            Can be set to None in case there is no cross attention block (e.g. for LM usage).
         modules: List of modules to use for ConformerBlockV2:
             - "ff" for feed forward module
             - "mhcsa" for multi-head causal self attention module
@@ -58,7 +59,7 @@ class TransformerDecoderBlockV1Config(ModelConfiguration):
 
     ff_cfg: ConformerPositionwiseFeedForwardV2Config
     mhsa_cfg: CausalSelfAttentionV1Config
-    cross_cfg: CrossAttentionV1Config
+    cross_cfg: Optional[CrossAttentionV1Config]
     modules: List[str] = field(default_factory=lambda: ["mhcsa", "cross", "ff"])
     scales: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
 
@@ -67,6 +68,9 @@ class TransformerDecoderBlockV1Config(ModelConfiguration):
 
         assert len(self.modules) == len(self.scales), "modules and scales must have same length"
         assert all(name in ["ff", "mhcsa", "cross"] for name in self.modules), "module type not supported"
+        assert "cross" not in self.modules or self.cross_cfg is not None, (
+            "must specify cross attention config when enabling the cross attention module"
+        )
 
 
 class TransformerDecoderBlockV1State(TypedDict):
@@ -88,6 +92,9 @@ class TransformerDecoderBlockV1(nn.Module, ModuleWithState[TransformerDecoderBlo
             elif module_name == "mhcsa":
                 modules.append(CausalSelfAttentionV1(cfg.mhsa_cfg))
             elif module_name == "cross":
+                assert cfg.cross_cfg is not None, (
+                    "must specify cross attention config when enabling the cross attention module"
+                )
                 modules.append(CrossAttentionV1(cfg.cross_cfg))
             else:
                 raise NotImplementedError
