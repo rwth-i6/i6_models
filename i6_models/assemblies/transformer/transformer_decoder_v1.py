@@ -128,7 +128,8 @@ class TransformerDecoderV1Config(ModelConfiguration):
         block_cfg: Configuration for TransformerDecoderV1.
         input_dropout: Dropout applied to the input embedding.
         input_embedding_scale: Scale applied to the input embedding.
-            Set to `None` to apply a (tuned) default.
+            Set to `None` to apply a default that is suitable for ASR AED decoder models.
+            When training a pure LM, scale 1.0 may be a better choice.
         num_blocks: Number of transformer blocks in the decoder.
         num_output: Number of output labels/vocab dim.
         logits_bias: Whether to add a bias to the output logits.
