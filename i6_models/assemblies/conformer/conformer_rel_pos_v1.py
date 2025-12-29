@@ -78,7 +78,8 @@ class ConformerRelPosBlockV1(nn.Module):
         self.scales = cfg.scales
         self.final_layer_norm = torch.nn.LayerNorm(cfg.ff_cfg.input_dim)
 
-    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, /, sequence_mask: torch.Tensor,
+                attention_bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         :param x: input tensor of shape [B, T, F]
         :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T]

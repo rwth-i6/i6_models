@@ -136,12 +136,14 @@ class ConformerMHSARelPosV1(nn.Module):
             nn.init.xavier_uniform_(self.pos_bias_u)
             nn.init.xavier_uniform_(self.pos_bias_v)
 
-    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, input_tensor: torch.Tensor, sequence_mask: torch.Tensor,
+                attention_bias: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Apply layer norm and multi-head self attention and dropout
 
         :param input_tensor: Input to the self attention of shape (B, T, F)
         :param sequence_mask: bool mask of shape (B, T), True signals within sequence, False outside
+        :param attention_bias: Shape [B, 1, T, T] or [B, 1, 1, T] to bias the attention score matrix
         """
         output_tensor = self.layernorm(input_tensor)  # [B, T, F]
 
@@ -207,8 +209,19 @@ class ConformerMHSARelPosV1(nn.Module):
             attn_bd = self._rel_shift_bhij(attn_bd, k_len=time_dim_size)  # [B, #heads, T, T']
 
         attn = attn_ac + attn_bd + mask  # [B, #heads, T, T']
-        attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
 
+        if attention_bias is not None:
+            if attention_bias.ndim == 4 and attention_bias.shape[-1] == self.embed_dim_per_head:
+                # [B, T, 1, D] for learnable embedding
+                # bias score = Q*B^T
+                attn_bias_score = torch.einsum("bihd, bjhd -> bhij", q_with_bias_v, attention_bias)
+                attn = attn + attn_bias_score  
+            else:
+                # [B, H, T, T] otherwise
+                attn = attn + attention_bias
+
+        attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
+        
         # softmax and dropout
         attn_output_weights = self.att_weights_dropout(F.softmax(attn_scaled, dim=-1))  # [B, #heads, T, T']
 
