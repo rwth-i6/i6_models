@@ -222,7 +222,7 @@ class ConformerMHSARelPosV1(nn.Module):
 
         output_tensor = self.dropout(output_tensor)
 
-        return output_tensor  # [B,T,F]
+        return output_tensor, attn_output_weights  # [B,T,F]
 
     @staticmethod
     def _rel_shift_bhij(x, k_len=None):

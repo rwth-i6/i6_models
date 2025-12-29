@@ -85,12 +85,16 @@ class ConformerRelPosBlockV1(nn.Module):
         :return: torch.Tensor of shape [B, T, F]
         """
         for scale, module in zip(self.scales, self.module_list):
-            if isinstance(module, (ConformerMHSARelPosV1, ConformerConvolutionV3)):
+            if isinstance(module, ConformerMHSARelPosV1):
+                # assume only one mhsa module
+                out, attn_weights = module(x, sequence_mask, attention_bias=attention_bias)
+                x = scale * out + x
+            elif isinstance(module, ConformerConvolutionV3):
                 x = scale * module(x, sequence_mask) + x
             else:
                 x = scale * module(x) + x
         x = self.final_layer_norm(x)  #  [B, T, F]
-        return x
+        return x, attn_weights
 
 
 @dataclass
@@ -127,3 +131,43 @@ class ConformerRelPosEncoderV1(ConformerEncoderV2):
         else:
             self.frontend = nn.Identity()
         self.module_list = torch.nn.ModuleList([ConformerRelPosBlockV1(cfg.block_cfg) for _ in range(cfg.num_layers)])
+
+    def forward(
+        self, data_tensor: torch.Tensor, /, sequence_mask: torch.Tensor, return_layers: Optional[List[int]] = None,
+        attention_bias: Optional[torch.Tensor] = None
+    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
+        """
+        :param data_tensor: input tensor of shape [B, T', F]
+        :param sequence_mask: mask tensor where 1 defines positions within the sequence and 0 outside, shape: [B, T']
+        :param return_layers: list of layer indices specifying which layers to return, starting from 0
+        :return: (outputs, out_seq_mask)
+            where outputs is a list of torch.Tensor of shape [B, T, F']
+            for each of the layers in return_layers,
+            out_seq_mask is a torch.Tensor of shape [B, T]
+
+        F: input feature dim, F': internal and output feature dim
+        T': data time dim, T: down-sampled time dim (internal time dim)
+        """
+
+        if return_layers is None:
+            return_layers = [len(self.module_list) - 1]
+
+        if isinstance(self.frontend, nn.Identity):
+            x = data_tensor
+        else:
+            x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
+
+        outputs = []
+        all_layer_attentions = []
+        assert max(return_layers) < len(self.module_list) and min(return_layers) >= 0, (
+            f"invalid layer index, should be between 0 and {len(self.module_list) - 1}"
+        )
+
+        for i in range(max(return_layers) + 1):
+            # pass bias to all blocks in this encoder
+            x, attn_weights = self.module_list[i](x, sequence_mask, attention_bias=attention_bias)  # [B, T, F']
+            all_layer_attentions.append(attn_weights)
+            if i in return_layers:
+                outputs.append(x)
+
+        return outputs, sequence_mask, all_layer_attentions
