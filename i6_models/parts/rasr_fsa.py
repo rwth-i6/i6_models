@@ -165,7 +165,8 @@ class _AbstractRasrFsaBuilder(ABC):
         self.__dict__.update(state)
         self.builder = self.get_builder(config_path=self.config_path)
 
-    def apply_tdp_scale_to_fsa_tuple(self, fsa: FsaTuple, tdp_scale: float) -> FsaTuple:
+    @staticmethod
+    def apply_tdp_scale_to_fsa_tuple(fsa: FsaTuple, tdp_scale: float) -> FsaTuple:
         """
         Scales the weights of an FSA represented as a tuple by the factor (TDP scale) provided.
 
@@ -204,12 +205,14 @@ class _AbstractRasrFsaBuilder(ABC):
         """
         ...
 
+    @staticmethod
     @abstractmethod
-    def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> Union[WeightedFsa, WeightedFsaV2]:
+    def build_batched_fsa(fsas: Iterable[FsaTuple], tdp_scale: float) -> Union[WeightedFsa, WeightedFsaV2]:
         """
         Creates the final FSA to be used by the corresponding `fbw` op from `i6_native_ops`.
 
         :param fsas: Sequence of FSAs to be batched together.
+        :param tdp_scale: FSA weights will be scaled (multiplied) by this value.
         :return: Single FSA which bundles together all FSAs provided as parameter.
             The final object is compatible with the corresponding `fbw` op from `i6_native_ops`.
         """
@@ -230,7 +233,7 @@ class _AbstractRasrFsaBuilder(ABC):
 
         fsas: Iterable[FsaTuple] = map(self.build_single, multiple_identifiers)
 
-        return self.build_batched_fsa(fsas)
+        return self.build_batched_fsa(fsas, self.tdp_scale)
 
 
 class RasrFsaBuilder(_AbstractRasrFsaBuilder):
@@ -257,7 +260,8 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
         raw_fsa = self.builder.build_by_segment_name(seq_tag)
         return raw_fsa
 
-    def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> WeightedFsa:
+    @staticmethod
+    def build_batched_fsa(fsas: Iterable[FsaTuple], tdp_scale: float) -> WeightedFsa:
         """
         Build and concatenate the FSAs for a batch of sequence tags
         and reformat as an input to `i6_native_ops.fbw.fbw_loss`.
@@ -273,6 +277,7 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
             * integer edge array of shape [E, 3] where each row is an edge
                 consisting of from-state, to-state and the emission idx
             * float weight array of shape [E,]
+        :param tdp_scale: FSA weights will be scaled (multiplied) by this value.
         :return: a concatenated FSA
         """
 
@@ -300,8 +305,8 @@ class RasrFsaBuilder(_AbstractRasrFsaBuilder):
             start_end_states,
         )
 
-        if self.tdp_scale != 1.0:
-            out_fsa *= self.tdp_scale
+        if tdp_scale != 1.0:
+            out_fsa *= tdp_scale
 
         return out_fsa
 
@@ -321,7 +326,8 @@ class _RasrFsaBuilderFbw2(_AbstractRasrFsaBuilder):
     Using any subclass requires a working installation of the python package `librasr`.
     """
 
-    def build_batched_fsa(self, fsas: Iterable[FsaTuple]) -> WeightedFsaV2:
+    @staticmethod
+    def build_batched_fsa(fsas: Iterable[FsaTuple], tdp_scale: float) -> WeightedFsaV2:
         """
         Joins a set of FSAs represented as tuples into a single :classref:`WeightedFsaV2` object.
 
@@ -331,6 +337,7 @@ class _RasrFsaBuilderFbw2(_AbstractRasrFsaBuilder):
             * integer edge array of shape [E, 3] where each row is an edge
                 consisting of from-state, to-state and the emission idx
             * float weight array of shape [E,]
+        :param tdp_scale: FSA weights will be scaled (multiplied) by this value.
         :return: Single FSA object corresponding to the joined FSAs passed as parameter.
         """
 
