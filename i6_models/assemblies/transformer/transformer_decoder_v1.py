@@ -20,7 +20,7 @@ from torch import nn, Tensor
 import torch.nn.functional as F
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, TypedDict, Union
+from typing import List, Optional, Tuple, TypedDict, Union, NotRequired
 
 from i6_models.config import ModelConfiguration
 from i6_models.parts.conformer import (
@@ -141,6 +141,8 @@ class TransformerDecoderV1Config(ModelConfiguration):
         logits_bias: Whether to add a bias to the output logits.
             Usually False is a good choice.
         share_embedding: Whether to share the input and output embedding.
+        use_positional_encoding: use a sinus positional encoding on the initial input
+        do_output_embedding_matmul: apply the final model output x output embedding matmul
     """
 
     block_cfg: TransformerDecoderBlockV1Config
@@ -150,13 +152,15 @@ class TransformerDecoderV1Config(ModelConfiguration):
     num_output: int
     logits_bias: bool
     share_embedding: bool
+    use_positional_encoding: bool = True
+    do_output_embedding_matmul: bool = True
 
 
 class TransformerDecoderV1State(TypedDict):
     """Recurrent state of the transformer decoder."""
 
     block_state: List[TransformerDecoderBlockV1State]
-    pos: Tensor
+    pos: NotRequired[Tensor]
 
 
 class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]):
@@ -190,12 +194,19 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         else:
             self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
 
+        self.use_positional_encoding = cfg.use_positional_encoding
+        self.do_output_embedding_matmul = cfg.do_output_embedding_matmul
+
     def get_initial_state(self) -> TransformerDecoderV1State:
         """:return: initial decoder state"""
-        return {
+        state: TransformerDecoderV1State = {
             "block_state": [block.get_initial_state() for block in self.module_list],
-            "pos": torch.tensor(0, dtype=torch.int32),
         }
+
+        if self.use_positional_encoding:
+            state["pos"] = torch.tensor(0, dtype=torch.int32)
+
+        return state
 
     def transform_encoder_output(
         self,
@@ -229,10 +240,13 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
             - `s = get_initial_state()`.
         """
         x = self.input_embedding(labels) * self.input_embedding_scale
-        sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
-            torch.arange(labels.shape[-1], device=labels.device) + state["pos"], self.model_dim
-        )
-        x = x + sinus_pe.unsqueeze(0)
+
+        if self.use_positional_encoding:
+            sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
+                torch.arange(labels.shape[-1], device=labels.device) + state["pos"], self.model_dim
+            )
+            x = x + sinus_pe.unsqueeze(0)
+
         x = self.input_dropout(x)
 
         output = x
@@ -243,11 +257,16 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         new_state: TransformerDecoderV1State = {
             **state,
             "block_state": new_block_states,
-            "pos": state["pos"] + labels_lens.max(),
         }
 
+        if self.use_positional_encoding:
+            new_state["pos"] = state["pos"] + labels_lens.max()
+
         output = self.out_norm(output)
-        output_logits = (
-            F.linear(output, self.input_embedding.weight, None) if self.share_embedding else self.out_logits(output)
-        )
-        return output_logits, new_state
+
+        if self.do_output_embedding_matmul:
+            output = (
+                F.linear(output, self.input_embedding.weight, None) if self.share_embedding else self.out_logits(output)
+            )
+
+        return output, new_state
