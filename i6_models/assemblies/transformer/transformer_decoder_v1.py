@@ -17,12 +17,11 @@ __all__ = [
 
 import torch
 from torch import nn, Tensor
-import torch.nn.functional as F
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, TypedDict, Union, NotRequired
 
-from i6_models.config import ModelConfiguration
+from i6_models.config import ModelConfiguration, ModuleFactoryV1
 from i6_models.parts.conformer import (
     ConformerMHSARelPosV1,
     ConformerPositionwiseFeedForwardV2,
@@ -129,6 +128,52 @@ class TransformerDecoderBlockV1(nn.Module, ModuleWithState[TransformerDecoderBlo
 
 
 @dataclass
+class SinusoidalPositionalEncodingV1Config(ModelConfiguration):
+    """
+    Attributes:
+        embedding_dim: embedding dimension
+    """
+    embedding_dim = int
+
+
+class PositionalEncodingV1State(TypedDict):
+    """
+    State for some positional encoding.
+    """
+    pos: Tensor
+
+
+class SinusoidalPositionalEncodingV1(nn.Module, ModuleWithState[PositionalEncodingV1State]):
+    """
+    Computes and applies a sinusoidal positional encoding.
+    """
+    def __init__(self, cfg: SinusoidalPositionalEncodingV1Config):
+        super().__init__()
+
+        self.embed_dim = cfg.embedding_dim
+
+    def forward(self, inputs: Tensor, lengths: Tensor, state: PositionalEncodingV1State):
+        """
+        Apply sinusoidal positional encoding on the inputs.
+
+        :param inputs: tensor to apply the positional encoding on
+        :param lengths: input lengths
+        :param state: current state of positional encoding.
+        """
+        sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
+            torch.arange(inputs.shape[-1], device=inputs.device) + state["pos"], self.embed_dim
+        )
+        output = inputs + sinus_pe.unsqueeze(0)
+
+        new_state: PositionalEncodingV1State = {"pos": state["pos"] + lengths.max()}
+
+        return output, new_state
+
+    def get_initial_state(self) -> PositionalEncodingV1State:
+        return {"pos": Tensor(0, dtype=torch.int32)}
+
+
+@dataclass
 class TransformerDecoderV1Config(ModelConfiguration):
     """
     Attributes:
@@ -141,8 +186,8 @@ class TransformerDecoderV1Config(ModelConfiguration):
         logits_bias: Whether to add a bias to the output logits.
             Usually False is a good choice.
         share_embedding: Whether to share the input and output embedding.
-        use_positional_encoding: use a sinus positional encoding on the initial input
-        do_output_embedding_matmul: apply the final model output x output embedding matmul
+        positional_encoding: optionally apply some positional encoding to the input embeddings.
+        output_linear_projection: Whether to apply a linear projection on the model output to 'num_output' dimension.
     """
 
     block_cfg: TransformerDecoderBlockV1Config
@@ -152,15 +197,15 @@ class TransformerDecoderV1Config(ModelConfiguration):
     num_output: int
     logits_bias: bool
     share_embedding: bool
-    use_positional_encoding: bool = True
-    do_output_embedding_matmul: bool = True
+    positional_encoding: Optional[ModuleFactoryV1]
+    output_linear_projection: bool = True
 
 
 class TransformerDecoderV1State(TypedDict):
     """Recurrent state of the transformer decoder."""
 
     block_state: List[TransformerDecoderBlockV1State]
-    pos: NotRequired[Tensor]
+    pos_state: NotRequired[PositionalEncodingV1State]
 
 
 class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]):
@@ -188,14 +233,21 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         )
         self.out_norm = nn.LayerNorm(self.model_dim)
         self.share_embedding = cfg.share_embedding
-        if cfg.share_embedding:
-            assert not cfg.logits_bias, "Cannot use logits bias with shared embedding"
-            nn.init.xavier_uniform_(self.input_embedding.weight)  # bad convergence with default init
+
+        cfg.positional_encoding = None
+        if cfg.positional_encoding is not None:
+            self.positional_encoding = cfg.positional_encoding()
+
+        self.output_linear_projection = cfg.output_linear_projection
+
+        if not self.output_linear_projection:
+            self.out_logits = nn.Identity()
         else:
             self.out_logits = nn.Linear(self.model_dim, cfg.num_output, bias=cfg.logits_bias)
 
-        self.use_positional_encoding = cfg.use_positional_encoding
-        self.do_output_embedding_matmul = cfg.do_output_embedding_matmul
+        if cfg.share_embedding and self.output_linear_projection:
+            self.out_logits.weight = self.input_embedding.weight
+            nn.init.xavier_uniform_(self.input_embedding.weight)  # bad convergence with default init
 
     def get_initial_state(self) -> TransformerDecoderV1State:
         """:return: initial decoder state"""
@@ -203,8 +255,8 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
             "block_state": [block.get_initial_state() for block in self.module_list],
         }
 
-        if self.use_positional_encoding:
-            state["pos"] = torch.tensor(0, dtype=torch.int32)
+        if self.positional_encoding is not None:
+            state["pos_state"] = self.positional_encoding.get_initial_state()
 
         return state
 
@@ -239,13 +291,15 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
             - `enc_out, enc_out_mask = forward_some_encoder(...)` and
             - `s = get_initial_state()`.
         """
+        new_state: TransformerDecoderV1State = {
+            **state,
+        }
+
         x = self.input_embedding(labels) * self.input_embedding_scale
 
-        if self.use_positional_encoding:
-            sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
-                torch.arange(labels.shape[-1], device=labels.device) + state["pos"], self.model_dim
-            )
-            x = x + sinus_pe.unsqueeze(0)
+        if self.positional_encoding is not None:
+            x, new_pos_state = self.positional_encoding(x, labels_lens, state["pos"])
+            new_state["pos_state"] = new_pos_state
 
         x = self.input_dropout(x)
 
@@ -254,19 +308,9 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         for block, block_state in zip(self.module_list, state["block_state"]):
             output, new_block_state = block(output, labels_lens, block_state)
             new_block_states.append(new_block_state)
-        new_state: TransformerDecoderV1State = {
-            **state,
-            "block_state": new_block_states,
-        }
-
-        if self.use_positional_encoding:
-            new_state["pos"] = state["pos"] + labels_lens.max()
+        new_state["block_state"] = new_block_states
 
         output = self.out_norm(output)
-
-        if self.do_output_embedding_matmul:
-            output = (
-                F.linear(output, self.input_embedding.weight, None) if self.share_embedding else self.out_logits(output)
-            )
+        output = self.out_logits(output)
 
         return output, new_state
