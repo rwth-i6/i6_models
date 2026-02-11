@@ -133,6 +133,7 @@ class SinusoidalPositionalEncodingV1Config(ModelConfiguration):
     Attributes:
         embedding_dim: embedding dimension
     """
+
     embedding_dim = int
 
 
@@ -140,6 +141,7 @@ class PositionalEncodingV1State(TypedDict):
     """
     State for some positional encoding.
     """
+
     pos: Tensor
 
 
@@ -147,6 +149,7 @@ class SinusoidalPositionalEncodingV1(nn.Module, ModuleWithState[PositionalEncodi
     """
     Computes and applies a sinusoidal positional encoding.
     """
+
     def __init__(self, cfg: SinusoidalPositionalEncodingV1Config):
         super().__init__()
 
