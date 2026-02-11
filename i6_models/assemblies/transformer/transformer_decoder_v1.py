@@ -155,16 +155,17 @@ class SinusoidalPositionalEncodingV1(nn.Module, ModuleWithState[PositionalEncodi
 
         self.embed_dim = cfg.embedding_dim
 
-    def forward(self, inputs: Tensor, lengths: Tensor, state: PositionalEncodingV1State):
+    def forward(self, inputs: Tensor, labels: Tensor, lengths: Tensor, state: PositionalEncodingV1State):
         """
         Apply sinusoidal positional encoding on the inputs.
 
-        :param inputs: tensor to apply the positional encoding on
+        :param inputs: input embeddings
+        :param labels: input labels
         :param lengths: input lengths
         :param state: current state of positional encoding.
         """
         sinus_pe = ConformerMHSARelPosV1._sinusoidal_pe(
-            torch.arange(inputs.shape[-1], device=inputs.device) + state["pos"], self.embed_dim
+            torch.arange(labels.shape[-1], device=labels.device) + state["pos"], self.embed_dim
         )
         output = inputs + sinus_pe.unsqueeze(0)
 
@@ -301,7 +302,7 @@ class TransformerDecoderV1(nn.Module, ModuleWithState[TransformerDecoderV1State]
         x = self.input_embedding(labels) * self.input_embedding_scale
 
         if self.positional_encoding is not None:
-            x, new_pos_state = self.positional_encoding(x, labels_lens, state["pos"])
+            x, new_pos_state = self.positional_encoding(x, labels, labels_lens, state["pos"])
             new_state["pos_state"] = new_pos_state
 
         x = self.input_dropout(x)
