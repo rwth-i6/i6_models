@@ -190,7 +190,7 @@ class TransformerDecoderV2(nn.Module, ModuleWithState[TransformerDecoderV2State]
 
 
 @dataclass
-class TransformerDecoderBlockV2Config(ModelConfiguration):
+class TransformerDecoderBlockV2Config(TransformerDecoderBlockV1Config):
     """
     Attributes:
         ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
@@ -204,29 +204,14 @@ class TransformerDecoderBlockV2Config(ModelConfiguration):
             Must have the same length as `modules`.
     """
 
-    ff_cfg: ConformerPositionwiseFeedForwardV2Config
-    mhsa_cfg: CausalSelfAttentionV1Config
-    cross_cfg: Optional[CrossAttentionV1Config]
-    modules: List[str] = field(default_factory=lambda: ["mhcsa", "cross", "ff"])
-    scales: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
-
     num_ff_layers: int
 
-    def __post__init__(self):
-        super().__post_init__()
 
-        assert len(self.modules) == len(self.scales), "modules and scales must have same length"
-        assert all(name in ["ff", "mhcsa", "cross"] for name in self.modules), "module type not supported"
-        assert "cross" not in self.modules or self.cross_cfg is not None, (
-            "must specify cross attention config when enabling the cross attention module"
-        )
-
-
-class TransformerDecoderBlockV2(nn.Module, ModuleWithState[TransformerDecoderBlockV1State]):
+class TransformerDecoderBlockV2(TransformerDecoderBlockV1, ModuleWithState[TransformerDecoderBlockV1State]):
     """A transformer block with multiple feed-forward layers."""
 
     def __init__(self, cfg: TransformerDecoderBlockV2Config):
-        super().__init__()
+        super().__init__(cfg)
 
         modules = []
         for module_name in cfg.modules:
@@ -246,33 +231,8 @@ class TransformerDecoderBlockV2(nn.Module, ModuleWithState[TransformerDecoderBlo
         self.module_list = nn.ModuleList(modules)
         self.scales = [cfg.scales[0] for _ in range(cfg.num_ff_layers)] + cfg.scales[1:] 
 
-    def get_initial_state(self) -> TransformerDecoderBlockV1State:
-        return {"module_states": [module.get_initial_state() for module in self.module_list]}
 
-    def transform_encoder_output(
-        self,
-        encoder_output: Tensor,
-        encoder_output_lens: Tensor,
-        state: TransformerDecoderBlockV1State,
-    ) -> TransformerDecoderBlockV1State:
-        new_module_state = [
-            module.transform_encoder_output(encoder_output, encoder_output_lens, module_state)
-            for module, module_state in zip(self.module_list, state["module_states"])
-        ]
-        return {**state, "module_states": new_module_state}
-
-    def forward(
-        self, labels: Tensor, labels_lens: Tensor, state: TransformerDecoderBlockV1State
-    ) -> Tuple[Tensor, TransformerDecoderBlockV1State]:
-        new_states = []
-        for module, scale, module_state in zip(self.module_list, self.scales, state["module_states"]):
-            module_output, new_mod_state = module(labels, labels_lens, module_state)
-            labels = labels + module_output * scale
-            new_states.append(new_mod_state)
-        return labels, {**state, "module_states": new_states}
-
-
-class TransformerDecoderV3(nn.Module, ModuleWithState[TransformerDecoderV2State]):
+class TransformerDecoderV3(TransformerDecoderV2, ModuleWithState[TransformerDecoderV2State]):
     """
     A transformer decoder with causal MHSA and cross attention and support for multiple feed-forward layers per layer.
 
