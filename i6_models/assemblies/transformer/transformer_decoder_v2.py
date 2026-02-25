@@ -32,6 +32,7 @@ class TransformerDecoderV2Config(ModelConfiguration):
 
     block_cfg: TransformerDecoderBlockV1Config
     input_dropout: float
+    input_embedding_dim: int
     input_embedding_scale: Optional[float]
     num_blocks: int
     num_output: int
@@ -89,17 +90,22 @@ class TransformerDecoderV2(nn.Module, ModuleWithState[TransformerDecoderV2State]
         self.model_dim = cfg.block_cfg.ff_cfg.input_dim
 
         self.input_dropout = BroadcastDropout(cfg.input_dropout)
-        self.input_embedding = nn.Embedding(cfg.num_output, self.model_dim)
+        self.input_embedding_dim = cfg.input_embedding_dim
+        self.input_embedding = nn.Embedding(cfg.num_output, self.input_embedding_dim)
         self.input_embedding_scale = (
             cfg.input_embedding_scale if cfg.input_embedding_scale is not None else self.model_dim**0.5
         )
+        self.input_projection = None
+        if self.input_embedding_dim != self.model_dim:
+            self.input_projection = nn.Linear(self.input_embedding_dim, self.model_dim)
+
         self.module_list = torch.nn.ModuleList(
             [TransformerDecoderBlockV1(cfg.block_cfg) for _ in range(cfg.num_blocks)]
         )
         self.out_norm = nn.LayerNorm(self.model_dim)
         self.share_embedding = cfg.share_embedding
 
-        cfg.positional_encoding = None
+        self.positional_encoding = None
         if cfg.positional_encoding is not None:
             self.positional_encoding = cfg.positional_encoding()
 
@@ -159,6 +165,9 @@ class TransformerDecoderV2(nn.Module, ModuleWithState[TransformerDecoderV2State]
 
         x = self.input_embedding(labels) * self.input_embedding_scale
 
+        if self.input_projection is not None:
+            x = self.input_projection(x)
+
         if self.positional_encoding is not None:
             x, new_pos_state = self.positional_encoding(x, labels_lens, state["pos"])
             new_state["pos_state"] = new_pos_state
@@ -178,3 +187,104 @@ class TransformerDecoderV2(nn.Module, ModuleWithState[TransformerDecoderV2State]
             output = self.out_logits(output)
 
         return output, new_state
+
+
+@dataclass
+class TransformerDecoderBlockV2Config(ModelConfiguration):
+    """
+    Attributes:
+        ff_cfg: Configuration for ConformerPositionwiseFeedForwardV1
+        mhsa_cfg: Configuration for CausalSelfAttentionV1
+        cross_cfg: Configuration for CrossAttentionV1.
+            Can be set to None in case there is no cross attention block (e.g. for LM usage).
+        modules: List of modules to use for ConformerBlockV2:
+            - "ff" for feed forward module
+            - "mhcsa" for multi-head causal self attention module
+        scales: List of scales to apply to the module outputs before the residual connection.
+            Must have the same length as `modules`.
+    """
+
+    ff_cfg: ConformerPositionwiseFeedForwardV2Config
+    mhsa_cfg: CausalSelfAttentionV1Config
+    cross_cfg: Optional[CrossAttentionV1Config]
+    modules: List[str] = field(default_factory=lambda: ["mhcsa", "cross", "ff"])
+    scales: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
+
+    num_ff_layers: int
+
+    def __post__init__(self):
+        super().__post_init__()
+
+        assert len(self.modules) == len(self.scales), "modules and scales must have same length"
+        assert all(name in ["ff", "mhcsa", "cross"] for name in self.modules), "module type not supported"
+        assert "cross" not in self.modules or self.cross_cfg is not None, (
+            "must specify cross attention config when enabling the cross attention module"
+        )
+
+
+class TransformerDecoderBlockV2(nn.Module, ModuleWithState[TransformerDecoderBlockV1State]):
+    """A transformer block with multiple feed-forward layers."""
+
+    def __init__(self, cfg: TransformerDecoderBlockV2Config):
+        super().__init__()
+
+        modules = []
+        for module_name in cfg.modules:
+            if module_name == "ff":
+                for _ in range(cfg.num_ff_layers):
+                    modules.append(DummyState(ConformerPositionwiseFeedForwardV2(cfg.ff_cfg)))
+            elif module_name == "mhcsa":
+                modules.append(CausalSelfAttentionV1(cfg.mhsa_cfg))
+            elif module_name == "cross":
+                assert cfg.cross_cfg is not None, (
+                    "must specify cross attention config when enabling the cross attention module"
+                )
+                modules.append(CrossAttentionV1(cfg.cross_cfg))
+            else:
+                raise NotImplementedError
+
+        self.module_list = nn.ModuleList(modules)
+        self.scales = [cfg.scales[0] for _ in range(cfg.num_ff_layers)] + cfg.scales[1:] 
+
+    def get_initial_state(self) -> TransformerDecoderBlockV1State:
+        return {"module_states": [module.get_initial_state() for module in self.module_list]}
+
+    def transform_encoder_output(
+        self,
+        encoder_output: Tensor,
+        encoder_output_lens: Tensor,
+        state: TransformerDecoderBlockV1State,
+    ) -> TransformerDecoderBlockV1State:
+        new_module_state = [
+            module.transform_encoder_output(encoder_output, encoder_output_lens, module_state)
+            for module, module_state in zip(self.module_list, state["module_states"])
+        ]
+        return {**state, "module_states": new_module_state}
+
+    def forward(
+        self, labels: Tensor, labels_lens: Tensor, state: TransformerDecoderBlockV1State
+    ) -> Tuple[Tensor, TransformerDecoderBlockV1State]:
+        new_states = []
+        for module, scale, module_state in zip(self.module_list, self.scales, state["module_states"]):
+            module_output, new_mod_state = module(labels, labels_lens, module_state)
+            labels = labels + module_output * scale
+            new_states.append(new_mod_state)
+        return labels, {**state, "module_states": new_states}
+
+
+class TransformerDecoderV3(nn.Module, ModuleWithState[TransformerDecoderV2State]):
+    """
+    A transformer decoder with causal MHSA and cross attention and support for multiple feed-forward layers per layer.
+
+    Can be driven seq-wise during training or stepwise for inference.
+    """
+
+    def __init__(self, cfg: TransformerDecoderV2Config):
+        """
+        :param cfg: configuration with subunits for transformer blocks
+        """
+        super().__init__(cfg)
+
+        self.module_list = torch.nn.ModuleList(
+            [TransformerDecoderBlockV2(cfg.block_cfg) for _ in range(cfg.num_blocks)]
+        )

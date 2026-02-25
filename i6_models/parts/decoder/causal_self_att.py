@@ -154,7 +154,7 @@ class CausalSelfAttentionV1(nn.Module, ModuleWithState[CausalSelfAttentionV1Stat
             assert t_dim == 1, f"stepping decoder, but got query time dim {t_dim} (should be 1)"
             causal_mask = causal_mask[l_dim - 1, :]  # B... 1 (heads) 1 (q) T (k/v)
 
-        kv_mask = make_kv_attn_mask(k, x_lens_accum)  # B... 1 (heads) 1 (q) T (k/v)
+        kv_mask = make_kv_attn_mask(k, x_lens_accum).to(causal_mask.device)  # B... 1 (heads) 1 (q) T (k/v)
 
         att_out = F.scaled_dot_product_attention(
             q,
