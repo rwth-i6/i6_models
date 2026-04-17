@@ -123,7 +123,13 @@ class FactoredDiphoneBlockV1(nn.Module):
         return logits_center, logits_left, contexts_embedded_left
 
     def forward_joint(self, features: Tensor) -> Tensor:
+        """See `forward_joint_diphone`."""
+        return self.forward_joint_diphone(features)
+
+    def forward_joint_diphone(self, features: Tensor) -> Tensor:
         """
+        Computes log p(c,l|h(x)), i.e. forwards the network for the full diphone joint.
+
         :param features: Main encoder output. shape B, T, F. F=num_inputs
         :return: log probabilities for p(c,l|x).
         """
