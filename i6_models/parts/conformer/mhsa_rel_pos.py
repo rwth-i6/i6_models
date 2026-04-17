@@ -164,10 +164,9 @@ class ConformerMHSARelPosV1(nn.Module):
 
         if self.learnable_pos_emb:
             # 1D optimization: 2T-1 unique relative positions instead of T×T distance matrix.
-            # Descending order matches sinusoidal branch convention for _rel_shift_bhij.
-            rel_pos = torch.arange(time_dim_size - 1, -time_dim_size, -1, device=input_tensor.device)
-            # _rel_shift_bhij produces i-j convention; embedding table uses j-i, so negate
-            indices = torch.clamp(-rel_pos, -self.rel_pos_clip, self.rel_pos_clip) + self.rel_pos_clip
+            # Build [-(T-1), ..., -1, 0, 1, ..., T-1] directly.
+            rel_pos = torch.arange(-(time_dim_size - 1), time_dim_size, device=input_tensor.device)
+            indices = torch.clamp(rel_pos, -self.rel_pos_clip, self.rel_pos_clip) + self.rel_pos_clip
             rel_pos_embeddings = self.rel_pos_embeddings[indices].view(
                 1, 2 * time_dim_size - 1, self.pos_emb_dim
             )  # [1, T+T'-1, pos_emb_dim]
