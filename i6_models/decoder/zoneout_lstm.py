@@ -17,7 +17,9 @@ class ZoneoutLSTMCell(nn.Module):
         """
         super().__init__()
         self.cell = cell
-        assert 0.0 <= zoneout_h <= 1.0 and 0.0 <= zoneout_c <= 1.0, "Zoneout drop probability must be in [0, 1]"
+        assert (
+            0.0 <= zoneout_h <= 1.0 and 0.0 <= zoneout_c <= 1.0
+        ), "Zoneout drop probability must be in [0, 1]"
         self.zoneout_h = zoneout_h
         self.zoneout_c = zoneout_c
 
@@ -25,18 +27,20 @@ class ZoneoutLSTMCell(nn.Module):
         self, inputs: torch.Tensor, state: Tuple[torch.Tensor, torch.Tensor]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         with torch.autocast(device_type="cuda", enabled=False):
-            h, c = self.cell(inputs)
+            h, c = self.cell(inputs, state)
         prev_h, prev_c = state
         h = self._zoneout(prev_h, h, self.zoneout_h)
         c = self._zoneout(prev_c, c, self.zoneout_c)
         return h, c
 
-    def _zoneout(self, prev_state: torch.Tensor, curr_state: torch.Tensor, factor: float):
+    def _zoneout(
+        self, prev_state: torch.Tensor, curr_state: torch.Tensor, factor: float
+    ):
         """
         Apply Zoneout.
 
-        :param prev: previous state tensor
-        :param curr: current state tensor
+        :param prev_state: previous state tensor
+        :param curr_state: current state tensor
         :param factor: drop probability
         """
         if factor == 0.0:
