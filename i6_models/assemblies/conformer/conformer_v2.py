@@ -100,7 +100,7 @@ class ConformerEncoderV2Config(ModelConfiguration):
     num_layers: int
 
     # nested configurations
-    frontend: ModuleFactoryV1
+    frontend: Optional[ModuleFactoryV1]
     block_cfg: ConformerBlockV2Config
 
 
@@ -117,7 +117,10 @@ class ConformerEncoderV2(nn.Module):
         """
         super().__init__()
 
-        self.frontend = cfg.frontend()
+        if cfg.frontend is not None:
+            self.frontend = cfg.frontend()
+        else:
+            self.frontend = nn.Identity()
         self.module_list = torch.nn.ModuleList([ConformerBlockV2(cfg.block_cfg) for _ in range(cfg.num_layers)])
 
     def forward(
@@ -139,12 +142,15 @@ class ConformerEncoderV2(nn.Module):
         if return_layers is None:
             return_layers = [len(self.module_list) - 1]
 
-        x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
+        if isinstance(self.frontend, nn.Identity):
+            x = data_tensor
+        else:
+            x, sequence_mask = self.frontend(data_tensor, sequence_mask)  # [B, T, F']
 
         outputs = []
-        assert (
-            max(return_layers) < len(self.module_list) and min(return_layers) >= 0
-        ), f"invalid layer index, should be between 0 and {len(self.module_list)-1}"
+        assert max(return_layers) < len(self.module_list) and min(return_layers) >= 0, (
+            f"invalid layer index, should be between 0 and {len(self.module_list) - 1}"
+        )
 
         for i in range(max(return_layers) + 1):
             x = self.module_list[i](x, sequence_mask)  # [B, T, F']

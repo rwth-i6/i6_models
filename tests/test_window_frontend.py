@@ -37,6 +37,6 @@ def test_output_shape():
         assert out.shape == expected_shape, f"Output with shape {out.shape} not as expected {expected_shape}"
         for i in range(expected_out_len[-1] - 1):
             # check if masks are correct
-            assert (
-                out_mask[i, expected_out_len[i] - 1] and not out_mask[i, expected_out_len[i]]
-            ), f"Failed for {i=}, {stride=}, {window_size=}, {out_mask[i]=}, {out_mask[i].shape=}"
+            assert out_mask[i, expected_out_len[i] - 1] and not out_mask[i, expected_out_len[i]], (
+                f"Failed for {i=}, {stride=}, {window_size=}, {out_mask[i]=}, {out_mask[i].shape=}"
+            )

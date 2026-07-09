@@ -37,7 +37,6 @@ class ConformerMHSAV1(torch.nn.Module):
     """
 
     def __init__(self, cfg: ConformerMHSAV1Config):
-
         super().__init__()
 
         self.layernorm = torch.nn.LayerNorm(cfg.input_dim)
@@ -94,7 +93,6 @@ class ConformerMHSAV2(ConformerMHSAV1):
     """
 
     def __init__(self, cfg: ConformerMHSAV2Config):
-
         super().__init__(cfg)
 
         self.dropout = BroadcastDropout(cfg.dropout, dropout_broadcast_axes=cfg.dropout_broadcast_axes)
