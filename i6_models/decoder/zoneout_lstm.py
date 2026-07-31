@@ -1,7 +1,7 @@
+from typing import Tuple
+
 import torch
 from torch import nn
-
-from typing import Tuple
 
 
 class ZoneoutLSTMCell(nn.Module):
@@ -17,9 +17,7 @@ class ZoneoutLSTMCell(nn.Module):
         """
         super().__init__()
         self.cell = cell
-        assert (
-            0.0 <= zoneout_h <= 1.0 and 0.0 <= zoneout_c <= 1.0
-        ), "Zoneout drop probability must be in [0, 1]"
+        assert 0.0 <= zoneout_h <= 1.0 and 0.0 <= zoneout_c <= 1.0, "Zoneout drop probability must be in [0, 1]"
         self.zoneout_h = zoneout_h
         self.zoneout_c = zoneout_c
 
@@ -33,9 +31,7 @@ class ZoneoutLSTMCell(nn.Module):
         c = self._zoneout(prev_c, c, self.zoneout_c)
         return h, c
 
-    def _zoneout(
-        self, prev_state: torch.Tensor, curr_state: torch.Tensor, factor: float
-    ):
+    def _zoneout(self, prev_state: torch.Tensor, curr_state: torch.Tensor, factor: float):
         """
         Apply Zoneout.
 
