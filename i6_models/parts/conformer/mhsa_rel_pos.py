@@ -199,6 +199,9 @@ class ConformerMHSARelPosV1(nn.Module):
         q_with_bias_u = q + self.pos_bias_u if self.with_pos_bias else q  # [B, T, #heads, F']
         q_with_bias_v = q + self.pos_bias_v if self.with_pos_bias else q
 
+        # attention matrix a and c
+        attn_ac = torch.einsum("bihf, bjhf -> bhij", q_with_bias_u, k)  # [B, #heads, T, T']
+
         # attention matrix b and d
         attn_bd = torch.einsum(
             "bihf, ijhf -> bhij",
@@ -206,32 +209,18 @@ class ConformerMHSARelPosV1(nn.Module):
             rel_pos_embeddings.to(device=q_with_bias_v.device, dtype=q_with_bias_v.dtype),
         )  # [B, #heads, T, T'] or [B, #heads, T, T+T'+1]
         attn_bd = self._rel_shift_bhij(attn_bd, k_len=time_dim_size)  # [B, #heads, T, T']
-        # We use attn_mask to add BD matrix to attention scores.
-        #
-        # Inside torch's SDPA the mask is added after regular scaling, so to get correct
-        # results, we need to apply the scaling here before passing to SDPA.
-        #
-        # See for reference:
-        #   https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
-        attn_bd_mask = attn_bd + mask
-        scale = math.sqrt(1.0 / float(self.embed_dim_per_head))
-        attn_bd_mask_scaled = attn_bd_mask * scale
 
+        attn = attn_ac + attn_bd + mask  # [B, #heads, T, T']
+        attn_scaled = attn * (math.sqrt(1.0 / float(self.embed_dim_per_head)))  # [B, #heads, T, T']
+
+        # softmax and dropout
+        attn_output_weights = self.att_weights_dropout(F.softmax(attn_scaled, dim=-1))  # [B, #heads, T, T']
+
+        # sequence of weighted sums over value sequence
         v = value_seq.view(batch_dim_size, -1, self.num_heads, self.embed_dim_per_head)  # [B, T, H, F']
-
-        # Use torch's SDPA for efficiency.
-        #
-        # The attention matrices a and c are computed inside torch's sdpa.
-        attn_output = F.scaled_dot_product_attention(
-            q_with_bias_u.transpose(-3, -2),  # [B, #heads, T, F']
-            k.transpose(-3, -2),  # [B, #heads, T', F']
-            v.transpose(-3, -2),  # [B, #heads, T, F']
-            attn_mask=attn_bd_mask_scaled,  # [B, #heads, T, T']
-            dropout_p=self.att_weights_dropout.p if self.training else 0.0,
-            scale=scale,
-        )  # [B, #heads, T, F']
-        attn_output = attn_output.transpose(-3, -2).flatten(-2)  # [B, T, F']
-        assert attn_output.shape[-1] == self.embed_dim
+        attn_output = torch.einsum("bhij, bjhf -> bihf", attn_output_weights, v).reshape(
+            batch_dim_size, -1, self.embed_dim
+        )
 
         output_tensor = self.out_proj(attn_output)
         output_tensor = self.dropout(output_tensor)
